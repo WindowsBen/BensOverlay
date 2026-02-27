@@ -8,8 +8,82 @@ if (fontSize) document.documentElement.style.setProperty('--chat-font-size', fon
 if (shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', shadowColor);
 
 // ─── Emote Registry ───────────────────────────────────────────────────────────
-// Maps emote name (word) → image URL
+// Single shared map: emote name (word) → image URL
+// All three services write into this — last writer wins on name collisions
+// Load order: FFZ → BTTV → 7TV, so 7TV wins any conflicts (most up-to-date)
 const emoteMap = {};
+
+// ─── BetterTTV ────────────────────────────────────────────────────────────────
+async function fetchBTTVEmotes(twitchUserId) {
+    try {
+        // Global BTTV emotes (PogChamp, monkaS, etc.)
+        const globalRes = await fetch('https://api.betterttv.net/3/cached/emotes/global');
+        if (globalRes.ok) {
+            const globals = await globalRes.json();
+            for (const emote of globals) {
+                emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/1x`;
+            }
+            console.log(`[BTTV] Loaded ${globals.length} global emotes`);
+        }
+
+        // Channel-specific BTTV emotes
+        const channelRes = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchUserId}`);
+        if (!channelRes.ok) { console.warn('[BTTV] Channel not found on BTTV'); return; }
+
+        const data = await channelRes.json();
+        const channelEmotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])];
+        for (const emote of channelEmotes) {
+            emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/1x`;
+        }
+        console.log(`[BTTV] Loaded ${channelEmotes.length} channel emotes`);
+
+    } catch (err) {
+        console.error('[BTTV] Failed to fetch emotes:', err);
+    }
+}
+
+// ─── FrankerFaceZ ─────────────────────────────────────────────────────────────
+async function fetchFFZEmotes(twitchUserId) {
+    try {
+        // Global FFZ emotes
+        const globalRes = await fetch('https://api.frankerfacez.com/v1/set/global');
+        if (globalRes.ok) {
+            const globalData = await globalRes.json();
+            let globalCount = 0;
+            for (const set of Object.values(globalData.sets || {})) {
+                for (const emote of set.emoticons || []) {
+                    // FFZ URLs are protocol-relative (//cdn...) — prefix https:
+                    const url = emote.urls['1'] || Object.values(emote.urls)[0];
+                    if (url) {
+                        emoteMap[emote.name] = url.startsWith('//') ? `https:${url}` : url;
+                        globalCount++;
+                    }
+                }
+            }
+            console.log(`[FFZ] Loaded ${globalCount} global emotes`);
+        }
+
+        // Channel FFZ emotes
+        const channelRes = await fetch(`https://api.frankerfacez.com/v1/room/id/${twitchUserId}`);
+        if (!channelRes.ok) { console.warn('[FFZ] Channel not found on FFZ'); return; }
+
+        const data = await channelRes.json();
+        let channelCount = 0;
+        for (const set of Object.values(data.sets || {})) {
+            for (const emote of set.emoticons || []) {
+                const url = emote.urls['1'] || Object.values(emote.urls)[0];
+                if (url) {
+                    emoteMap[emote.name] = url.startsWith('//') ? `https:${url}` : url;
+                    channelCount++;
+                }
+            }
+        }
+        console.log(`[FFZ] Loaded ${channelCount} channel emotes`);
+
+    } catch (err) {
+        console.error('[FFZ] Failed to fetch emotes:', err);
+    }
+}
 
 // ─── 7TV: Fetch Channel Emotes ────────────────────────────────────────────────
 async function fetch7TVEmotes(twitchUserId) {
@@ -26,7 +100,6 @@ async function fetch7TVEmotes(twitchUserId) {
         }
         console.log(`[7TV] Loaded ${emotes.length} emotes`);
 
-        // Subscribe to live updates using the emote set ID
         const emoteSetId = data?.emote_set?.id;
         if (emoteSetId) subscribe7TVLiveUpdates(emoteSetId);
 
@@ -40,7 +113,6 @@ function subscribe7TVLiveUpdates(emoteSetId) {
     const ws = new WebSocket('wss://events.7tv.io/v3');
 
     ws.onopen = () => {
-        // Op 35 = SUBSCRIBE
         ws.send(JSON.stringify({
             op: 35,
             d: {
@@ -53,36 +125,22 @@ function subscribe7TVLiveUpdates(emoteSetId) {
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        if (msg.op !== 0 || msg.d?.type !== 'emote_set.update') return; // Only handle DISPATCH
+        if (msg.op !== 0 || msg.d?.type !== 'emote_set.update') return;
 
         const { pulled = [], pushed = [], updated = [] } = msg.d?.body || {};
 
-        // Emotes removed from the set
         for (const item of pulled) {
             const name = item.old_value?.name;
-            if (name) {
-                delete emoteMap[name];
-                console.log(`[7TV] Emote removed: ${name}`);
-            }
+            if (name) { delete emoteMap[name]; console.log(`[7TV] Emote removed: ${name}`); }
         }
-
-        // Emotes added to the set
         for (const item of pushed) {
             const { name, id } = item.value || {};
-            if (name && id) {
-                emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`;
-                console.log(`[7TV] Emote added: ${name}`);
-            }
+            if (name && id) { emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`; console.log(`[7TV] Emote added: ${name}`); }
         }
-
-        // Emotes renamed or updated
         for (const item of updated) {
             if (item.old_value?.name) delete emoteMap[item.old_value.name];
             const { name, id } = item.value || {};
-            if (name && id) {
-                emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`;
-                console.log(`[7TV] Emote updated: ${name}`);
-            }
+            if (name && id) { emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`; console.log(`[7TV] Emote updated: ${name}`); }
         }
     };
 
@@ -103,12 +161,13 @@ function escapeHTML(str) {
         .replace(/"/g, '&quot;');
 }
 
-// ─── Replace 7TV emote words in a plain-text chunk ───────────────────────────
+// ─── Replace third-party emote words in a plain-text chunk ───────────────────
 // Input text must already be HTML-escaped.
-function parse7TVEmotes(escapedText) {
+function parseThirdPartyEmotes(escapedText) {
     return escapedText.split(' ').map(word => {
-        // Unescape for dictionary lookup
-        const raw = word.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        const raw = word
+            .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>').replace(/&quot;/g, '"');
         if (emoteMap[raw]) {
             return `<img class="chat-emote" src="${emoteMap[raw]}" alt="${word}" title="${word}">`;
         }
@@ -116,10 +175,8 @@ function parse7TVEmotes(escapedText) {
     }).join(' ');
 }
 
-// ─── Parse Full Message (Twitch Native + 7TV) ─────────────────────────────────
-// tags.emotes format: { "emoteId": ["start-end", "start-end"], ... }
+// ─── Parse Full Message (Twitch Native + BTTV + FFZ + 7TV) ───────────────────
 function parseMessage(message, twitchEmotes) {
-    // Build sorted list of Twitch emote character ranges
     const ranges = [];
     if (twitchEmotes) {
         for (const [emoteId, positions] of Object.entries(twitchEmotes)) {
@@ -135,27 +192,23 @@ function parseMessage(message, twitchEmotes) {
     }
 
     if (ranges.length === 0) {
-        // No Twitch emotes — just scan for 7TV
-        return parse7TVEmotes(escapeHTML(message));
+        return parseThirdPartyEmotes(escapeHTML(message));
     }
 
-    // Walk character ranges, inserting Twitch emote images and scanning gaps for 7TV
     let html = '';
     let cursor = 0;
 
     for (const range of ranges) {
         if (cursor < range.start) {
-            // Gap before this Twitch emote: check for 7TV emotes in here
-            html += parse7TVEmotes(escapeHTML(message.slice(cursor, range.start)));
+            html += parseThirdPartyEmotes(escapeHTML(message.slice(cursor, range.start)));
         }
         const emoteName = message.slice(range.start, range.end + 1);
         html += `<img class="chat-emote" src="${range.url}" alt="${escapeHTML(emoteName)}" title="${escapeHTML(emoteName)}">`;
         cursor = range.end + 1;
     }
 
-    // Trailing text after last Twitch emote
     if (cursor < message.length) {
-        html += parse7TVEmotes(escapeHTML(message.slice(cursor)));
+        html += parseThirdPartyEmotes(escapeHTML(message.slice(cursor)));
     }
 
     return html;
@@ -178,7 +231,6 @@ function displayMessage(tags, message) {
 
     chatContainer.appendChild(messageElement);
 
-    // Cap at 50 messages
     if (chatContainer.childNodes.length > 50) {
         chatContainer.removeChild(chatContainer.firstChild);
     }
@@ -193,11 +245,19 @@ if (channelName) {
 
     client.connect();
 
-    // roomstate fires when we join — gives us the numeric Twitch user ID
-    // which we need to look up 7TV emotes
     client.on('roomstate', (channel, state) => {
         const twitchUserId = state['room-id'];
-        if (twitchUserId) fetch7TVEmotes(twitchUserId);
+        if (twitchUserId) {
+            // All three fire in parallel, writing into the same emoteMap
+            // FFZ → BTTV → 7TV load order means 7TV wins any name collisions
+            Promise.all([
+                fetchFFZEmotes(twitchUserId),
+                fetchBTTVEmotes(twitchUserId),
+                fetch7TVEmotes(twitchUserId),
+            ]).then(() => {
+                console.log(`[Emotes] All providers loaded. Total: ${Object.keys(emoteMap).length} emotes`);
+            });
+        }
     });
 
     client.on('message', (channel, tags, message, self) => {
