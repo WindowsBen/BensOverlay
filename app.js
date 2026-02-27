@@ -53,56 +53,24 @@ function showRemovedEmoteToast(emoteName, emoteUrl) {
 }
 
 // ─── Twitch Badges ────────────────────────────────────────────────────────────
-async function fetchTwitchBadges(channelId) {
-    try {
-        // Global badges (admin, staff, turbo, Prime, bits, etc.)
-        const globalRes = await fetch('https://badges.twitch.tv/v1/badges/global/display?language=en');
-        if (globalRes.ok) {
-            const globalData = await globalRes.json();
-            for (const [setName, setData] of Object.entries(globalData.badge_sets || {})) {
-                for (const [version, versionData] of Object.entries(setData.versions || {})) {
-                    badgeMap[`${setName}/${version}`] = versionData.image_url_1x;
-                }
-            }
-            console.log('[Badges] Loaded global Twitch badges');
-        }
-
-        // Channel badges (subscriber tiers, bits tiers, custom badges)
-        // Channel badges overwrite globals with the same key
-        const channelRes = await fetch(`https://badges.twitch.tv/v1/badges/channels/${channelId}/display?language=en`);
-        if (channelRes.ok) {
-            const channelData = await channelRes.json();
-            for (const [setName, setData] of Object.entries(channelData.badge_sets || {})) {
-                for (const [version, versionData] of Object.entries(setData.versions || {})) {
-                    badgeMap[`${setName}/${version}`] = versionData.image_url_1x;
-                }
-            }
-            console.log('[Badges] Loaded channel Twitch badges');
-        }
-    } catch (err) {
-        console.error('[Badges] Failed to fetch Twitch badges:', err);
-    }
-}
+// NOTE: badges.twitch.tv blocks cross-origin requests from non-Twitch domains.
+// The modern Helix API (api.twitch.tv/helix/chat/badges) requires auth headers.
+// Twitch badge fetching is disabled until auth is added to the project.
+// The badgeMap and renderBadges infrastructure is kept in place for when that happens.
 
 // ─── FFZ Badges ───────────────────────────────────────────────────────────────
 async function fetchFFZBadges() {
     try {
-        // Returns badge definitions + a userId → badgeId mapping in one call
-        const res = await fetch('https://api.frankerfacez.com/v1/badges/ids');
+        // /v1/badges returns an array of badge objects, each with a users[] array
+        const res = await fetch('https://api.frankerfacez.com/v1/badges');
         if (!res.ok) { console.warn('[FFZ Badges] Could not fetch badge list'); return; }
         const data = await res.json();
 
-        // Build lookup: badge id → image URL
-        const badgeDefs = {};
+        // Each badge has { id, urls: { "1": "//cdn...", ... }, users: [userId, ...] }
         for (const badge of data.badges || []) {
-            badgeDefs[badge.id] = `https:${badge.urls['1']}`;
-        }
-
-        // Map each userId to their badge URLs
-        for (const [badgeId, userIds] of Object.entries(data.users || {})) {
-            const url = badgeDefs[badgeId];
+            const url = badge.urls['1'] ? `https:${badge.urls['1']}` : null;
             if (!url) continue;
-            for (const userId of userIds) {
+            for (const userId of badge.users || []) {
                 if (!ffzUserBadges[userId]) ffzUserBadges[userId] = [];
                 ffzUserBadges[userId].push(url);
             }
@@ -389,7 +357,6 @@ if (channelName) {
                 fetchFFZEmotes(twitchUserId),
                 fetchBTTVEmotes(twitchUserId),
                 fetch7TVEmotes(twitchUserId),
-                fetchTwitchBadges(twitchUserId),
                 fetchFFZBadges(),
             ]).then(() => {
                 console.log(`[Emotes] All providers loaded. Total: ${Object.keys(emoteMap).length} emotes`);
