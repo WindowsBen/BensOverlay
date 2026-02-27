@@ -58,7 +58,7 @@
             const toastRemove = document.getElementById('toastRemove').checked ? '1' : '0';
 
             const currentUrl = window.location.href.replace('index.html', '');
-            const finalUrl = `${currentUrl}overlay.html?channel=${channel}&fontSize=${fontSize}px&shadow=${shadowColor}&toastAdd=${toastAdd}&toastRemove=${toastRemove}`;
+            const finalUrl = `${currentUrl}overlay.html?channel=${channel}&fontSize=${fontSize}px&shadow=${encodeURIComponent(shadowColor)}&toastAdd=${toastAdd}&toastRemove=${toastRemove}`;
 
             document.getElementById('resultLink').value = finalUrl;
         }
