@@ -106,7 +106,7 @@
 
     // ── Implicit OAuth flow ───────────────────────────────────────────────────
     function loginWithTwitch() {
-        const redirectUri = (window.location.origin + window.location.pathname).replace('index.html', '');
+        const redirectUri = window.location.origin + window.location.pathname; // must include index.html — GitHub Pages strips fragments on redirects
 
         const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
         authUrl.searchParams.set('client_id',     CLIENT_ID);
