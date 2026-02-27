@@ -68,13 +68,16 @@ async function fetchFFZBadges() {
 
         // Each badge has { id, urls: { "1": "//cdn...", ... }, users: [userId, ...] }
         for (const badge of data.badges || []) {
-            const url = badge.urls['1'] ? `https:${badge.urls['1']}` : null;
+            const url = badge.urls?.['1'] ? `https:${badge.urls['1']}` : null;
             if (!url) continue;
             for (const userId of badge.users || []) {
-                if (!ffzUserBadges[userId]) ffzUserBadges[userId] = [];
-                ffzUserBadges[userId].push(url);
+                // Stringify the ID — tmi.js gives tags['user-id'] as a string
+                const key = String(userId);
+                if (!ffzUserBadges[key]) ffzUserBadges[key] = [];
+                ffzUserBadges[key].push(url);
             }
         }
+        console.log('[FFZ Badges] Sample keys:', Object.keys(ffzUserBadges).slice(0, 3));
         console.log(`[FFZ Badges] Loaded badge data for ${Object.keys(ffzUserBadges).length} users`);
     } catch (err) {
         console.error('[FFZ Badges] Failed:', err);
