@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BensOverlay Configurator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="config-card">
+        <h1>Overlay Config</h1>
+        <label>Twitch Channel</label>
+        <input type="text" id="channel" placeholder="bens_stream">
+        
+        <label>Font Size</label>
+        <input type="number" id="fontSize" value="24">
+
+        <label>Text Shadow Color</label>
+        <input type="color" id="shadowColor" value="#000000">
+
+        <button id="generateBtn">Generate Link</button>
+        
+        <div id="resultArea" style="display:none;">
+            <p>Copy this into OBS:</p>
+            <textarea id="finalUrl" readonly></textarea>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+</body>
+</html>
