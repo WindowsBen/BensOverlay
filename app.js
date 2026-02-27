@@ -1,20 +1,27 @@
 // ─── Read URL Settings ────────────────────────────────────────────────────────
-const params = new URLSearchParams(window.location.search);
+const params      = new URLSearchParams(window.location.search);
 const channelName = params.get('channel');
-const fontSize = params.get('fontSize');
+const fontSize    = params.get('fontSize');
 const shadowColor = params.get('shadow');
 
-if (fontSize) document.documentElement.style.setProperty('--chat-font-size', fontSize);
+if (fontSize)    document.documentElement.style.setProperty('--chat-font-size', fontSize);
 if (shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', shadowColor);
 
-// Toast visibility — default true if param is missing (backwards compatible)
 const showToastAdd    = params.get('toastAdd')    !== '0';
 const showToastRemove = params.get('toastRemove') !== '0';
 
 // ─── Emote Registry ───────────────────────────────────────────────────────────
+// Single shared map: emote name → image URL
+// Load order: FFZ → BTTV → 7TV, so 7TV wins any name conflicts
 const emoteMap = {};
 
-// ─── New Emote Toast Notification ────────────────────────────────────────────
+// ─── Badge Registries ─────────────────────────────────────────────────────────
+// Twitch: "set/version" → image URL  e.g. "subscriber/6" → "https://..."
+const badgeMap = {};
+// FFZ: userId (string) → array of image URLs
+const ffzUserBadges = {};
+
+// ─── Toast Notifications ──────────────────────────────────────────────────────
 function showNewEmoteToast(emoteName, emoteUrl) {
     const toast = document.createElement('div');
     toast.className = 'emote-toast';
@@ -22,15 +29,8 @@ function showNewEmoteToast(emoteName, emoteUrl) {
         New Emote added to Set: <strong>${escapeHTML(emoteName)}</strong>
         <img class="toast-emote" src="${escapeHTML(emoteUrl)}" alt="${escapeHTML(emoteName)}">
     `;
-
     document.body.appendChild(toast);
-
-    // Trigger the enter animation on next frame (so CSS transition fires)
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => toast.classList.add('emote-toast--visible'));
-    });
-
-    // Start fade-out after 4s, remove from DOM after transition completes
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('emote-toast--visible')));
     setTimeout(() => {
         toast.classList.remove('emote-toast--visible');
         toast.addEventListener('transitionend', () => toast.remove(), { once: true });
@@ -44,17 +44,99 @@ function showRemovedEmoteToast(emoteName, emoteUrl) {
         Emote removed from Set: <strong>${escapeHTML(emoteName)}</strong>
         ${emoteUrl ? `<img class="toast-emote" src="${escapeHTML(emoteUrl)}" alt="${escapeHTML(emoteName)}">` : ''}
     `;
-
     document.body.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => toast.classList.add('emote-toast--visible'));
-    });
-
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('emote-toast--visible')));
     setTimeout(() => {
         toast.classList.remove('emote-toast--visible');
         toast.addEventListener('transitionend', () => toast.remove(), { once: true });
     }, 4000);
+}
+
+// ─── Twitch Badges ────────────────────────────────────────────────────────────
+async function fetchTwitchBadges(channelId) {
+    try {
+        // Global badges (admin, staff, turbo, Prime, bits, etc.)
+        const globalRes = await fetch('https://badges.twitch.tv/v1/badges/global/display?language=en');
+        if (globalRes.ok) {
+            const globalData = await globalRes.json();
+            for (const [setName, setData] of Object.entries(globalData.badge_sets || {})) {
+                for (const [version, versionData] of Object.entries(setData.versions || {})) {
+                    badgeMap[`${setName}/${version}`] = versionData.image_url_1x;
+                }
+            }
+            console.log('[Badges] Loaded global Twitch badges');
+        }
+
+        // Channel badges (subscriber tiers, bits tiers, custom badges)
+        // Channel badges overwrite globals with the same key
+        const channelRes = await fetch(`https://badges.twitch.tv/v1/badges/channels/${channelId}/display?language=en`);
+        if (channelRes.ok) {
+            const channelData = await channelRes.json();
+            for (const [setName, setData] of Object.entries(channelData.badge_sets || {})) {
+                for (const [version, versionData] of Object.entries(setData.versions || {})) {
+                    badgeMap[`${setName}/${version}`] = versionData.image_url_1x;
+                }
+            }
+            console.log('[Badges] Loaded channel Twitch badges');
+        }
+    } catch (err) {
+        console.error('[Badges] Failed to fetch Twitch badges:', err);
+    }
+}
+
+// ─── FFZ Badges ───────────────────────────────────────────────────────────────
+async function fetchFFZBadges() {
+    try {
+        // Returns badge definitions + a userId → badgeId mapping in one call
+        const res = await fetch('https://api.frankerfacez.com/v1/badges/ids');
+        if (!res.ok) { console.warn('[FFZ Badges] Could not fetch badge list'); return; }
+        const data = await res.json();
+
+        // Build lookup: badge id → image URL
+        const badgeDefs = {};
+        for (const badge of data.badges || []) {
+            badgeDefs[badge.id] = `https:${badge.urls['1']}`;
+        }
+
+        // Map each userId to their badge URLs
+        for (const [badgeId, userIds] of Object.entries(data.users || {})) {
+            const url = badgeDefs[badgeId];
+            if (!url) continue;
+            for (const userId of userIds) {
+                if (!ffzUserBadges[userId]) ffzUserBadges[userId] = [];
+                ffzUserBadges[userId].push(url);
+            }
+        }
+        console.log(`[FFZ Badges] Loaded badge data for ${Object.keys(ffzUserBadges).length} users`);
+    } catch (err) {
+        console.error('[FFZ Badges] Failed:', err);
+    }
+}
+
+// ─── Render Badges HTML ───────────────────────────────────────────────────────
+function renderBadges(tags) {
+    let html = '';
+
+    // Twitch badges — tags.badges is already parsed by tmi.js:
+    // { broadcaster: '1', subscriber: '6', ... }
+    if (tags.badges) {
+        for (const [setName, version] of Object.entries(tags.badges)) {
+            const url = badgeMap[`${setName}/${version}`];
+            if (url) {
+                html += `<img class="chat-badge" src="${url}" alt="${escapeHTML(setName)}" title="${escapeHTML(setName)}">`;
+            }
+        }
+    }
+
+    // FFZ badges — keyed by tmi user-id
+    const userId = tags['user-id'];
+    if (userId && ffzUserBadges[userId]) {
+        for (const url of ffzUserBadges[userId]) {
+            html += `<img class="chat-badge ffz-badge" src="${url}" alt="FFZ Badge" title="FFZ Badge">`;
+        }
+    }
+
+    return html;
 }
 
 // ─── BetterTTV ────────────────────────────────────────────────────────────────
@@ -165,7 +247,7 @@ function subscribe7TVLiveUpdates(emoteSetId) {
         for (const item of pulled) {
             const name = item.old_value?.name;
             if (name) {
-                const url = emoteMap[name]; // grab URL before deleting
+                const url = emoteMap[name];
                 delete emoteMap[name];
                 console.log(`[7TV] Emote removed: ${name}`);
                 if (showToastRemove) showRemovedEmoteToast(name, url);
@@ -185,7 +267,10 @@ function subscribe7TVLiveUpdates(emoteSetId) {
         for (const item of updated) {
             if (item.old_value?.name) delete emoteMap[item.old_value.name];
             const { name, id } = item.value || {};
-            if (name && id) { emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`; console.log(`[7TV] Emote updated: ${name}`); }
+            if (name && id) {
+                emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`;
+                console.log(`[7TV] Emote updated: ${name}`);
+            }
         }
     };
 
@@ -260,25 +345,32 @@ function displayMessage(tags, message) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
 
-    const userColor = tags.color || '#ffffff';
-    const username = tags['display-name'] || tags.username;
+    const userColor     = tags.color || '#ffffff';
+    const username      = tags['display-name'] || tags.username;
     const parsedMessage = parseMessage(message, tags.emotes);
+    const badgesHTML    = renderBadges(tags);
 
     messageElement.innerHTML = `
-        <span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
+        <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
         <span class="message-text">${parsedMessage}</span>
     `;
 
-    // Tag for targeted deletion — use login name (tags.username) not display-name,
-    // since clearchat fires with the login name and they can differ for some users
-    if (tags['id'])        messageElement.dataset.msgId    = tags['id'];
-    if (tags.username)     messageElement.dataset.username  = tags.username.toLowerCase();
+    // Tag for targeted deletion
+    if (tags['id'])    messageElement.dataset.msgId   = tags['id'];
+    if (tags.username) messageElement.dataset.username = tags.username.toLowerCase();
 
     chatContainer.appendChild(messageElement);
 
     if (chatContainer.childNodes.length > 50) {
         chatContainer.removeChild(chatContainer.firstChild);
     }
+}
+
+// ─── Remove all messages from a user ─────────────────────────────────────────
+function removeUserMessages(username) {
+    document.getElementById('chat-container')
+        .querySelectorAll(`[data-username="${CSS.escape(username.toLowerCase())}"]`)
+        .forEach(el => el.remove());
 }
 
 // ─── Connect to Twitch Chat ───────────────────────────────────────────────────
@@ -297,6 +389,8 @@ if (channelName) {
                 fetchFFZEmotes(twitchUserId),
                 fetchBTTVEmotes(twitchUserId),
                 fetch7TVEmotes(twitchUserId),
+                fetchTwitchBadges(twitchUserId),
+                fetchFFZBadges(),
             ]).then(() => {
                 console.log(`[Emotes] All providers loaded. Total: ${Object.keys(emoteMap).length} emotes`);
             });
@@ -309,21 +403,13 @@ if (channelName) {
     });
 
     // Timeout or ban — remove all messages from that user
-    function removeUserMessages(username) {
-        const chatContainer = document.getElementById('chat-container');
-        chatContainer.querySelectorAll(`[data-username="${CSS.escape(username.toLowerCase())}"]`)
-            .forEach(el => el.remove());
-    }
-
     client.on('timeout', (channel, username) => removeUserMessages(username));
     client.on('ban',     (channel, username) => removeUserMessages(username));
 
-    // Single message deleted by a mod or the broadcaster
+    // Single message deleted
     client.on('messagedeleted', (channel, username, deletedMessage, tags) => {
         const msgId = tags['target-msg-id'];
-        if (msgId) {
-            document.querySelector(`[data-msg-id="${CSS.escape(msgId)}"]`)?.remove();
-        }
+        if (msgId) document.querySelector(`[data-msg-id="${CSS.escape(msgId)}"]`)?.remove();
     });
 
     client.on('message', (channel, tags, message, self) => {
