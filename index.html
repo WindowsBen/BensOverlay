@@ -5,63 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Overlay Configurator</title>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: sans-serif; padding: 20px; background: #18181b; color: white; }
-        .container { max-width: 400px; margin: 0 auto; background: #27272b; padding: 20px; border-radius: 8px; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
+        .container { max-width: 420px; margin: 0 auto; background: #27272b; padding: 24px; border-radius: 8px; }
+        h2 { margin-top: 0; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; }
         input[type="text"],
         input[type="number"],
-        input[type="color"] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        .section-label { margin-top: 20px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #aaa; }
-        .checkbox-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-weight: normal; cursor: pointer; }
+        input[type="color"] { width: 100%; padding: 8px; margin-top: 5px; background: #18181b; border: 1px solid #3f3f46; color: white; border-radius: 4px; }
+        input[readonly] { opacity: 0.6; }
+        .section-label { margin-top: 20px; padding-top: 14px; border-top: 1px solid #3f3f46; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-weight: normal; font-size: 14px; cursor: pointer; }
         .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #9146FF; flex-shrink: 0; }
-        button { margin-top: 20px; width: 100%; padding: 10px; background: #9146FF; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button { margin-top: 14px; width: 100%; padding: 10px; background: #9146FF; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 14px; }
         button:hover { background: #772ce8; }
+        .btn-secondary { background: #3f3f46; }
+        .btn-secondary:hover { background: #52525b; }
+        .auth-status { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; }
+        .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .dot-grey  { background: #666; }
+        .dot-green { background: #2ecc71; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Configure Overlay</h2>
+<div class="container">
+    <h2>Chat Overlay Configurator</h2>
 
-        <label>Twitch Channel Name:</label>
-        <input type="text" id="channel" placeholder="e.g., xQc">
+    <!-- ── Step 1: Auth ── -->
+    <div class="section-label">Step 1 — Connect your Twitch account</div>
 
-        <label>Font Size (px):</label>
-        <input type="number" id="fontSize" value="16">
-
-        <label>Text Shadow Color:</label>
-        <input type="color" id="shadowColor" value="#000000">
-
-        <div class="section-label">Emote Notifications</div>
-
-        <label class="checkbox-row">
-            <input type="checkbox" id="toastAdd" checked>
-            Show pop-up when an emote is <strong>added</strong>
-        </label>
-
-        <label class="checkbox-row">
-            <input type="checkbox" id="toastRemove" checked>
-            Show pop-up when an emote is <strong>removed</strong>
-        </label>
-
-        <button onclick="generateLink()">Generate Link</button>
-
-        <label>Your OBS Browser Source Link:</label>
-        <input type="text" id="resultLink" readonly>
+    <div class="auth-status">
+        <div class="dot dot-grey" id="status-dot"></div>
+        <span id="status-text">Not connected</span>
     </div>
 
-    <script>
-        function generateLink() {
-            const channel = document.getElementById('channel').value;
-            const fontSize = document.getElementById('fontSize').value;
-            const shadowColor = document.getElementById('shadowColor').value;
-            const toastAdd = document.getElementById('toastAdd').checked ? '1' : '0';
-            const toastRemove = document.getElementById('toastRemove').checked ? '1' : '0';
+    <button id="auth-btn" onclick="loginWithTwitch()">Login with Twitch</button>
+    <button id="reauth-btn" class="btn-secondary" onclick="loginWithTwitch()" style="display:none;">Switch account</button>
 
-            const currentUrl = window.location.href.replace('index.html', '');
-            const finalUrl = `${currentUrl}overlay.html?channel=${channel}&fontSize=${fontSize}px&shadow=${encodeURIComponent(shadowColor)}&toastAdd=${toastAdd}&toastRemove=${toastRemove}`;
+    <!-- ── Step 2: Configure ── -->
+    <div class="section-label">Step 2 — Configure Overlay</div>
 
-            document.getElementById('resultLink').value = finalUrl;
+    <label>Twitch Channel Name:
+        <input type="text" id="channel" placeholder="e.g., xQc">
+    </label>
+
+    <label>Font Size (px):
+        <input type="number" id="fontSize" value="16">
+    </label>
+
+    <label>Text Shadow Color:
+        <input type="color" id="shadowColor" value="#000000">
+    </label>
+
+    <div class="section-label">Emote Notifications</div>
+
+    <label class="checkbox-row">
+        <input type="checkbox" id="toastAdd" checked>
+        Show pop-up when an emote is <strong>added</strong>
+    </label>
+    <label class="checkbox-row">
+        <input type="checkbox" id="toastRemove" checked>
+        Show pop-up when an emote is <strong>removed</strong>
+    </label>
+
+    <button onclick="generateLink()">Generate OBS Link</button>
+
+    <label>Your OBS Browser Source Link:
+        <input type="text" id="resultLink" readonly>
+    </label>
+</div>
+
+<script>
+    const CLIENT_ID = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
+
+    // ── Handle OAuth redirect (token comes back in the URL fragment) ──────────
+    function handleOAuthRedirect() {
+        const hash = window.location.hash;
+        if (!hash) return;
+
+        const fragmentParams = new URLSearchParams(hash.slice(1));
+        const token = fragmentParams.get('access_token');
+        if (!token) return;
+
+        localStorage.setItem('twitch_access_token', token);
+
+        // Remove token from URL bar
+        history.replaceState(null, '', window.location.pathname);
+    }
+
+    // ── Restore state on load ─────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        handleOAuthRedirect();
+
+        if (localStorage.getItem('twitch_access_token')) {
+            setAuthStatus('green', 'Connected ✓');
+            document.getElementById('auth-btn').style.display   = 'none';
+            document.getElementById('reauth-btn').style.display = 'block';
         }
-    </script>
+    });
+
+    // ── Implicit OAuth flow ───────────────────────────────────────────────────
+    function loginWithTwitch() {
+        const redirectUri = window.location.origin + window.location.pathname;
+
+        const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
+        authUrl.searchParams.set('client_id',     CLIENT_ID);
+        authUrl.searchParams.set('redirect_uri',  redirectUri);
+        authUrl.searchParams.set('response_type', 'token');
+        authUrl.searchParams.set('scope',         'user:read:chat');
+
+        window.location.href = authUrl.toString();
+    }
+
+    function setAuthStatus(color, text) {
+        document.getElementById('status-dot').className    = `dot dot-${color}`;
+        document.getElementById('status-text').textContent = text;
+    }
+
+    // ── Generate Link ─────────────────────────────────────────────────────────
+    function generateLink() {
+        const channel     = document.getElementById('channel').value.trim();
+        const fontSize    = document.getElementById('fontSize').value;
+        const shadowColor = document.getElementById('shadowColor').value;
+        const toastAdd    = document.getElementById('toastAdd').checked    ? '1' : '0';
+        const toastRemove = document.getElementById('toastRemove').checked ? '1' : '0';
+
+        if (!channel) { alert('Please enter a channel name.'); return; }
+
+        const base     = window.location.href.replace('index.html', '');
+        const finalUrl = `${base}overlay.html?channel=${encodeURIComponent(channel)}&fontSize=${fontSize}px&shadow=${encodeURIComponent(shadowColor)}&toastAdd=${toastAdd}&toastRemove=${toastRemove}`;
+
+        document.getElementById('resultLink').value = finalUrl;
+    }
+</script>
 </body>
 </html>

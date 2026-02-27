@@ -3,6 +3,8 @@ const params      = new URLSearchParams(window.location.search);
 const channelName = params.get('channel');
 const fontSize    = params.get('fontSize');
 const shadowColor = params.get('shadow');
+const clientId    = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
+const accessToken = localStorage.getItem('twitch_access_token');
 
 if (fontSize)    document.documentElement.style.setProperty('--chat-font-size', fontSize);
 if (shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', shadowColor);
@@ -15,11 +17,9 @@ const showToastRemove = params.get('toastRemove') !== '0';
 // Load order: FFZ → BTTV → 7TV, so 7TV wins any name conflicts
 const emoteMap = {};
 
-// ─── Badge Registries ─────────────────────────────────────────────────────────
-// Twitch: "set/version" → image URL  e.g. "subscriber/6" → "https://..."
+// ─── Badge Registry ───────────────────────────────────────────────────────────
+// "set/version" → image URL  e.g. "subscriber/6" → "https://..."
 const badgeMap = {};
-// FFZ: userId (string) → array of image URLs
-const ffzUserBadges = {};
 
 // ─── Toast Notifications ──────────────────────────────────────────────────────
 function showNewEmoteToast(emoteName, emoteUrl) {
@@ -52,41 +52,49 @@ function showRemovedEmoteToast(emoteName, emoteUrl) {
     }, 4000);
 }
 
-// ─── Twitch Badges ────────────────────────────────────────────────────────────
-// NOTE: badges.twitch.tv blocks cross-origin requests from non-Twitch domains.
-// The modern Helix API (api.twitch.tv/helix/chat/badges) requires auth headers.
-// Twitch badge fetching is disabled until auth is added to the project.
-// The badgeMap and renderBadges infrastructure is kept in place for when that happens.
+// ─── Twitch Badges (Helix API) ────────────────────────────────────────────────
+async function fetchTwitchBadges(channelId) {
+    if (!clientId || !accessToken) {
+        console.warn('[Badges] No clientId or token — skipping Twitch badge fetch. Authenticate in the configurator to enable badges.');
+        return;
+    }
 
-// ─── FFZ Badges ───────────────────────────────────────────────────────────────
-async function fetchFFZBadges() {
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Client-Id':     clientId,
+    };
+
     try {
-        // /v1/badges returns an array of badge objects, each with a users[] array
-        const res = await fetch('https://api.frankerfacez.com/v1/badges');
-        if (!res.ok) { console.warn('[FFZ Badges] Could not fetch badge list'); return; }
-        const data = await res.json();
-
-        // Build badge id → URL lookup from the badges array
-        const badgeDefs = {};
-        for (const badge of data.badges || []) {
-            const url = badge.urls?.['1'] ? `https:${badge.urls['1']}` : null;
-            if (url) badgeDefs[badge.id] = url;
-        }
-
-        // data.users is { badgeId: [userId, ...] } — invert into ffzUserBadges
-        for (const [badgeId, userIds] of Object.entries(data.users || {})) {
-            const url = badgeDefs[badgeId];
-            if (!url) continue;
-            for (const userId of userIds) {
-                const key = String(userId);
-                if (!ffzUserBadges[key]) ffzUserBadges[key] = [];
-                ffzUserBadges[key].push(url);
+        // Global badges (admin, staff, turbo, Prime, bits, etc.)
+        const globalRes = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
+        if (globalRes.ok) {
+            const globalData = await globalRes.json();
+            for (const set of globalData.data || []) {
+                for (const version of set.versions || []) {
+                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                }
             }
+            console.log('[Badges] Loaded global Twitch badges');
+        } else if (globalRes.status === 401) {
+            console.warn('[Badges] Token expired — clear localStorage and re-authenticate in the configurator');
+            return;
         }
-        console.log(`[FFZ Badges] Loaded badge data for ${Object.keys(ffzUserBadges).length} users`);
-        console.log(`[FFZ Badges] Loaded badge data for ${Object.keys(ffzUserBadges).length} users`);
+
+        // Channel badges (subscriber tiers, bits tiers, custom badges)
+        // These overwrite globals with the same key so channel-specific icons always win
+        const channelRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${channelId}`, { headers });
+        if (channelRes.ok) {
+            const channelData = await channelRes.json();
+            for (const set of channelData.data || []) {
+                for (const version of set.versions || []) {
+                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                }
+            }
+            console.log('[Badges] Loaded channel Twitch badges');
+        }
+
     } catch (err) {
-        console.error('[FFZ Badges] Failed:', err);
+        console.error('[Badges] Failed to fetch Twitch badges:', err);
     }
 }
 
@@ -94,25 +102,13 @@ async function fetchFFZBadges() {
 function renderBadges(tags) {
     let html = '';
 
-    // Twitch badges — tags.badges is already parsed by tmi.js:
-    // { broadcaster: '1', subscriber: '6', ... }
+    // tags.badges is already parsed by tmi.js: { broadcaster: '1', subscriber: '6', ... }
     if (tags.badges) {
         for (const [setName, version] of Object.entries(tags.badges)) {
             const url = badgeMap[`${setName}/${version}`];
             if (url) {
                 html += `<img class="chat-badge" src="${url}" alt="${escapeHTML(setName)}" title="${escapeHTML(setName)}">`;
             }
-        }
-    }
-
-    // FFZ badges — keyed by tmi user-id
-    const userId = tags['user-id'];
-    if (userId) {
-        console.log(`[FFZ Badges] Looking up userId: "${userId}", found:`, ffzUserBadges[userId]);
-    }
-    if (userId && ffzUserBadges[userId]) {
-        for (const url of ffzUserBadges[userId]) {
-            html += `<img class="chat-badge ffz-badge" src="${url}" alt="FFZ Badge" title="FFZ Badge">`;
         }
     }
 
@@ -233,7 +229,6 @@ function subscribe7TVLiveUpdates(emoteSetId) {
                 if (showToastRemove) showRemovedEmoteToast(name, url);
             }
         }
-
         for (const item of pushed) {
             const { name, id } = item.value || {};
             if (name && id) {
@@ -243,7 +238,6 @@ function subscribe7TVLiveUpdates(emoteSetId) {
                 if (showToastAdd) showNewEmoteToast(name, url);
             }
         }
-
         for (const item of updated) {
             if (item.old_value?.name) delete emoteMap[item.old_value.name];
             const { name, id } = item.value || {};
@@ -335,7 +329,6 @@ function displayMessage(tags, message) {
         <span class="message-text">${parsedMessage}</span>
     `;
 
-    // Tag for targeted deletion
     if (tags['id'])    messageElement.dataset.msgId   = tags['id'];
     if (tags.username) messageElement.dataset.username = tags.username.toLowerCase();
 
@@ -369,23 +362,20 @@ if (channelName) {
                 fetchFFZEmotes(twitchUserId),
                 fetchBTTVEmotes(twitchUserId),
                 fetch7TVEmotes(twitchUserId),
-                fetchFFZBadges(),
+                fetchTwitchBadges(twitchUserId),
             ]).then(() => {
-                console.log(`[Emotes] All providers loaded. Total: ${Object.keys(emoteMap).length} emotes`);
+                console.log(`[Init] All providers loaded. Emotes: ${Object.keys(emoteMap).length}, Badges: ${Object.keys(badgeMap).length}`);
             });
         }
     });
 
-    // /clear — full wipe
     client.on('clearchat', () => {
         document.getElementById('chat-container').innerHTML = '';
     });
 
-    // Timeout or ban — remove all messages from that user
     client.on('timeout', (channel, username) => removeUserMessages(username));
     client.on('ban',     (channel, username) => removeUserMessages(username));
 
-    // Single message deleted
     client.on('messagedeleted', (channel, username, deletedMessage, tags) => {
         const msgId = tags['target-msg-id'];
         if (msgId) document.querySelector(`[data-msg-id="${CSS.escape(msgId)}"]`)?.remove();
