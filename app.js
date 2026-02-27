@@ -4,7 +4,7 @@ const channelName = params.get('channel');
 const fontSize    = params.get('fontSize');
 const shadowColor = params.get('shadow');
 const clientId    = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
-const accessToken = localStorage.getItem('twitch_access_token');
+const accessToken = params.get('token') || localStorage.getItem('twitch_access_token');
 
 if (fontSize)    document.documentElement.style.setProperty('--chat-font-size', fontSize);
 if (shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', shadowColor);
