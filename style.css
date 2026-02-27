@@ -1,0 +1,35 @@
+/* These are our default variables. They get overwritten by the URL settings. */
+:root {
+    --chat-font-size: 16px;
+    --chat-shadow-color: #000000;
+}
+
+body {
+    margin: 0;
+    overflow: hidden; /* Prevents scrollbars in OBS */
+    background: transparent; /* Essential for OBS overlays */
+    color: white;
+    font-family: sans-serif;
+}
+
+#chat-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100vh;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.chat-message {
+    font-size: var(--chat-font-size);
+    text-shadow: 1px 1px 2px var(--chat-shadow-color), -1px -1px 2px var(--chat-shadow-color);
+    margin-bottom: 8px;
+    word-wrap: break-word;
+    /* Future proofing: This class is where we will add bubble styles later! */
+}
+
+.username {
+    font-weight: bold;
+    margin-right: 5px;
+}

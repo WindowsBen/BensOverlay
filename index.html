@@ -2,28 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BensOverlay Configurator</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Overlay Configurator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #18181b; color: white; }
+        .container { max-width: 400px; margin: 0 auto; background: #27272b; padding: 20px; border-radius: 8px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        button { margin-top: 20px; width: 100%; padding: 10px; background: #9146FF; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button:hover { background: #772ce8; }
+    </style>
 </head>
 <body>
-    <div class="config-card">
-        <h1>Overlay Config</h1>
-        <label>Twitch Channel</label>
-        <input type="text" id="channel" placeholder="bens_stream">
-        
-        <label>Font Size</label>
-        <input type="number" id="fontSize" value="24">
+    <div class="container">
+        <h2>Configure Overlay</h2>
+        <label>Twitch Channel Name:</label>
+        <input type="text" id="channel" placeholder="e.g., xQc">
 
-        <label>Text Shadow Color</label>
+        <label>Font Size (px):</label>
+        <input type="number" id="fontSize" value="16">
+
+        <label>Text Shadow Color:</label>
         <input type="color" id="shadowColor" value="#000000">
 
-        <button id="generateBtn">Generate Link</button>
-        
-        <div id="resultArea" style="display:none;">
-            <p>Copy this into OBS:</p>
-            <textarea id="finalUrl" readonly></textarea>
-        </div>
+        <button onclick="generateLink()">Generate Link</button>
+
+        <label>Your OBS Browser Source Link:</label>
+        <input type="text" id="resultLink" readonly>
     </div>
-    <script src="js/config.js"></script>
+
+    <script>
+        function generateLink() {
+            const channel = document.getElementById('channel').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const shadowColor = document.getElementById('shadowColor').value;
+            
+            // This builds the URL with your custom settings
+            const currentUrl = window.location.href.replace('index.html', '');
+            const finalUrl = `${currentUrl}overlay.html?channel=${channel}&fontSize=${fontSize}px&shadow=${shadowColor}`;
+            
+            document.getElementById('resultLink').value = finalUrl;
+        }
+    </script>
 </body>
 </html>
