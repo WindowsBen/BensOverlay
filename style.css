@@ -37,16 +37,20 @@ body {
 /* ─── Emote Images & Canvases ──────────────────────────────────────── */
 .chat-emote {
     height: 1.6em;
-    width: 1.6em;
-    object-fit: contain;   /* For <img> Twitch native emotes */
+    width: auto;           /* Width follows aspect ratio on both <img> and <canvas> */
     vertical-align: middle;
     margin: 0 1px;
     filter: drop-shadow(1px 1px 1px var(--chat-shadow-color));
 }
 
-/* Canvas pixel buffer is fixed at EMOTE_SIZE (28px) in app.js.
-   We scale visually via CSS to match the 1.6em rhythm — keeps drawImage sharp. */
+img.chat-emote {
+    object-fit: contain;   /* Only <img> needs this (Twitch native emotes) */
+}
+
+/* canvas height is fixed at 1.6em; width is driven by style.aspectRatio
+   set inline in JS once naturalWidth/naturalHeight are known.
+   The internal pixel buffer is EMOTE_HEIGHT_PX — CSS scales it cleanly. */
 canvas.chat-emote {
-    width: 1.6em;
     height: 1.6em;
+    width: auto;
 }
