@@ -269,9 +269,10 @@ function displayMessage(tags, message) {
         <span class="message-text">${parsedMessage}</span>
     `;
 
-    // Tag for targeted deletion
-    if (tags['id']) messageElement.dataset.msgId    = tags['id'];
-    if (username)   messageElement.dataset.username  = username.toLowerCase();
+    // Tag for targeted deletion — use login name (tags.username) not display-name,
+    // since clearchat fires with the login name and they can differ for some users
+    if (tags['id'])        messageElement.dataset.msgId    = tags['id'];
+    if (tags.username)     messageElement.dataset.username  = tags.username.toLowerCase();
 
     chatContainer.appendChild(messageElement);
 
