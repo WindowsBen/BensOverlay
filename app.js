@@ -107,6 +107,9 @@ function renderBadges(tags) {
 
     // FFZ badges — keyed by tmi user-id
     const userId = tags['user-id'];
+    if (userId) {
+        console.log(`[FFZ Badges] Looking up userId: "${userId}", found:`, ffzUserBadges[userId]);
+    }
     if (userId && ffzUserBadges[userId]) {
         for (const url of ffzUserBadges[userId]) {
             html += `<img class="chat-badge ffz-badge" src="${url}" alt="FFZ Badge" title="FFZ Badge">`;
