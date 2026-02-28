@@ -31,6 +31,7 @@ async function fetchFFZBadges() {
         for (const [badgeId, loginNames] of Object.entries(data.users || {})) {
             const def = badgeDefs[badgeId];
             if (!def) continue;
+            console.log(`[FFZ Badges] Badge ${badgeId} (${def.title}) users sample:`, loginNames.slice(0, 3));
             for (const loginName of loginNames) {
                 const key = loginName.toLowerCase();
                 if (!ffzUserBadges[key]) ffzUserBadges[key] = [];
