@@ -18,12 +18,8 @@ async function fetch7TVUserCosmetics(twitchUserId) {
         if (!res.ok) return null;
 
         const data = await res.json();
-        console.log('[7TV Cosmetics] Top-level keys:', Object.keys(data));
-        console.log('[7TV Cosmetics] user.style:', JSON.stringify(data?.user?.style));
-        console.log('[7TV Cosmetics] cosmetics key:', JSON.stringify(data?.cosmetics));
-        console.log('[7TV Cosmetics] user keys:', Object.keys(data?.user || {}));
-
         const style = data?.user?.style;
+        const sevenTVUserId = data?.user?.id;
 
         const cosmetics = {
             badgeUrl: null,
@@ -32,6 +28,17 @@ async function fetch7TVUserCosmetics(twitchUserId) {
 
         if (style?.badge_id) {
             cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/1x.webp`;
+        }
+
+        if (style?.paint_id && sevenTVUserId) {
+            const paintRes = await fetch(`https://7tv.io/v3/cosmetics?user_id=${sevenTVUserId}`);
+            if (paintRes.ok) {
+                const paintData = await paintRes.json();
+                console.log('[7TV Paint] Cosmetics response keys:', Object.keys(paintData));
+                console.log('[7TV Paint] Paints array:', JSON.stringify(paintData?.paints));
+            } else {
+                console.warn('[7TV Paint] Fetch failed:', paintRes.status, await paintRes.text());
+            }
         }
 
         sevenTVCosmeticsCache[twitchUserId] = cosmetics;
