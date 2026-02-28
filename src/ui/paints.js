@@ -1,37 +1,50 @@
 // ─── ui/paints.js ─────────────────────────────────────────────────────────────
 // Converts 7TV paint objects into CSS and applies them to username spans.
-// 7TV paints can be gradients, solid colors, or image-based, with optional
-// drop shadows and text stroke effects.
+// Uses injected <style> tags rather than inline styles because OBS's browser
+// silently drops -webkit-background-clip when set via element.style.
+
+// Counter for generating unique class names per user
+let paintClassCounter = 0;
 
 function applyPaint(element, paint) {
     if (!paint) return;
 
-    const shadows = (paint.shadows || []).map(s => {
-        const color = intToRGBA(s.color);
-        return `${s.x_offset}px ${s.y_offset}px ${s.radius}px ${color}`;
-    }).join(', ');
+    const className = `seventv-paint-${++paintClassCounter}`;
+    const css = buildPaintCSS(`.${className}`, paint);
+    if (!css) return;
 
-    if (shadows) {
-        element.style.textShadow = shadows;
-    }
+    // Inject a <style> block — vendor prefixes work here unlike inline styles
+    const styleTag = document.createElement('style');
+    styleTag.textContent = css;
+    document.head.appendChild(styleTag);
 
-    // Build the gradient or solid color for -webkit-background-clip text effect
+    element.classList.add(className);
+    element.style.display = 'inline-block';
+}
+
+function buildPaintCSS(selector, paint) {
     const gradientCSS = buildPaintGradient(paint);
+    const shadowCSS   = buildPaintShadows(paint);
+
+    if (!gradientCSS && !shadowCSS) return null;
+
+    let rules = '';
+
     if (gradientCSS) {
-        // Append to existing inline style so we don't lose the Twitch name color fallback.
-        // We write the raw -webkit- prefixed properties as a string because
-        // OBS's CEF browser silently drops setProperty for vendor-prefixed props.
-        const existing = element.getAttribute('style') || '';
-        element.setAttribute('style',
-            existing +
-            `;display:inline-block` +
-            `;background-image:${gradientCSS}` +
-            `;-webkit-background-clip:text` +
-            `;background-clip:text` +
-            `;-webkit-text-fill-color:transparent` +
-            `;color:transparent`
-        );
+        rules += `
+    background-image: ${gradientCSS};
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;`;
     }
+
+    if (shadowCSS) {
+        rules += `
+    filter: ${shadowCSS};`;
+    }
+
+    return `${selector} {${rules}\n}`;
 }
 
 function buildPaintGradient(paint) {
@@ -43,7 +56,7 @@ function buildPaintGradient(paint) {
 
     switch (paint.function) {
         case 'LINEAR_GRADIENT': {
-            const angle = paint.angle ?? 90;
+            const angle  = paint.angle ?? 90;
             const repeat = paint.repeat ? 'repeating-linear-gradient' : 'linear-gradient';
             return `${repeat}(${angle}deg, ${stops.join(', ')})`;
         }
@@ -56,12 +69,20 @@ function buildPaintGradient(paint) {
             return `conic-gradient(from ${angle}deg, ${stops.join(', ')})`;
         }
         default:
-            // Solid color — use first stop color
             if (paint.stops?.length) {
-                return `linear-gradient(${intToRGBA(paint.stops[0].color)}, ${intToRGBA(paint.stops[0].color)})`;
+                const c = intToRGBA(paint.stops[0].color);
+                return `linear-gradient(${c}, ${c})`;
             }
             return null;
     }
+}
+
+function buildPaintShadows(paint) {
+    if (!paint.shadows?.length) return null;
+    return paint.shadows.map(s => {
+        const color = intToRGBA(s.color);
+        return `drop-shadow(${s.x_offset}px ${s.y_offset}px ${s.radius}px ${color})`;
+    }).join(' ');
 }
 
 // 7TV encodes colors as signed 32-bit integers (RGBA)
