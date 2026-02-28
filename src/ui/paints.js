@@ -18,6 +18,7 @@ function applyPaint(element, paint) {
     // Build the gradient or solid color for -webkit-background-clip text effect
     const gradientCSS = buildPaintGradient(paint);
     if (gradientCSS) {
+        element.style.display            = 'inline-block';
         element.style.backgroundImage    = gradientCSS;
         element.style.webkitBackgroundClip = 'text';
         element.style.backgroundClip     = 'text';
@@ -27,7 +28,6 @@ function applyPaint(element, paint) {
 }
 
 function buildPaintGradient(paint) {
-    console.log('[7TV Paint] buildPaintGradient received:', JSON.stringify(paint));
     const stops = (paint.stops || []).map(s => {
         return `${intToRGBA(s.color)} ${(s.at * 100).toFixed(1)}%`;
     });
