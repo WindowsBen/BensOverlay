@@ -18,12 +18,19 @@ function applyPaint(element, paint) {
     // Build the gradient or solid color for -webkit-background-clip text effect
     const gradientCSS = buildPaintGradient(paint);
     if (gradientCSS) {
-        element.style.display = 'inline-block';
-        element.style.backgroundImage = gradientCSS;
-        element.style.setProperty('-webkit-background-clip', 'text');
-        element.style.setProperty('background-clip', 'text');
-        element.style.setProperty('-webkit-text-fill-color', 'transparent');
-        element.style.color = 'transparent';
+        // Append to existing inline style so we don't lose the Twitch name color fallback.
+        // We write the raw -webkit- prefixed properties as a string because
+        // OBS's CEF browser silently drops setProperty for vendor-prefixed props.
+        const existing = element.getAttribute('style') || '';
+        element.setAttribute('style',
+            existing +
+            `;display:inline-block` +
+            `;background-image:${gradientCSS}` +
+            `;-webkit-background-clip:text` +
+            `;background-clip:text` +
+            `;-webkit-text-fill-color:transparent` +
+            `;color:transparent`
+        );
     }
 }
 
