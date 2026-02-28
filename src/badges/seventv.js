@@ -18,7 +18,7 @@ async function fetch7TVUserCosmetics(twitchUserId) {
         if (!res.ok) return null;
 
         const data = await res.json();
-        const style = data?.user?.style;
+        const style       = data?.user?.style;
         const sevenTVUserId = data?.user?.id;
 
         const cosmetics = {
@@ -42,11 +42,10 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             });
             if (paintRes.ok) {
                 const paintData = await paintRes.json();
-                console.log('[7TV Paint] GQL response:', JSON.stringify(paintData));
                 const paint = paintData?.data?.cosmetics?.paints?.[0];
                 if (paint) cosmetics.paint = paint;
             } else {
-                console.warn('[7TV Paint] GQL fetch failed:', paintRes.status, await paintRes.text());
+                console.warn('[7TV Paint] GQL fetch failed:', paintRes.status);
             }
         }
 
