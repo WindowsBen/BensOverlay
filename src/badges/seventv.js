@@ -34,6 +34,9 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             const paintRes = await fetch(`https://7tv.io/v3/cosmetics/paints/${style.paint_id}`);
             if (paintRes.ok) {
                 cosmetics.paint = await paintRes.json();
+                console.log('[7TV Paint] Raw paint data:', JSON.stringify(cosmetics.paint));
+            } else {
+                console.warn('[7TV Paint] Fetch failed:', paintRes.status, await paintRes.text());
             }
         }
 
