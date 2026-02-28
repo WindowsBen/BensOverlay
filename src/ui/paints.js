@@ -61,8 +61,6 @@ function buildPaintGradient(paint) {
         return `${intToRGBA(s.color)} ${(s.at * 100).toFixed(1)}%`;
     });
 
-    if (!stops.length) return null;
-
     switch (paint.function) {
         case 'LINEAR_GRADIENT': {
             const angle  = paint.angle ?? 90;
@@ -85,6 +83,7 @@ function buildPaintGradient(paint) {
             return null;
         }
         default:
+            if (!stops.length) return null;
             if (paint.stops?.length) {
                 const c = intToRGBA(paint.stops[0].color);
                 return `linear-gradient(${c}, ${c})`;
