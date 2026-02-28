@@ -19,7 +19,8 @@ function applyPaint(element, paint) {
     document.head.appendChild(styleTag);
 
     element.classList.add(className);
-    element.style.display = 'inline-block';
+    element.style.display    = 'inline-block';
+    element.style.textShadow = 'none'; // paint handles its own shadows via filter: drop-shadow
 }
 
 function buildPaintCSS(selector, paint) {
