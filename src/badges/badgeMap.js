@@ -18,8 +18,8 @@ function renderBadges(tags) {
         }
     }
 
-    // FFZ badges — keyed by login name, gated by showExternalCosmetics
-    if (CONFIG.showExternalCosmetics && tags.username) {
+    // FFZ badges — keyed by login name, hidden when role-only mode or external cosmetics are off
+    if (CONFIG.showExternalCosmetics && !CONFIG.roleOnlyBadges && tags.username) {
         const key = tags.username.toLowerCase();
         const ffzBadges = ffzUserBadges[key];
         if (ffzBadges) {
