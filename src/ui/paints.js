@@ -5,6 +5,7 @@
 
 function applyPaint(element, paint) {
     if (!paint) return;
+    console.log('[7TV Paint] Element before:', element.style.cssText);
 
     const shadows = (paint.shadows || []).map(s => {
         const color = intToRGBA(s.color);
@@ -17,6 +18,7 @@ function applyPaint(element, paint) {
 
     // Build the gradient or solid color for -webkit-background-clip text effect
     const gradientCSS = buildPaintGradient(paint);
+    console.log('[7TV Paint] gradientCSS:', gradientCSS);
     if (gradientCSS) {
         element.style.display            = 'inline-block';
         element.style.backgroundImage    = gradientCSS;
@@ -24,6 +26,7 @@ function applyPaint(element, paint) {
         element.style.backgroundClip     = 'text';
         element.style.webkitTextFillColor = 'transparent';
         element.style.color              = 'transparent';
+        console.log('[7TV Paint] Element after:', element.style.cssText);
     }
 }
 
