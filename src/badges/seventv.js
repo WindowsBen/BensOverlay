@@ -30,14 +30,23 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/1x.webp`;
         }
 
-        if (style?.paint_id && sevenTVUserId) {
-            const paintRes = await fetch(`https://7tv.io/v3/cosmetics?user_id=${sevenTVUserId}`);
+        if (style?.paint_id) {
+            const paintRes = await fetch('https://7tv.io/v3/gql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: `{
+                    cosmetics(list: [{ id: "${style.paint_id}", kind: PAINT }]) {
+                        paints { id name function color stops { at color } angle repeat shadows { x_offset y_offset radius color } }
+                    }
+                }` })
+            });
             if (paintRes.ok) {
                 const paintData = await paintRes.json();
-                console.log('[7TV Paint] Cosmetics response keys:', Object.keys(paintData));
-                console.log('[7TV Paint] Paints array:', JSON.stringify(paintData?.paints));
+                console.log('[7TV Paint] GQL response:', JSON.stringify(paintData));
+                const paint = paintData?.data?.cosmetics?.paints?.[0];
+                if (paint) cosmetics.paint = paint;
             } else {
-                console.warn('[7TV Paint] Fetch failed:', paintRes.status, await paintRes.text());
+                console.warn('[7TV Paint] GQL fetch failed:', paintRes.status, await paintRes.text());
             }
         }
 
