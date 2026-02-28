@@ -17,21 +17,21 @@ async function fetchFFZBadges() {
         // Build badge id → { url, title, color } lookup
         const badgeDefs = {};
         for (const badge of data.badges || []) {
-            const url = badge.image ? `https:${badge.image}` : null;
-            if (url) {
-                badgeDefs[badge.id] = {
-                    url,
-                    title: badge.title || 'FFZ Badge',
-                    color: badge.color || null,
-                };
-            }
+            const raw = badge.image || null;
+            if (!raw) continue;
+            // URLs may be protocol-relative (//cdn...) or already absolute (https://cdn...)
+            const url = raw.startsWith('//') ? `https:${raw}` : raw;
+            badgeDefs[badge.id] = {
+                url,
+                title: badge.title || 'FFZ Badge',
+                color: badge.color || null,
+            };
         }
 
         // Invert users map: loginName → [badge defs]
         for (const [badgeId, loginNames] of Object.entries(data.users || {})) {
             const def = badgeDefs[badgeId];
             if (!def) continue;
-            console.log(`[FFZ Badges] Badge ${badgeId} (${def.title}) users sample:`, loginNames.slice(0, 3));
             for (const loginName of loginNames) {
                 const key = loginName.toLowerCase();
                 if (!ffzUserBadges[key]) ffzUserBadges[key] = [];
@@ -40,7 +40,6 @@ async function fetchFFZBadges() {
         }
 
         console.log(`[FFZ Badges] Loaded badge data for ${Object.keys(ffzUserBadges).length} users`);
-        console.log(`[FFZ Badges] windowsben in map:`, ffzUserBadges['windowsben'] ?? 'NOT FOUND');
     } catch (err) {
         console.error('[FFZ Badges] Failed:', err);
     }

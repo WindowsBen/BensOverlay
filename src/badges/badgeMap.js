@@ -22,7 +22,6 @@ function renderBadges(tags) {
     if (CONFIG.showExternalCosmetics && tags.username) {
         const key = tags.username.toLowerCase();
         const ffzBadges = ffzUserBadges[key];
-        console.log(`[FFZ Badges] Looking up "${key}":`, ffzBadges ?? 'not found');
         if (ffzBadges) {
             for (const badge of ffzBadges) {
                 html += `<img class="chat-badge ffz-badge" src="${badge.url}" alt="${escapeHTML(badge.title)}" title="${escapeHTML(badge.title)}">`;
