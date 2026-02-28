@@ -39,6 +39,13 @@ function buildPaintCSS(selector, paint) {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;`;
+
+        // Image-based paints need size/repeat so they cover the text properly
+        if (paint.function === 'URL') {
+            rules += `
+    background-size: auto 100%;
+    background-repeat: repeat-x;`;
+        }
     }
 
     if (shadowCSS) {

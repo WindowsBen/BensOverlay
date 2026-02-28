@@ -44,7 +44,6 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             if (paintRes.ok) {
                 const paintData = await paintRes.json();
                 cosmetics.paint = paintData?.data?.cosmetics?.paints?.[0] || null;
-                console.log('[7TV Paint] Raw data:', JSON.stringify(cosmetics.paint));
             }
         }
 
