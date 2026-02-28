@@ -18,7 +18,10 @@ async function fetch7TVUserCosmetics(twitchUserId) {
         if (!res.ok) return null;
 
         const data = await res.json();
-        console.log('[7TV Cosmetics] Full user response:', JSON.stringify(data));
+        console.log('[7TV Cosmetics] Top-level keys:', Object.keys(data));
+        console.log('[7TV Cosmetics] user.style:', JSON.stringify(data?.user?.style));
+        console.log('[7TV Cosmetics] cosmetics key:', JSON.stringify(data?.cosmetics));
+        console.log('[7TV Cosmetics] user keys:', Object.keys(data?.user || {}));
 
         const style = data?.user?.style;
 
