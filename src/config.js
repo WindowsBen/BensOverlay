@@ -20,4 +20,4 @@ if (CONFIG.fontSize)    document.documentElement.style.setProperty('--chat-font-
 if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', CONFIG.shadowColor);
 
 // Badges that are strictly tied to channel role — always shown even in role-only mode
-const ROLE_BADGES = new Set(['broadcaster', 'moderator', 'vip', 'staff', 'admin', 'global_mod']);
+const ROLE_BADGES = new Set(['broadcaster', 'moderator', 'super_moderator', 'vip', 'staff', 'admin', 'global_mod']);
