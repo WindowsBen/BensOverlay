@@ -71,14 +71,24 @@ function buildTokens(message, twitchEmotes) {
                 const isZeroWidth = zeroWidthEmotes.has(raw);
                 const img = `<img class="chat-emote${isZeroWidth ? ' zero-width' : ''}" src="${emoteMap[raw]}" alt="${escapeHTML(word)}" title="${escapeHTML(word)}">`;
 
-                if (isZeroWidth && tokens.length > 0 && tokens[tokens.length - 1].isEmote) {
-                    // Stack onto the previous emote (works for both Twitch and third-party)
-                    const prev = tokens[tokens.length - 1];
-                    if (prev.stacked) {
-                        prev.html = prev.html.replace('</span>', img + '</span>');
+                if (isZeroWidth) {
+                    // Find the last non-space token to stack onto
+                    let prevIdx = tokens.length - 1;
+                    while (prevIdx >= 0 && tokens[prevIdx].html === ' ') prevIdx--;
+                    const prev = prevIdx >= 0 ? tokens[prevIdx] : null;
+
+                    if (prev && prev.isEmote) {
+                        // Remove any trailing space tokens before the stack
+                        while (tokens.length - 1 > prevIdx) tokens.pop();
+
+                        if (prev.stacked) {
+                            prev.html = prev.html.replace('</span>', img + '</span>');
+                        } else {
+                            prev.html = `<span class="emote-stack">${prev.html}${img}</span>`;
+                            prev.stacked = true;
+                        }
                     } else {
-                        prev.html = `<span class="emote-stack">${prev.html}${img}</span>`;
-                        prev.stacked = true;
+                        tokens.push({ html: img, isEmote: true, stacked: false });
                     }
                 } else {
                     tokens.push({ html: img, isEmote: true, stacked: false });
