@@ -5,6 +5,9 @@ function displayMessage(tags, message) {
     const chatContainer = document.getElementById('chat-container');
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
+    if (tags['msg-id'] === 'highlighted-message') {
+        messageElement.classList.add('highlighted-message');
+    }
 
     const userColor     = tags.color || '#ffffff';
     const username      = tags['display-name'] || tags.username;
