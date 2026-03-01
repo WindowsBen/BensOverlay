@@ -7,7 +7,7 @@ const chatterinoUserBadges = {};
 
 async function fetchChatterinoBadges() {
     try {
-        const res = await fetch('https://fourtf.com/chatterino/badges.json');
+        const res = await fetch('https://api.chatterino.com/badges');
         if (!res.ok) { console.warn('[Chatterino Badges] Could not fetch badge list'); return; }
 
         const data = await res.json();
