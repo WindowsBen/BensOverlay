@@ -28,7 +28,7 @@ async function fetch7TVUserCosmetics(twitchUserId) {
         const cosmetics = { badgeUrl: null, paint: null, sevenTVUserId };
 
         if (style?.badge_id) {
-            cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/1x.webp`;
+            cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/4x.webp`;
         }
 
         if (style?.paint_id) {
@@ -68,27 +68,19 @@ async function handle7TVUserUpdate(sevenTVUserId, body) {
     const twitchUserId = sevenTVUserIdMap[sevenTVUserId];
     if (!twitchUserId) return;
 
-    console.log(`[7TV Cosmetics] User update received for ${twitchUserId}, waiting 2s before re-fetch...`);
-
     // Wait 2s for 7TV's API to propagate the change before fetching
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     delete sevenTVCosmeticsCache[twitchUserId];
 
     const cosmetics = await fetch7TVUserCosmetics(twitchUserId);
-    console.log(`[7TV Cosmetics] New paint:`, cosmetics?.paint?.name, '| badge:', cosmetics?.badgeUrl);
     if (!cosmetics) return;
 
     const allMessages = document.querySelectorAll(`[data-seventv-uid]`);
-    console.log(`[7TV Cosmetics] Elements with seventv-uid: ${allMessages.length}`);
-
-    let matched = 0;
     allMessages.forEach(msgEl => {
         if (msgEl.dataset.seventvUid !== twitchUserId) return;
-        matched++;
         reapply7TVCosmetics(msgEl, cosmetics);
     });
-    console.log(`[7TV Cosmetics] Reapplied to ${matched} message(s)`);
 }
 
 // Applies 7TV cosmetics to an already-rendered message element
@@ -139,7 +131,6 @@ function reapply7TVCosmetics(messageElement, cosmetics) {
 
     // ── Apply new paint ──
     if (cosmetics.paint && usernameSpan) {
-        console.log(`[7TV Cosmetics] Applying paint: ${cosmetics.paint.name}`);
         applyPaint(usernameSpan, cosmetics.paint);
     }
 }

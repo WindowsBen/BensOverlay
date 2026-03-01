@@ -14,8 +14,8 @@ async function fetchChatterinoBadges() {
         const data = await res.json();
 
         for (const badge of data.badges || []) {
-            if (!badge.image1 || !badge.users) continue;
-            const def = { url: badge.image1, title: badge.tooltip || 'Chatterino Badge' };
+            if (!badge.image3 || !badge.users) continue;
+            const def = { url: badge.image3, title: badge.tooltip || 'Chatterino Badge' };
 
             for (const userId of badge.users) {
                 const key = String(userId);

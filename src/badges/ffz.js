@@ -15,8 +15,10 @@ async function fetchFFZBadges() {
         // Build badge id → { url, title } lookup
         const badgeDefs = {};
         for (const badge of data.badges || []) {
-            if (!badge.image) continue;
-            badgeDefs[badge.id] = { url: badge.image, title: badge.title || 'FFZ Badge' };
+            if (!badge.urls && !badge.image) continue;
+            const url = badge.urls?.['4'] || badge.urls?.['2'] || badge.urls?.['1'] || badge.image;
+            if (!url) continue;
+            badgeDefs[badge.id] = { url, title: badge.title || 'FFZ Badge' };
         }
 
         // Invert users map: twitchUserId → [badge defs]

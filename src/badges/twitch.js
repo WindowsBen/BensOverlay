@@ -20,7 +20,7 @@ async function fetchTwitchBadges(channelId) {
             const globalData = await globalRes.json();
             for (const set of globalData.data || []) {
                 for (const version of set.versions || []) {
-                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_4x;
                 }
             }
             console.log('[Badges] Loaded global Twitch badges');
@@ -36,7 +36,7 @@ async function fetchTwitchBadges(channelId) {
             const channelData = await channelRes.json();
             for (const set of channelData.data || []) {
                 for (const version of set.versions || []) {
-                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_1x;
+                    badgeMap[`${set.set_id}/${version.id}`] = version.image_url_4x;
                 }
             }
             console.log('[Badges] Loaded channel Twitch badges');
