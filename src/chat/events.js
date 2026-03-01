@@ -35,8 +35,10 @@ function displayEventMessage(iconSvg, label, detail, extraMessage = '', messageI
         </span>`;
 
     container.appendChild(el);
-    trimChat();
-    scrollToBottom();
+
+    if (container.childNodes.length > 50) {
+        container.removeChild(container.firstChild);
+    }
 }
 
 // ── Sub icons ────────────────────────────────────────────────────────────────

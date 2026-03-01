@@ -25,7 +25,7 @@ async function fetchCheermotes(twitchUserId) {
             const tiers = [];
 
             for (const tier of action.tiers || []) {
-                const url = tier.images?.dark?.animated?.['1'] || tier.images?.dark?.static?.['1'];
+                const url = tier.images?.dark?.animated?.['4'] || tier.images?.dark?.static?.['4'];
                 if (url) {
                     tiers.push({ min_bits: tier.min_bits, url });
                 }

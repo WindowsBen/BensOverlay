@@ -5,7 +5,7 @@
 
 function parseThirdPartyEmotes(escapedText) {
     const words = escapedText.split(' ');
-    const tokens = []; // array of { html, isEmote }
+    const tokens = []; // array of { html, isEmote, stacked }
 
     for (const word of words) {
         const raw = word
@@ -17,10 +17,8 @@ function parseThirdPartyEmotes(escapedText) {
             const img = `<img class="chat-emote${isZeroWidth ? ' zero-width' : ''}" src="${emoteMap[raw]}" alt="${word}" title="${word}">`;
 
             if (isZeroWidth && tokens.length > 0 && tokens[tokens.length - 1].isEmote) {
-                // Wrap previous emote + this one together in a stack
                 const prev = tokens[tokens.length - 1];
                 if (prev.stacked) {
-                    // Already a stack — just append the zero-width emote inside it
                     prev.html = prev.html.replace('</span>', img + '</span>');
                 } else {
                     prev.html = `<span class="emote-stack">${prev.html}${img}</span>`;
@@ -38,7 +36,6 @@ function parseThirdPartyEmotes(escapedText) {
 }
 
 function parseMessage(message, twitchEmotes) {
-    // Build sorted list of Twitch native emote character ranges
     const ranges = [];
     if (twitchEmotes) {
         for (const [emoteId, positions] of Object.entries(twitchEmotes)) {
@@ -46,7 +43,7 @@ function parseMessage(message, twitchEmotes) {
                 const [start, end] = pos.split('-').map(Number);
                 ranges.push({
                     start, end,
-                    url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0`
+                    url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`
                 });
             }
         }
@@ -55,7 +52,6 @@ function parseMessage(message, twitchEmotes) {
 
     if (ranges.length === 0) return parseThirdPartyEmotes(escapeHTML(message));
 
-    // Walk character ranges: insert Twitch emote images, scan gaps for third-party emotes
     let html = '';
     let cursor = 0;
 

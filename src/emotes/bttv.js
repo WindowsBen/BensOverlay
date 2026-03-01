@@ -7,7 +7,7 @@ async function fetchBTTVEmotes(twitchUserId) {
         if (globalRes.ok) {
             const globals = await globalRes.json();
             for (const emote of globals) {
-                emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/1x`;
+                emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/3x`;
             }
             console.log(`[BTTV] Loaded ${globals.length} global emotes`);
         }
@@ -18,7 +18,7 @@ async function fetchBTTVEmotes(twitchUserId) {
         const data = await channelRes.json();
         const channelEmotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])];
         for (const emote of channelEmotes) {
-            emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/1x`;
+            emoteMap[emote.code] = `https://cdn.betterttv.net/emote/${emote.id}/3x`;
         }
         console.log(`[BTTV] Loaded ${channelEmotes.length} channel emotes`);
     } catch (err) {

@@ -13,7 +13,7 @@ async function fetch7TVEmotes(twitchUserId) {
             const globalData = await globalRes.json();
             let globalCount = 0;
             for (const emote of globalData.emotes || []) {
-                emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/1x.webp`;
+                emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/4x.webp`;
                 if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(emote.name);
                 globalCount++;
             }
@@ -29,7 +29,7 @@ async function fetch7TVEmotes(twitchUserId) {
         if (!emotes) return;
 
         for (const emote of emotes) {
-            emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/1x.webp`;
+            emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/4x.webp`;
             if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) {
                 zeroWidthEmotes.add(emote.name);
             }
@@ -62,7 +62,7 @@ function handle7TVEmoteSetUpdate(body) {
     for (const item of pushed) {
         const { name, id, flags } = item.value || {};
         if (name && id) {
-            const url = `https://cdn.7tv.app/emote/${id}/1x.webp`;
+            const url = `https://cdn.7tv.app/emote/${id}/4x.webp`;
             emoteMap[name] = url;
             if (flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(name);
             else zeroWidthEmotes.delete(name);
@@ -78,7 +78,7 @@ function handle7TVEmoteSetUpdate(body) {
         }
         const { name, id, flags } = item.value || {};
         if (name && id) {
-            emoteMap[name] = `https://cdn.7tv.app/emote/${id}/1x.webp`;
+            emoteMap[name] = `https://cdn.7tv.app/emote/${id}/4x.webp`;
             if (flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(name);
             else zeroWidthEmotes.delete(name);
             console.log(`[7TV] Emote updated: ${name}`);
