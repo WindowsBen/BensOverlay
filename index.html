@@ -23,6 +23,10 @@
         .event-type-options label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #aaa; }
         .event-type-options input[type="color"] { width: 48px; height: 28px; border: none; background: none; cursor: pointer; padding: 0; }
         .event-type-options input[type="text"] { background: #2a2a2e; border: 1px solid #3f3f46; color: #efeff1; border-radius: 4px; padding: 4px 6px; font-size: 13px; width: 140px; }
+        .color-with-opacity { display: flex; align-items: center; gap: 6px; }
+        .opacity-slider { width: 80px; accent-color: #9146FF; cursor: pointer; }
+        .opacity-label { font-size: 11px; color: #888; min-width: 32px; }
+        .opacity-tag { font-size: 11px; color: #888; white-space: nowrap; }
         button { margin-top: 14px; width: 100%; padding: 10px; background: #9146FF; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 14px; }
         button:hover { background: #772ce8; }
         .btn-secondary { background: #3f3f46; }
@@ -60,7 +64,11 @@
     </label>
 
     <label>Text Shadow Color:
-        <input type="color" id="shadowColor" value="#000000">
+        <div class="color-with-opacity">
+            <input type="color" id="shadowColor" value="#000000">
+            <span class="opacity-tag">Opacity</span><input type="range" id="shadowOpacity" min="0" max="100" value="100" class="opacity-slider">
+            <span class="opacity-label" id="shadowOpacityLabel">100%</span>
+        </div>
     </label>
 
     <div class="section-label">Emote Notifications</div>
@@ -83,8 +91,20 @@
             <strong>Subscriptions</strong>
         </label>
         <div class="event-type-options">
-            <label>Accent color <input type="color" id="subAccent" value="#9146FF"></label>
-            <label>Background color <input type="color" id="subBg" value="#1a0a2e"></label>
+            <label>Accent color
+                <div class="color-with-opacity">
+                    <input type="color" id="subAccent" value="#9146FF">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="subAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                    <span class="opacity-label" id="subAccentOpacityLabel">100%</span>
+                </div>
+            </label>
+            <label>Background color
+                <div class="color-with-opacity">
+                    <input type="color" id="subBg" value="#1a0a2e">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="subBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                    <span class="opacity-label" id="subBgOpacityLabel">80%</span>
+                </div>
+            </label>
             <label>Label override <input type="text" id="subLabel" placeholder="e.g. subscribed"></label>
         </div>
     </div>
@@ -96,8 +116,20 @@
             <strong>Bits / Cheers</strong>
         </label>
         <div class="event-type-options">
-            <label>Accent color <input type="color" id="bitsAccent" value="#9146FF"></label>
-            <label>Background color <input type="color" id="bitsBg" value="#1a0a2e"></label>
+            <label>Accent color
+                <div class="color-with-opacity">
+                    <input type="color" id="bitsAccent" value="#9146FF">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="bitsAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                    <span class="opacity-label" id="bitsAccentOpacityLabel">100%</span>
+                </div>
+            </label>
+            <label>Background color
+                <div class="color-with-opacity">
+                    <input type="color" id="bitsBg" value="#1a0a2e">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="bitsBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                    <span class="opacity-label" id="bitsBgOpacityLabel">80%</span>
+                </div>
+            </label>
             <label>Label override <input type="text" id="bitsLabel" placeholder="e.g. cheered"></label>
         </div>
     </div>
@@ -109,8 +141,20 @@
             <strong>Channel Point Redemptions</strong>
         </label>
         <div class="event-type-options">
-            <label>Accent color <input type="color" id="redeemAccent" value="#FFB800"></label>
-            <label>Background color <input type="color" id="redeemBg" value="#2a1f00"></label>
+            <label>Accent color
+                <div class="color-with-opacity">
+                    <input type="color" id="redeemAccent" value="#FFB800">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="redeemAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                    <span class="opacity-label" id="redeemAccentOpacityLabel">100%</span>
+                </div>
+            </label>
+            <label>Background color
+                <div class="color-with-opacity">
+                    <input type="color" id="redeemBg" value="#2a1f00">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="redeemBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                    <span class="opacity-label" id="redeemBgOpacityLabel">80%</span>
+                </div>
+            </label>
             <label>Label override <input type="text" id="redeemLabel" placeholder="e.g. redeemed"></label>
         </div>
     </div>
@@ -122,8 +166,20 @@
             <strong>Highlighted Messages</strong>
         </label>
         <div class="event-type-options">
-            <label>Accent color <input type="color" id="highlightAccent" value="#FF00FF"></label>
-            <label>Background color <input type="color" id="highlightBg" value="#2a002a"></label>
+            <label>Accent color
+                <div class="color-with-opacity">
+                    <input type="color" id="highlightAccent" value="#FF00FF">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="highlightAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                    <span class="opacity-label" id="highlightAccentOpacityLabel">100%</span>
+                </div>
+            </label>
+            <label>Background color
+                <div class="color-with-opacity">
+                    <input type="color" id="highlightBg" value="#2a002a">
+                    <span class="opacity-tag">Opacity</span><input type="range" id="highlightBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                    <span class="opacity-label" id="highlightBgOpacityLabel">80%</span>
+                </div>
+            </label>
         </div>
     </div>
 
@@ -150,6 +206,20 @@
 </div>
 
 <script>
+        // ── Helpers ──────────────────────────────────────────────────────────
+        function hexOpacityToRgba(hex, opacity) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${(opacity / 100).toFixed(2)})`;
+        }
+
+        // Wire up all opacity sliders to show live percentage labels
+        document.querySelectorAll('.opacity-slider').forEach(slider => {
+            const labelId = slider.id + 'Label';
+            const label   = document.getElementById(labelId);
+            if (label) slider.addEventListener('input', () => { label.textContent = slider.value + '%'; });
+        });
     const CLIENT_ID = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
 
     // ── Handle OAuth redirect (token comes back in the URL fragment) ──────────
@@ -209,24 +279,24 @@
     function generateLink() {
         const channel     = document.getElementById('channel').value.trim();
         const fontSize    = document.getElementById('fontSize').value;
-        const shadowColor = document.getElementById('shadowColor').value;
+        const shadowColor   = hexOpacityToRgba(document.getElementById('shadowColor').value,   parseInt(document.getElementById('shadowOpacity').value));
         const toastAdd      = document.getElementById('toastAdd').checked      ? '1' : '0';
         const toastRemove   = document.getElementById('toastRemove').checked   ? '1' : '0';
         const showSubs      = document.getElementById('showSubs').checked      ? '1' : '0';
         const showBits      = document.getElementById('showBits').checked      ? '1' : '0';
         const showRedeems   = document.getElementById('showRedeems').checked   ? '1' : '0';
         const showHighlights = document.getElementById('showHighlights').checked ? '1' : '0';
-        const subAccent     = document.getElementById('subAccent').value;
-        const subBg         = document.getElementById('subBg').value;
+        const subAccent     = hexOpacityToRgba(document.getElementById('subAccent').value,     parseInt(document.getElementById('subAccentOpacity').value));
+        const subBg         = hexOpacityToRgba(document.getElementById('subBg').value,         parseInt(document.getElementById('subBgOpacity').value));
         const subLabel      = document.getElementById('subLabel').value.trim();
-        const bitsAccent    = document.getElementById('bitsAccent').value;
-        const bitsBg        = document.getElementById('bitsBg').value;
+        const bitsAccent    = hexOpacityToRgba(document.getElementById('bitsAccent').value,    parseInt(document.getElementById('bitsAccentOpacity').value));
+        const bitsBg        = hexOpacityToRgba(document.getElementById('bitsBg').value,        parseInt(document.getElementById('bitsBgOpacity').value));
         const bitsLabel     = document.getElementById('bitsLabel').value.trim();
-        const redeemAccent  = document.getElementById('redeemAccent').value;
-        const redeemBg      = document.getElementById('redeemBg').value;
+        const redeemAccent  = hexOpacityToRgba(document.getElementById('redeemAccent').value,  parseInt(document.getElementById('redeemAccentOpacity').value));
+        const redeemBg      = hexOpacityToRgba(document.getElementById('redeemBg').value,      parseInt(document.getElementById('redeemBgOpacity').value));
         const redeemLabel   = document.getElementById('redeemLabel').value.trim();
-        const highlightAccent = document.getElementById('highlightAccent').value;
-        const highlightBg   = document.getElementById('highlightBg').value;
+        const highlightAccent = hexOpacityToRgba(document.getElementById('highlightAccent').value, parseInt(document.getElementById('highlightAccentOpacity').value));
+        const highlightBg   = hexOpacityToRgba(document.getElementById('highlightBg').value,   parseInt(document.getElementById('highlightBgOpacity').value));
         const disableAllBadges     = document.getElementById('disableAllBadges').checked     ? '1' : '0';
         const roleOnlyBadges       = document.getElementById('roleOnlyBadges').checked       ? '1' : '0';
         const showExternalCosmetics = document.getElementById('showExternalCosmetics').checked ? '1' : '0';

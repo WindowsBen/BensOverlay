@@ -126,20 +126,20 @@ body {
 }
 
 .sub-message {
-    background: color-mix(in srgb, var(--sub-bg) 100%, transparent);
+    background: var(--sub-bg);
     border-left-color: var(--sub-accent);
 }
 
 .sub-message .event-icon   { color: var(--sub-accent); }
-.sub-message .event-label  { color: color-mix(in srgb, var(--sub-accent) 70%, white); }
+.sub-message .event-label  { color: var(--sub-accent); filter: brightness(1.4); }
 
 .bits-message {
-    background: color-mix(in srgb, var(--bits-bg) 100%, transparent);
+    background: var(--bits-bg);
     border-left-color: var(--bits-accent);
 }
 
 .bits-message .event-icon  { color: var(--bits-accent); }
-.bits-message .event-label { color: color-mix(in srgb, var(--bits-accent) 70%, white); }
+.bits-message .event-label { color: var(--bits-accent); filter: brightness(1.4); }
 
 /* ─── Cheermote gems ────────────────────────────────────────────────────── */
 .cheermote-amount {
@@ -152,16 +152,16 @@ body {
 
 /* ─── Redemption Messages ───────────────────────────────────────────────── */
 .redemption-message {
-    background: color-mix(in srgb, var(--redeem-bg) 100%, transparent);
+    background: var(--redeem-bg);
     border-left-color: var(--redeem-accent);
 }
 
-.redemption-icon            { color: var(--redeem-accent); }
-.redemption-message .event-label { color: color-mix(in srgb, var(--redeem-accent) 70%, white); }
+.redemption-icon                      { color: var(--redeem-accent); }
+.redemption-message .event-label      { color: var(--redeem-accent); filter: brightness(1.4); }
 
 /* ─── Highlighted Messages ──────────────────────────────────────────────── */
 .highlighted-message {
-    background: color-mix(in srgb, var(--highlight-bg) 100%, transparent);
+    background: var(--highlight-bg);
     border-left: 3px solid var(--highlight-accent);
     border-radius: 4px;
     padding: 4px 8px;

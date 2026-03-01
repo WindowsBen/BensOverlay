@@ -33,14 +33,14 @@ if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shado
 
 // Event type color CSS variables
 const cssVars = {
-    '--sub-accent':       params.get('subAccent')       || '#9146FF',
-    '--sub-bg':           params.get('subBg')           || '#1a0a2e',
-    '--bits-accent':      params.get('bitsAccent')      || '#9146FF',
-    '--bits-bg':          params.get('bitsBg')          || '#1a0a2e',
-    '--redeem-accent':    params.get('redeemAccent')    || '#FFB800',
-    '--redeem-bg':        params.get('redeemBg')        || '#2a1f00',
-    '--highlight-accent': params.get('highlightAccent') || '#FF00FF',
-    '--highlight-bg':     params.get('highlightBg')     || '#2a002a',
+    '--sub-accent':       params.get('subAccent')       || 'rgba(145,70,255,1.00)',
+    '--sub-bg':           params.get('subBg')           || 'rgba(26,10,46,0.80)',
+    '--bits-accent':      params.get('bitsAccent')      || 'rgba(145,70,255,1.00)',
+    '--bits-bg':          params.get('bitsBg')          || 'rgba(26,10,46,0.80)',
+    '--redeem-accent':    params.get('redeemAccent')    || 'rgba(255,184,0,1.00)',
+    '--redeem-bg':        params.get('redeemBg')        || 'rgba(42,31,0,0.80)',
+    '--highlight-accent': params.get('highlightAccent') || 'rgba(255,0,255,1.00)',
+    '--highlight-bg':     params.get('highlightBg')     || 'rgba(42,0,42,0.80)',
 };
 for (const [key, val] of Object.entries(cssVars)) {
     document.documentElement.style.setProperty(key, val);
