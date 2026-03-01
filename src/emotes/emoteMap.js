@@ -4,6 +4,16 @@
 
 const emoteMap = {};
 
-// Set of emote names that are zero-width (7TV only).
-// When one of these follows a regular emote, they stack visually.
+// 7TV emotes flagged as zero-width (overlay on preceding emote)
 const zeroWidthEmotes = new Set();
+
+// FFZ emotes flagged as modifier (also overlay on preceding emote)
+const ffzModifierEmotes = new Set();
+
+// BTTV modifier keywords that come BEFORE the target emote
+const BTTV_MODIFIERS = {
+    'w!': 'emote-mod-wide',
+    'h!': 'emote-mod-flip-h',
+    'v!': 'emote-mod-flip-v',
+    'z!': 'emote-mod-zero-space',
+};

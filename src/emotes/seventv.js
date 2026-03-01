@@ -7,6 +7,20 @@ const SEVENTV_ZERO_WIDTH_FLAG = 1;
 
 async function fetch7TVEmotes(twitchUserId) {
     try {
+        // Global emotes
+        const globalRes = await fetch('https://7tv.io/v3/emote-sets/global');
+        if (globalRes.ok) {
+            const globalData = await globalRes.json();
+            let globalCount = 0;
+            for (const emote of globalData.emotes || []) {
+                emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/1x.webp`;
+                if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(emote.name);
+                globalCount++;
+            }
+            console.log(`[7TV] Loaded ${globalCount} global emotes`);
+        }
+
+        // Channel emotes
         const res = await fetch(`https://7tv.io/v3/users/twitch/${twitchUserId}`);
         if (!res.ok) { console.warn('[7TV] Channel not found on 7TV'); return; }
 

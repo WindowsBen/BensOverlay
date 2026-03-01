@@ -1,26 +1,44 @@
 // ─── chat/parser.js ───────────────────────────────────────────────────────────
-// Parses chat messages — handles Twitch native emotes (by character range)
-// and third-party emotes (BTTV/FFZ/7TV, by word lookup in emoteMap).
-// Zero-width emotes stack on top of the previous emote using .emote-stack.
+// Parses chat messages. Handles:
+//   - Twitch native emotes (by character range)
+//   - Third-party emotes (BTTV/FFZ/7TV by word lookup)
+//   - Zero-width overlays (7TV zero-width, FFZ modifier emotes) — come AFTER target
+//   - BTTV modifier keywords (w!, h!, v!, z!) — come BEFORE target emote
 
 function parseThirdPartyEmotes(escapedText) {
     const words = escapedText.split(' ');
-    const tokens = []; // array of { html, isEmote }
+    const tokens = []; // { html, isEmote, stacked }
+    let pendingBttvModifier = null; // BTTV modifier keyword waiting for the next emote
 
     for (const word of words) {
         const raw = word
             .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>').replace(/&quot;/g, '"');
 
-        if (emoteMap[raw]) {
-            const isZeroWidth = zeroWidthEmotes.has(raw);
-            const img = `<img class="chat-emote${isZeroWidth ? ' zero-width' : ''}" src="${emoteMap[raw]}" alt="${word}" title="${word}">`;
+        // ── BTTV modifier keyword (e.g. "w!") ───────────────────────────────
+        if (BTTV_MODIFIERS[raw]) {
+            pendingBttvModifier = BTTV_MODIFIERS[raw];
+            // Don't render the keyword itself — consume it silently
+            continue;
+        }
 
-            if (isZeroWidth && tokens.length > 0 && tokens[tokens.length - 1].isEmote) {
-                // Wrap previous emote + this one together in a stack
+        if (emoteMap[raw]) {
+            const isOverlay = zeroWidthEmotes.has(raw) || ffzModifierEmotes.has(raw);
+
+            // Build CSS class list
+            let classes = 'chat-emote';
+            if (pendingBttvModifier) {
+                classes += ` ${pendingBttvModifier}`;
+                pendingBttvModifier = null;
+            }
+            if (isOverlay) classes += ' zero-width';
+
+            const img = `<img class="${classes}" src="${emoteMap[raw]}" alt="${word}" title="${word}">`;
+
+            if (isOverlay && tokens.length > 0 && tokens[tokens.length - 1].isEmote) {
+                // Stack this overlay on top of the preceding emote
                 const prev = tokens[tokens.length - 1];
                 if (prev.stacked) {
-                    // Already a stack — just append the zero-width emote inside it
                     prev.html = prev.html.replace('</span>', img + '</span>');
                 } else {
                     prev.html = `<span class="emote-stack">${prev.html}${img}</span>`;
@@ -30,8 +48,18 @@ function parseThirdPartyEmotes(escapedText) {
                 tokens.push({ html: img, isEmote: true, stacked: false });
             }
         } else {
+            // Not an emote — if there's a pending modifier it wasn't consumed, render the keyword as text
+            if (pendingBttvModifier) {
+                tokens.push({ html: Object.keys(BTTV_MODIFIERS).find(k => BTTV_MODIFIERS[k] === pendingBttvModifier), isEmote: false });
+                pendingBttvModifier = null;
+            }
             tokens.push({ html: word, isEmote: false });
         }
+    }
+
+    // Trailing unused modifier (e.g. "w!" at end of message)
+    if (pendingBttvModifier) {
+        tokens.push({ html: Object.keys(BTTV_MODIFIERS).find(k => BTTV_MODIFIERS[k] === pendingBttvModifier), isEmote: false });
     }
 
     return tokens.map(t => t.html).join(' ');
@@ -55,7 +83,6 @@ function parseMessage(message, twitchEmotes) {
 
     if (ranges.length === 0) return parseThirdPartyEmotes(escapeHTML(message));
 
-    // Walk character ranges: insert Twitch emote images, scan gaps for third-party emotes
     let html = '';
     let cursor = 0;
 

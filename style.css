@@ -75,6 +75,25 @@ body {
     transform: translate(-50%, -50%);
 }
 
+/* ─── BTTV emote modifiers ─────────────────────────────────────────────── */
+.emote-mod-wide {
+    width: 3.2em !important;
+    object-fit: fill;
+}
+
+.emote-mod-flip-h {
+    transform: scaleX(-1);
+}
+
+.emote-mod-flip-v {
+    transform: scaleY(-1);
+}
+
+/* z! zero-space: rendered as normal, the space suppression is handled in parser */
+.emote-mod-zero-space {
+    margin: 0;
+}
+
 /* ─── New Emote Toast ──────────────────────────────────────────────── */
 .emote-toast {
     position: fixed;
