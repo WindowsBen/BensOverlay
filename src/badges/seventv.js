@@ -70,23 +70,24 @@ async function handle7TVUserUpdate(sevenTVUserId, body) {
 
     console.log(`[7TV Cosmetics] User update received for ${twitchUserId}, re-fetching...`);
 
-    // Clear cache so next fetch is fresh
     delete sevenTVCosmeticsCache[twitchUserId];
 
-    // Re-fetch new cosmetics
     const cosmetics = await fetch7TVUserCosmetics(twitchUserId);
+    console.log(`[7TV Cosmetics] New cosmetics:`, cosmetics);
     if (!cosmetics) return;
 
-    // Find all existing messages from this user and re-apply cosmetics
-    const messages = document.querySelectorAll(`[data-username]`);
-    messages.forEach(msgEl => {
-        // We only stored tmi login name, not twitchUserId on the element.
-        // Instead, look for elements that already have a 7TV badge or paint from this user.
-        // We tag message elements with data-seventv-uid when we first apply cosmetics.
+    const allMessages = document.querySelectorAll(`[data-seventv-uid]`);
+    console.log(`[7TV Cosmetics] Elements with seventv-uid: ${allMessages.length}`);
+
+    let matched = 0;
+    allMessages.forEach(msgEl => {
         if (msgEl.dataset.seventvUid !== twitchUserId) return;
+        matched++;
         reapply7TVCosmetics(msgEl, cosmetics);
     });
+    console.log(`[7TV Cosmetics] Reapplied to ${matched} message(s)`);
 }
+
 
 // Applies 7TV cosmetics to an already-rendered message element
 async function apply7TVCosmetics(twitchUserId, messageElement) {
