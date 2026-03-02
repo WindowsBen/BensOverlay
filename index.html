@@ -173,6 +173,30 @@
         .btn-secondary:hover { background: #3f3f46; }
         .btn-generate  { background: #2ecc71; color: #0e1a14; width: 100%; margin-top: 6px; }
         .btn-generate:hover { background: #27ae60; }
+        .btn-copy {
+            --checkbox-color: #9146FF;
+            --checkbox-shadow: rgba(145,70,255,0.35);
+            width: 100%;
+            margin-top: 8px;
+            background: transparent;
+            color: #9146FF;
+            border: 2px solid rgba(145,70,255,0.6);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(145,70,255,0.25);
+            transition: all 0.3s cubic-bezier(0.68,-0.55,0.265,1.55);
+        }
+        .btn-copy:hover {
+            background: rgba(145,70,255,0.12);
+            border-color: #9146FF;
+            box-shadow: 0 0 18px rgba(145,70,255,0.4), 0 0 36px rgba(145,70,255,0.2);
+            transform: scale(1.02);
+        }
+        .btn-copy.copied {
+            background: rgba(46,204,113,0.12);
+            color: #2ecc71;
+            border-color: rgba(46,204,113,0.6);
+            box-shadow: 0 0 18px rgba(46,204,113,0.35);
+        }
         .btn-row { display: flex; gap: 8px; }
 
         /* ── Custom Checkbox ───────────────────────────────── */
@@ -446,26 +470,53 @@
 
                 <!-- Subs -->
                 <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showSubs" checked onchange="toggleEventOptions('showSubs','opts-subs')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Subscriptions</strong></span></label>
-                    <div class="event-options visible" id="opts-subs">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showResubs" onchange="toggleEventOptions('showResubs','opts-resubs')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Subs &amp; Resubs</strong></span></label>
+                    <div class="event-options" id="opts-resubs">
                         <div class="event-options-inner">
                             <div class="event-option-row">
                                 <span class="option-label">Accent</span>
-                                <input type="color" id="subAccent" value="#9146FF">
+                                <input type="color" id="resubAccent" value="#9146FF">
                                 <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="subAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="subAccentOpacityLabel">100%</span>
+                                <input type="range" id="resubAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                                <span class="opacity-label" id="resubAccentOpacityLabel">100%</span>
                             </div>
                             <div class="event-option-row">
                                 <span class="option-label">Background</span>
-                                <input type="color" id="subBg" value="#1a0a2e">
+                                <input type="color" id="resubBg" value="#1a0a2e">
                                 <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="subBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="subBgOpacityLabel">80%</span>
+                                <input type="range" id="resubBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                                <span class="opacity-label" id="resubBgOpacityLabel">80%</span>
                             </div>
                             <div class="text-override-row">
                                 <span class="option-label">Label</span>
-                                <input type="text" id="subLabel" placeholder="e.g. subscribed">
+                                <input type="text" id="resubLabel" placeholder="e.g. subscribed">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gifted Subs -->
+                <div class="event-type-block">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showGifts" onchange="toggleEventOptions('showGifts','opts-gifts')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Gifted Subs</strong></span></label>
+                    <div class="event-options" id="opts-gifts">
+                        <div class="event-options-inner">
+                            <div class="event-option-row">
+                                <span class="option-label">Accent</span>
+                                <input type="color" id="giftAccent" value="#9146FF">
+                                <span class="opacity-tag">Opacity</span>
+                                <input type="range" id="giftAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                                <span class="opacity-label" id="giftAccentOpacityLabel">100%</span>
+                            </div>
+                            <div class="event-option-row">
+                                <span class="option-label">Background</span>
+                                <input type="color" id="giftBg" value="#1a0a2e">
+                                <span class="opacity-tag">Opacity</span>
+                                <input type="range" id="giftBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                                <span class="opacity-label" id="giftBgOpacityLabel">80%</span>
+                            </div>
+                            <div class="text-override-row">
+                                <span class="option-label">Label</span>
+                                <input type="text" id="giftLabel" placeholder="e.g. gifted">
                             </div>
                         </div>
                     </div>
@@ -473,8 +524,8 @@
 
                 <!-- Bits -->
                 <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showBits" checked onchange="toggleEventOptions('showBits','opts-bits')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Bits / Cheers</strong></span></label>
-                    <div class="event-options visible" id="opts-bits">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showBits" onchange="toggleEventOptions('showBits','opts-bits')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Bits / Cheers</strong></span></label>
+                    <div class="event-options" id="opts-bits">
                         <div class="event-options-inner">
                             <div class="event-option-row">
                                 <span class="option-label">Accent</span>
@@ -500,12 +551,12 @@
 
                 <!-- Redemptions -->
                 <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showRedeems" checked onchange="toggleEventOptions('showRedeems','opts-redeems')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Channel Point Redemptions</strong></span></label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showRedeems" onchange="toggleEventOptions('showRedeems','opts-redeems')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Channel Point Redemptions</strong></span></label>
                     <div class="event-warning">
                         <span>⚠️</span>
                         <span>Reward names only resolve in your own channel due to a Twitch API restriction.</span>
                     </div>
-                    <div class="event-options visible" id="opts-redeems">
+                    <div class="event-options" id="opts-redeems">
                         <div class="event-options-inner">
                             <div class="event-option-row">
                                 <span class="option-label">Accent</span>
@@ -531,8 +582,8 @@
 
                 <!-- Highlighted Messages -->
                 <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showHighlights" checked onchange="toggleEventOptions('showHighlights','opts-highlights')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Highlighted Messages</strong></span></label>
-                    <div class="event-options visible" id="opts-highlights">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showHighlights" onchange="toggleEventOptions('showHighlights','opts-highlights')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Highlighted Messages</strong></span></label>
+                    <div class="event-options" id="opts-highlights">
                         <div class="event-options-inner">
                             <div class="event-option-row">
                                 <span class="option-label">Accent</span>
@@ -554,8 +605,8 @@
 
                 <!-- Watch Streaks -->
                 <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showStreaks" checked onchange="toggleEventOptions('showStreaks','opts-streaks')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Watch Streaks</strong></span></label>
-                    <div class="event-options visible" id="opts-streaks">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showStreaks" onchange="toggleEventOptions('showStreaks','opts-streaks')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Watch Streaks</strong></span></label>
+                    <div class="event-options" id="opts-streaks">
                         <div class="event-options-inner">
                             <div class="event-option-row">
                                 <span class="option-label">Accent</span>
@@ -601,6 +652,11 @@
                 <label class="checkbox-wrapper"><input type="checkbox" id="roleOnlyBadges"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Role badges only (Broadcaster, Mod, VIP)</span></label>
                 <label class="checkbox-wrapper"><input type="checkbox" id="showExternalCosmetics" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show 7TV / FFZ / Chatterino badges &amp; paints</span></label>
 
+                <span class="field-label">Custom Font URL</span>
+                <input type="text" id="fontUrl" placeholder="e.g. https://fonts.cdnfonts.com/css/motley-forces">
+                <span style="font-size:11px;color:#666;margin-top:4px;display:block;">Paste a CSS font link. Then enter the font name below.</span>
+                <input type="text" id="fontFamily" placeholder="e.g. Motley Forces" style="margin-top:6px;">
+
                 <hr class="divider">
 
                 <span class="field-label">Emote Notifications</span>
@@ -624,6 +680,10 @@
                 </button>
                 <div class="output-label">OBS Browser Source URL</div>
                 <div class="output-box" id="resultLink">Click "Generate Link" to create your OBS URL.</div>
+                <button class="btn btn-copy" id="copyBtn" onclick="copyLink()" style="display:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <span id="copyBtnLabel">Copy Link</span>
+                </button>
             </div>
         </div>
 
@@ -760,36 +820,78 @@
             ? '&disableAllBadges=1'
             : `&roleOnlyBadges=${ch('roleOnlyBadges') ? '1':'0'}&showExternalCosmetics=${ch('showExternalCosmetics') ? '1':'0'}`;
 
-        const subLabel    = v('subLabel').trim();
+        const showResubs     = ch('showResubs');
+        const showGifts      = ch('showGifts');
+        const showBits       = ch('showBits');
+        const showRedeems    = ch('showRedeems');
+        const showHighlights = ch('showHighlights');
+        const showStreaks    = ch('showStreaks');
+
+        const resubLabel  = v('resubLabel').trim();
+        const giftLabel   = v('giftLabel').trim();
         const bitsLabel   = v('bitsLabel').trim();
         const redeemLabel = v('redeemLabel').trim();
         const streakLabel = v('streakLabel').trim();
+        const fontUrl     = v('fontUrl').trim();
+        const fontFamily  = v('fontFamily').trim();
 
         const eventParams = [
-            `showSubs=${ch('showSubs') ? '1':'0'}`,
-            `showBits=${ch('showBits') ? '1':'0'}`,
-            `showRedeems=${ch('showRedeems') ? '1':'0'}`,
-            `showHighlights=${ch('showHighlights') ? '1':'0'}`,
-            `showStreaks=${ch('showStreaks') ? '1':'0'}`,
-            `subAccent=${c8('subAccent','subAccentOpacity')}`,
-            `subBg=${c8('subBg','subBgOpacity')}`,
-            subLabel    ? `subLabel=${encodeURIComponent(subLabel)}`    : '',
-            `bitsAccent=${c8('bitsAccent','bitsAccentOpacity')}`,
-            `bitsBg=${c8('bitsBg','bitsBgOpacity')}`,
-            bitsLabel   ? `bitsLabel=${encodeURIComponent(bitsLabel)}`  : '',
-            `redeemAccent=${c8('redeemAccent','redeemAccentOpacity')}`,
-            `redeemBg=${c8('redeemBg','redeemBgOpacity')}`,
-            redeemLabel ? `redeemLabel=${encodeURIComponent(redeemLabel)}` : '',
-            `highlightAccent=${c8('highlightAccent','highlightAccentOpacity')}`,
-            `highlightBg=${c8('highlightBg','highlightBgOpacity')}`,
-            `streakAccent=${c8('streakAccent','streakAccentOpacity')}`,
-            `streakBg=${c8('streakBg','streakBgOpacity')}`,
-            streakLabel ? `streakLabel=${encodeURIComponent(streakLabel)}` : '',
+            `showResubs=${showResubs ? '1':'0'}`,
+            showResubs && `resubAccent=${c8('resubAccent','resubAccentOpacity')}`,
+            showResubs && `resubBg=${c8('resubBg','resubBgOpacity')}`,
+            showResubs && resubLabel  && `resubLabel=${encodeURIComponent(resubLabel)}`,
+
+            `showGifts=${showGifts ? '1':'0'}`,
+            showGifts && `giftAccent=${c8('giftAccent','giftAccentOpacity')}`,
+            showGifts && `giftBg=${c8('giftBg','giftBgOpacity')}`,
+            showGifts && giftLabel    && `giftLabel=${encodeURIComponent(giftLabel)}`,
+
+            `showBits=${showBits ? '1':'0'}`,
+            showBits && `bitsAccent=${c8('bitsAccent','bitsAccentOpacity')}`,
+            showBits && `bitsBg=${c8('bitsBg','bitsBgOpacity')}`,
+            showBits && bitsLabel     && `bitsLabel=${encodeURIComponent(bitsLabel)}`,
+
+            `showRedeems=${showRedeems ? '1':'0'}`,
+            showRedeems && `redeemAccent=${c8('redeemAccent','redeemAccentOpacity')}`,
+            showRedeems && `redeemBg=${c8('redeemBg','redeemBgOpacity')}`,
+            showRedeems && redeemLabel && `redeemLabel=${encodeURIComponent(redeemLabel)}`,
+
+            `showHighlights=${showHighlights ? '1':'0'}`,
+            showHighlights && `highlightAccent=${c8('highlightAccent','highlightAccentOpacity')}`,
+            showHighlights && `highlightBg=${c8('highlightBg','highlightBgOpacity')}`,
+
+            `showStreaks=${showStreaks ? '1':'0'}`,
+            showStreaks && `streakAccent=${c8('streakAccent','streakAccentOpacity')}`,
+            showStreaks && `streakBg=${c8('streakBg','streakBgOpacity')}`,
+            showStreaks && streakLabel && `streakLabel=${encodeURIComponent(streakLabel)}`,
         ].filter(Boolean).join('&');
 
-        const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&fontSize=${v('fontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
+        const fontParams = [
+            fontUrl    ? `fontUrl=${encodeURIComponent(fontUrl)}`       : '',
+            fontFamily ? `fontFamily=${encodeURIComponent(fontFamily)}` : '',
+        ].filter(Boolean).join('&');
+
+        const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&fontSize=${v('fontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}${fontParams ? '&'+fontParams : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
 
         document.getElementById('resultLink').textContent = url;
+        const copyBtn = document.getElementById('copyBtn');
+        copyBtn.style.display = 'flex';
+        copyBtn.classList.remove('copied');
+        document.getElementById('copyBtnLabel').textContent = 'Copy Link';
+    }
+
+    function copyLink() {
+        const url = document.getElementById('resultLink').textContent;
+        if (!url || url.startsWith('Click')) return;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.classList.add('copied');
+            document.getElementById('copyBtnLabel').textContent = 'Copied!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                document.getElementById('copyBtnLabel').textContent = 'Copy Link';
+            }, 2000);
+        });
     }
 </script>
 </body>

@@ -40,36 +40,36 @@ const ICON_GIFT = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 8h14
 const ICON_BITS = `<svg viewBox="0 0 20 20" fill="currentColor"><polygon points="10,2 13,8 19,9 14.5,13.5 16,19 10,16 4,19 5.5,13.5 1,9 7,8"/></svg>`;
 
 function handleSubscription(channel, username, methods, message, userstate) {
-    if (!CONFIG.showSubs) return;
+    if (!CONFIG.showResubs) return;
     const name   = userstate['display-name'] || username;
     const plan   = subPlanLabel(methods?.plan || userstate['msg-param-sub-plan']);
-    const detail = `${CONFIG.subLabel || 'subscribed'} with ${plan}!`;
+    const detail = `${CONFIG.resubLabel || 'subscribed'} with ${plan}!`;
     displayEventMessage(ICON_SUB, name, detail, '', false, 'sub-message');
 }
 
 function handleResub(channel, username, months, message, userstate) {
-    if (!CONFIG.showSubs) return;
+    if (!CONFIG.showResubs) return;
     const name      = userstate['display-name'] || username;
     const plan      = subPlanLabel(userstate['msg-param-sub-plan']);
     const cumMonths = userstate['msg-param-cumulative-months'] || months;
-    const detail    = `${CONFIG.subLabel || 'resubscribed'} (${cumMonths} months, ${plan})`;
+    const detail    = `${CONFIG.resubLabel || 'resubscribed'} (${cumMonths} months, ${plan})`;
     displayEventMessage(ICON_SUB, name, detail, message || '', false, 'sub-message');
 }
 
 function handleSubgift(channel, username, streakMonths, recipient, methods, userstate) {
-    if (!CONFIG.showSubs) return;
+    if (!CONFIG.showGifts) return;
     const gifter = userstate['display-name'] || username;
     const plan   = subPlanLabel(methods?.plan || userstate['msg-param-sub-plan']);
-    const detail = `${CONFIG.subLabel || 'gifted'} a ${plan} sub to ${recipient}!`;
-    displayEventMessage(ICON_GIFT, gifter, detail, '', false, 'sub-message');
+    const detail = `${CONFIG.giftLabel || 'gifted'} a ${plan} sub to ${recipient}!`;
+    displayEventMessage(ICON_GIFT, gifter, detail, '', false, 'gift-message');
 }
 
 function handleSubmysterygift(channel, username, numbOfSubs, methods, userstate) {
-    if (!CONFIG.showSubs) return;
+    if (!CONFIG.showGifts) return;
     const gifter = userstate['display-name'] || username;
     const plan   = subPlanLabel(methods?.plan);
-    const detail = `${CONFIG.subLabel || 'gifted'} ${numbOfSubs} ${plan} subs to the channel!`;
-    displayEventMessage(ICON_GIFT, gifter, detail, '', false, 'sub-message');
+    const detail = `${CONFIG.giftLabel || 'gifted'} ${numbOfSubs} ${plan} subs to the channel!`;
+    displayEventMessage(ICON_GIFT, gifter, detail, '', false, 'gift-message');
 }
 
 function handleCheer(channel, userstate, message) {

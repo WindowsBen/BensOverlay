@@ -9,7 +9,7 @@ body {
     overflow: hidden;
     background: transparent;
     color: white;
-    font-family: sans-serif;
+    font-family: var(--chat-font-family, sans-serif);
 }
 
 #chat-container {
@@ -126,20 +126,18 @@ body {
 }
 
 .sub-message {
-    background: var(--sub-bg);
-    border-left-color: var(--sub-accent);
+    background: var(--resub-bg);
+    border-left-color: var(--resub-accent);
 }
+.sub-message .event-icon   { color: var(--resub-accent); }
+.sub-message .event-label  { color: var(--resub-accent); filter: brightness(1.4); }
 
-.sub-message .event-icon   { color: var(--sub-accent); }
-.sub-message .event-label  { color: var(--sub-accent); filter: brightness(1.4); }
-
-.bits-message {
-    background: var(--bits-bg);
-    border-left-color: var(--bits-accent);
+.gift-message {
+    background: var(--gift-bg);
+    border-left-color: var(--gift-accent);
 }
-
-.bits-message .event-icon  { color: var(--bits-accent); }
-.bits-message .event-label { color: var(--bits-accent); filter: brightness(1.4); }
+.gift-message .event-icon  { color: var(--gift-accent); }
+.gift-message .event-label { color: var(--gift-accent); filter: brightness(1.4); }
 
 /* ─── Cheermote gems ────────────────────────────────────────────────────── */
 .cheermote-amount {
@@ -212,3 +210,10 @@ body {
 
 .streak-message .event-icon  { color: var(--streak-accent); }
 .streak-message .event-label { color: var(--streak-accent); filter: brightness(1.4); }
+
+.bits-message {
+    background: var(--bits-bg);
+    border-left-color: var(--bits-accent);
+}
+.bits-message .event-icon  { color: var(--bits-accent); }
+.bits-message .event-label { color: var(--bits-accent); filter: brightness(1.4); }

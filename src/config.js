@@ -16,16 +16,21 @@ const CONFIG = {
     shadowColor:     params.get('shadow'),
     showToastEmotes: params.get('toastEmotes') !== '0',
     // Per-type event toggles
-    showSubs:        params.get('showSubs')        !== '0',
-    showBits:        params.get('showBits')        !== '0',
-    showRedeems:     params.get('showRedeems')     !== '0',
-    showHighlights:  params.get('showHighlights')  !== '0',
-    showStreaks:     params.get('showStreaks')      !== '0',
+    showResubs:      params.get('showResubs')      !== '0' && params.get('showResubs') === '1',
+    showGifts:       params.get('showGifts')       !== '0' && params.get('showGifts')  === '1',
+    showBits:        params.get('showBits')        !== '0' && params.get('showBits')   === '1',
+    showRedeems:     params.get('showRedeems')     !== '0' && params.get('showRedeems') === '1',
+    showHighlights:  params.get('showHighlights')  !== '0' && params.get('showHighlights') === '1',
+    showStreaks:     params.get('showStreaks')      !== '0' && params.get('showStreaks') === '1',
     // Per-type labels (empty = use default)
-    subLabel:        params.get('subLabel')        || '',
+    resubLabel:      params.get('resubLabel')      || '',
+    giftLabel:       params.get('giftLabel')       || '',
     bitsLabel:       params.get('bitsLabel')       || '',
     redeemLabel:     params.get('redeemLabel')     || '',
     streakLabel:     params.get('streakLabel')     || '',
+    // Font
+    fontUrl:         params.get('fontUrl')         || '',
+    fontFamily:      params.get('fontFamily')      || '',
     // Badge options
     disableAllBadges:      params.get('disableAllBadges')      === '1',
     roleOnlyBadges:        params.get('roleOnlyBadges')        === '1',
@@ -38,10 +43,23 @@ const CONFIG = {
 if (CONFIG.fontSize)    document.documentElement.style.setProperty('--chat-font-size',    CONFIG.fontSize);
 if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', hex8ToCss(CONFIG.shadowColor, '#000000FF'));
 
+// Load custom font if provided
+if (CONFIG.fontUrl) {
+    const link = document.createElement('link');
+    link.rel  = 'stylesheet';
+    link.href = CONFIG.fontUrl;
+    document.head.appendChild(link);
+}
+if (CONFIG.fontFamily) {
+    document.documentElement.style.setProperty('--chat-font-family', CONFIG.fontFamily);
+}
+
 // Event type color CSS variables
 const cssVars = {
-    '--sub-accent':       hex8ToCss(params.get('subAccent'),       '#9146FFFF'),
-    '--sub-bg':           hex8ToCss(params.get('subBg'),           '#1a0a2eCC'),
+    '--resub-accent':     hex8ToCss(params.get('resubAccent'),     '#9146FFFF'),
+    '--resub-bg':         hex8ToCss(params.get('resubBg'),         '#1a0a2eCC'),
+    '--gift-accent':      hex8ToCss(params.get('giftAccent'),      '#9146FFFF'),
+    '--gift-bg':          hex8ToCss(params.get('giftBg'),          '#1a0a2eCC'),
     '--bits-accent':      hex8ToCss(params.get('bitsAccent'),      '#9146FFFF'),
     '--bits-bg':          hex8ToCss(params.get('bitsBg'),          '#1a0a2eCC'),
     '--redeem-accent':    hex8ToCss(params.get('redeemAccent'),    '#FFB800FF'),
