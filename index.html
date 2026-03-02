@@ -604,8 +604,7 @@
                 <hr class="divider">
 
                 <span class="field-label">Emote Notifications</span>
-                <label class="checkbox-wrapper"><input type="checkbox" id="toastAdd" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Pop-up when emote is <strong>&nbsp;added</strong></span></label>
-                <label class="checkbox-wrapper"><input type="checkbox" id="toastRemove" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Pop-up when emote is <strong>&nbsp;removed</strong></span></label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="toastEmotes" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show notification when 7TV emotes get added/removed</span></label>
             </div>
         </div>
 
@@ -725,10 +724,19 @@
     }
 
     function onDisableAllBadgesChange() {
-        if (document.getElementById('disableAllBadges').checked) {
-            document.getElementById('roleOnlyBadges').checked       = false;
-            document.getElementById('showExternalCosmetics').checked = false;
-        }
+        const disabled = document.getElementById('disableAllBadges').checked;
+        const deps = ['roleOnlyBadges', 'showExternalCosmetics'];
+        deps.forEach(id => {
+            const wrapper = document.getElementById(id).closest('.checkbox-wrapper');
+            if (disabled) {
+                document.getElementById(id).checked = false;
+                wrapper.style.opacity       = '0.35';
+                wrapper.style.pointerEvents = 'none';
+            } else {
+                wrapper.style.opacity       = '';
+                wrapper.style.pointerEvents = '';
+            }
+        });
     }
 
     // ── Generate ──────────────────────────────────────────────────────────────
@@ -779,7 +787,7 @@
             streakLabel ? `streakLabel=${encodeURIComponent(streakLabel)}` : '',
         ].filter(Boolean).join('&');
 
-        const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&fontSize=${v('fontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}&toastAdd=${ch('toastAdd') ? '1':'0'}&toastRemove=${ch('toastRemove') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
+        const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&fontSize=${v('fontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
 
         document.getElementById('resultLink').textContent = url;
     }

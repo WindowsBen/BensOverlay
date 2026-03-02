@@ -55,7 +55,7 @@ function handle7TVEmoteSetUpdate(body) {
             delete emoteMap[name];
             zeroWidthEmotes.delete(name);
             console.log(`[7TV] Emote removed: ${name}`);
-            if (CONFIG.showToastRemove) showRemovedEmoteToast(name, url);
+            if (CONFIG.showToastEmotes) showRemovedEmoteToast(name, url);
         }
     }
 
@@ -67,7 +67,7 @@ function handle7TVEmoteSetUpdate(body) {
             if (flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(name);
             else zeroWidthEmotes.delete(name);
             console.log(`[7TV] Emote added: ${name}`);
-            if (CONFIG.showToastAdd) showNewEmoteToast(name, url);
+            if (CONFIG.showToastEmotes) showNewEmoteToast(name, url);
         }
     }
 

@@ -14,8 +14,7 @@ const CONFIG = {
     channelName:     params.get('channel'),
     fontSize:        params.get('fontSize'),
     shadowColor:     params.get('shadow'),
-    showToastAdd:    params.get('toastAdd')        !== '0',
-    showToastRemove: params.get('toastRemove')     !== '0',
+    showToastEmotes: params.get('toastEmotes') !== '0',
     // Per-type event toggles
     showSubs:        params.get('showSubs')        !== '0',
     showBits:        params.get('showBits')        !== '0',
