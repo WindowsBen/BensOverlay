@@ -26,7 +26,7 @@
         .color-with-opacity { display: flex; align-items: center; gap: 6px; }
         .opacity-slider { width: 80px; accent-color: #9146FF; cursor: pointer; }
         .opacity-label { font-size: 11px; color: #888; min-width: 32px; }
-        .opacity-tag { font-size: 11px; color: #888; white-space: nowrap; }
+        .event-type-warning { font-size: 12px; color: #f0a020; margin: 6px 0 0 0; line-height: 1.4; }
         button { margin-top: 14px; width: 100%; padding: 10px; background: #9146FF; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 14px; }
         button:hover { background: #772ce8; }
         .btn-secondary { background: #3f3f46; }
@@ -140,6 +140,7 @@
             <input type="checkbox" id="showRedeems" checked>
             <strong>Channel Point Redemptions</strong>
         </label>
+        <p class="event-type-warning">⚠️ Reward names can only be resolved in your own channel. In other channels the redemption will display as "Channel Point Reward" due to a Twitch API restriction.</p>
         <div class="event-type-options">
             <label>Accent color
                 <div class="color-with-opacity">

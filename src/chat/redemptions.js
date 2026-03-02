@@ -31,12 +31,13 @@ async function getRewardName(broadcasterId, rewardId) {
         if (res.ok) {
             const data = await res.json();
             const name = data.data?.[0]?.title;
-            rewardNameCache[rewardId] = name || rewardId;
+            rewardNameCache[rewardId] = name || 'Channel Point Reward';
         } else {
-            rewardNameCache[rewardId] = rewardId;
+            // 401/403 = not the broadcaster's token, can't read rewards
+            rewardNameCache[rewardId] = 'Channel Point Reward';
         }
     } catch {
-        rewardNameCache[rewardId] = rewardId;
+        rewardNameCache[rewardId] = 'Channel Point Reward';
     }
     delete rewardFetchPending[rewardId];
     return rewardNameCache[rewardId];
