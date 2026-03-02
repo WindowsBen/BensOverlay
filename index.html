@@ -99,11 +99,17 @@
         .accordion.open .accordion-chevron { transform: rotate(180deg); }
 
         .accordion-body {
-            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.25s ease, padding 0.25s ease;
+            padding: 0 16px;
+            border-top: 0px solid #2f2f35;
+        }
+        .accordion.open .accordion-body {
+            max-height: 2000px;
             padding: 16px;
             border-top: 1px solid #2f2f35;
         }
-        .accordion.open .accordion-body { display: block; }
 
         /* ── Form elements ─────────────────────────────────── */
         .field-label {
@@ -169,22 +175,90 @@
         .btn-generate:hover { background: #27ae60; }
         .btn-row { display: flex; gap: 8px; }
 
-        /* ── Checkboxes ────────────────────────────────────── */
-        .checkbox-row {
+        /* ── Custom Checkbox ───────────────────────────────── */
+        .checkbox-wrapper {
+            --checkbox-size: 20px;
+            --checkbox-color: #9146FF;
+            --checkbox-shadow: rgba(145, 70, 255, 0.35);
+            --checkbox-border: rgba(145, 70, 255, 0.6);
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
+            align-items: center;
+            position: relative;
             cursor: pointer;
-            padding: 5px 0;
-            color: #cfcfd4;
+            padding: 6px 4px;
+            overflow: visible;
         }
-        .checkbox-row input[type="checkbox"] {
-            width: 15px; height: 15px;
-            margin-top: 2px;
+        .checkbox-wrapper input {
+            position: absolute;
+            opacity: 0;
             cursor: pointer;
-            accent-color: #9146FF;
+            height: 0;
+            width: 0;
+        }
+        .checkbox-wrapper .checkmark {
+            position: relative;
             flex-shrink: 0;
+            width: var(--checkbox-size);
+            height: var(--checkbox-size);
+            border: 2px solid var(--checkbox-border);
+            border-radius: 6px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            box-shadow: 0 0 10px var(--checkbox-shadow);
+            overflow: hidden;
+        }
+        .checkbox-wrapper .checkmark::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--checkbox-color), #bf94ff);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform: scale(0) rotate(-45deg);
+        }
+        .checkbox-wrapper input:checked ~ .checkmark::before {
+            opacity: 1;
+            transform: scale(1) rotate(0);
+        }
+        .checkbox-wrapper .checkmark svg {
+            width: 0;
+            height: 0;
+            color: #fff;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
+        .checkbox-wrapper input:checked ~ .checkmark svg {
+            width: 13px;
+            height: 13px;
+            transform: rotate(360deg);
+        }
+        .checkbox-wrapper:hover .checkmark {
+            border-color: var(--checkbox-color);
+            transform: scale(1.1);
+            box-shadow: 0 0 16px var(--checkbox-shadow), 0 0 30px var(--checkbox-shadow), inset 0 0 8px var(--checkbox-shadow);
+        }
+        .checkbox-wrapper input:checked ~ .checkmark {
+            animation: cb-pulse 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes cb-pulse {
+            0%   { transform: scale(1);   box-shadow: 0 0 16px var(--checkbox-shadow); }
+            50%  { transform: scale(0.9); box-shadow: 0 0 28px var(--checkbox-shadow), 0 0 44px var(--checkbox-shadow); }
+            100% { transform: scale(1);   box-shadow: 0 0 16px var(--checkbox-shadow); }
+        }
+        .checkbox-wrapper .cb-label {
+            margin-left: 10px;
+            font-size: 13px;
+            color: #cfcfd4;
+            transition: all 0.3s;
+        }
+        .checkbox-wrapper:hover .cb-label {
+            color: #efeff1;
+            transform: translateX(3px);
         }
 
         .divider { border: none; border-top: 1px solid #2f2f35; margin: 12px 0; }
@@ -198,7 +272,7 @@
             margin-bottom: 8px;
         }
         .event-type-block:last-child { margin-bottom: 0; }
-        .event-type-block .checkbox-row { padding: 0; }
+        .event-type-block .checkbox-wrapper { padding: 0; }
 
         /* Color options — hidden sub-panel */
         .event-options {
@@ -372,10 +446,7 @@
 
                 <!-- Subs -->
                 <div class="event-type-block">
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="showSubs" checked onchange="toggleEventOptions('showSubs','opts-subs')">
-                        <strong>Subscriptions</strong>
-                    </label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showSubs" checked onchange="toggleEventOptions('showSubs','opts-subs')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Subscriptions</strong></span></label>
                     <div class="event-options visible" id="opts-subs">
                         <div class="event-options-inner">
                             <div class="event-option-row">
@@ -402,10 +473,7 @@
 
                 <!-- Bits -->
                 <div class="event-type-block">
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="showBits" checked onchange="toggleEventOptions('showBits','opts-bits')">
-                        <strong>Bits / Cheers</strong>
-                    </label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showBits" checked onchange="toggleEventOptions('showBits','opts-bits')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Bits / Cheers</strong></span></label>
                     <div class="event-options visible" id="opts-bits">
                         <div class="event-options-inner">
                             <div class="event-option-row">
@@ -432,10 +500,7 @@
 
                 <!-- Redemptions -->
                 <div class="event-type-block">
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="showRedeems" checked onchange="toggleEventOptions('showRedeems','opts-redeems')">
-                        <strong>Channel Point Redemptions</strong>
-                    </label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showRedeems" checked onchange="toggleEventOptions('showRedeems','opts-redeems')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Channel Point Redemptions</strong></span></label>
                     <div class="event-warning">
                         <span>⚠️</span>
                         <span>Reward names only resolve in your own channel due to a Twitch API restriction.</span>
@@ -466,10 +531,7 @@
 
                 <!-- Highlighted Messages -->
                 <div class="event-type-block">
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="showHighlights" checked onchange="toggleEventOptions('showHighlights','opts-highlights')">
-                        <strong>Highlighted Messages</strong>
-                    </label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showHighlights" checked onchange="toggleEventOptions('showHighlights','opts-highlights')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Highlighted Messages</strong></span></label>
                     <div class="event-options visible" id="opts-highlights">
                         <div class="event-options-inner">
                             <div class="event-option-row">
@@ -492,10 +554,7 @@
 
                 <!-- Watch Streaks -->
                 <div class="event-type-block">
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="showStreaks" checked onchange="toggleEventOptions('showStreaks','opts-streaks')">
-                        <strong>Watch Streaks</strong>
-                    </label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="showStreaks" checked onchange="toggleEventOptions('showStreaks','opts-streaks')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Watch Streaks</strong></span></label>
                     <div class="event-options visible" id="opts-streaks">
                         <div class="event-options-inner">
                             <div class="event-option-row">
@@ -538,30 +597,15 @@
             </div>
             <div class="accordion-body">
                 <span class="field-label">Badges</span>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="disableAllBadges" onchange="onDisableAllBadgesChange()">
-                    Disable ALL badges
-                </label>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="roleOnlyBadges">
-                    Role badges only (Broadcaster, Mod, VIP)
-                </label>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="showExternalCosmetics" checked>
-                    Show 7TV / FFZ / Chatterino badges &amp; paints
-                </label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="disableAllBadges" onchange="onDisableAllBadgesChange()"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Disable ALL badges</span></label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="roleOnlyBadges"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Role badges only (Broadcaster, Mod, VIP)</span></label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="showExternalCosmetics" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show 7TV / FFZ / Chatterino badges &amp; paints</span></label>
 
                 <hr class="divider">
 
                 <span class="field-label">Emote Notifications</span>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="toastAdd" checked>
-                    Pop-up when emote is <strong>&nbsp;added</strong>
-                </label>
-                <label class="checkbox-row">
-                    <input type="checkbox" id="toastRemove" checked>
-                    Pop-up when emote is <strong>&nbsp;removed</strong>
-                </label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="toastAdd" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Pop-up when emote is <strong>&nbsp;added</strong></span></label>
+                <label class="checkbox-wrapper"><input type="checkbox" id="toastRemove" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Pop-up when emote is <strong>&nbsp;removed</strong></span></label>
             </div>
         </div>
 
