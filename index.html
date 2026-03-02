@@ -12,18 +12,18 @@
             background: #0e0e10;
             color: #efeff1;
             min-height: 100vh;
-            padding: 32px 16px;
+            padding: 40px 24px;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .page-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             color: #efeff1;
             display: flex;
             align-items: center;
@@ -59,7 +59,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 13px 16px;
+            padding: 16px 20px;
             cursor: pointer;
             user-select: none;
             background: #1f1f23;
@@ -72,14 +72,14 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
         }
         .accordion-title svg { color: #9146FF; flex-shrink: 0; }
 
         .accordion-badge {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 99px;
             background: #2ecc7122;
             color: #2ecc71;
@@ -102,22 +102,22 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.25s ease, padding 0.25s ease;
-            padding: 0 16px;
+            padding: 0 20px;
             border-top: 0px solid #2f2f35;
         }
         .accordion.open .accordion-body {
             max-height: 2000px;
-            padding: 16px;
+            padding: 20px;
             border-top: 1px solid #2f2f35;
         }
 
         /* ── Form elements ─────────────────────────────────── */
         .field-label {
             display: block;
-            font-size: 11px;
+            font-size: 12px;
             color: #adadb8;
-            margin-bottom: 5px;
-            margin-top: 14px;
+            margin-bottom: 6px;
+            margin-top: 16px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -127,12 +127,12 @@
         input[type="text"],
         input[type="number"] {
             width: 100%;
-            padding: 8px 10px;
+            padding: 9px 12px;
             background: #0e0e10;
             border: 1px solid #2f2f35;
             color: #efeff1;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 15px;
             outline: none;
             transition: border-color 0.15s;
         }
@@ -144,9 +144,9 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
+            font-size: 14px;
             color: #adadb8;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
         .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .dot-grey  { background: #555; }
@@ -158,9 +158,9 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 9px 16px;
+            padding: 11px 18px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -276,7 +276,7 @@
         }
         .checkbox-wrapper .cb-label {
             margin-left: 10px;
-            font-size: 13px;
+            font-size: 14px;
             color: #cfcfd4;
             transition: all 0.3s;
         }
@@ -292,8 +292,8 @@
             background: #0e0e10;
             border: 1px solid #2f2f35;
             border-radius: 6px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
         }
         .event-type-block:last-child { margin-bottom: 0; }
         .event-type-block .checkbox-wrapper { padding: 0; }
@@ -320,10 +320,10 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            font-size: 12px;
+            font-size: 13px;
             color: #adadb8;
         }
-        .option-label { min-width: 90px; font-weight: 600; }
+        .option-label { min-width: 100px; font-weight: 600; }
 
         input[type="color"] {
             width: 30px; height: 26px;
@@ -335,8 +335,8 @@
             flex-shrink: 0;
         }
         .opacity-slider { flex: 1; accent-color: #9146FF; cursor: pointer; max-width: 100px; }
-        .opacity-label  { font-size: 11px; color: #666; min-width: 30px; }
-        .opacity-tag    { font-size: 11px; color: #555; white-space: nowrap; }
+        .opacity-label  { font-size: 12px; color: #666; min-width: 34px; }
+        .opacity-tag    { font-size: 12px; color: #555; white-space: nowrap; }
 
         .text-override-row {
             display: flex;
@@ -345,11 +345,11 @@
             font-size: 12px;
             color: #adadb8;
         }
-        .text-override-row .option-label { min-width: 90px; font-weight: 600; }
+        .text-override-row .option-label { min-width: 100px; font-weight: 600; }
         .text-override-row input[type="text"] {
             flex: 1;
-            padding: 4px 8px;
-            font-size: 12px;
+            padding: 6px 8px;
+            font-size: 13px;
             background: #18181b;
             border: 1px solid #2f2f35;
             border-radius: 4px;
@@ -359,7 +359,7 @@
         .text-override-row input[type="text"]:focus { border-color: #9146FF; }
 
         .event-warning {
-            font-size: 11px;
+            font-size: 12px;
             color: #f0a020;
             margin-top: 6px;
             line-height: 1.5;
@@ -369,20 +369,20 @@
 
         /* ── Output ────────────────────────────────────────── */
         .output-label {
-            font-size: 11px;
+            font-size: 12px;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             font-weight: 600;
-            margin-bottom: 6px;
-            margin-top: 12px;
+            margin-bottom: 8px;
+            margin-top: 14px;
         }
         .output-box {
             background: #0e0e10;
             border: 1px solid #2f2f35;
             border-radius: 6px;
             padding: 10px 12px;
-            font-size: 11px;
+            font-size: 12px;
             color: #adadb8;
             word-break: break-all;
             line-height: 1.5;
@@ -459,10 +459,10 @@
 
                 <span class="field-label">Custom Font URL</span>
                 <input type="text" id="fontUrl" placeholder="e.g. https://fonts.cdnfonts.com/css/motley-forces">
-                <span style="font-size:11px;color:#666;margin-top:4px;display:block;">A CSS stylesheet that loads the font. This only tells the browser where to download it — it doesn't tell it <em>which</em> font to actually use.</span>
+                <span style="font-size:12px;color:#888;margin-top:4px;display:block;">A CSS stylesheet that loads the font. This only tells the browser where to download it — it doesn't tell it <em>which</em> font to actually use.</span>
                 <span class="field-label" style="margin-top:10px;">Font Name</span>
                 <input type="text" id="fontFamily" placeholder="e.g. Motley Forces">
-                <span style="font-size:11px;color:#666;margin-top:4px;display:block;">The exact font name as it appears in the stylesheet. This is what actually applies the font to the chat text. Both fields are required for the font to work.</span>
+                <span style="font-size:12px;color:#888;margin-top:4px;display:block;">The exact font name as it appears in the stylesheet. This is what actually applies the font to the chat text. Both fields are required for the font to work.</span>
             </div>
         </div>
 
