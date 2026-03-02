@@ -30,7 +30,6 @@ const CONFIG = {
     streakLabel:     params.get('streakLabel')     || '',
     // Font
     fontUrl:         params.get('fontUrl')         || '',
-    fontFamily:      params.get('fontFamily')      || '',
     // Badge options
     disableAllBadges:      params.get('disableAllBadges')      === '1',
     roleOnlyBadges:        params.get('roleOnlyBadges')        === '1',
@@ -43,15 +42,23 @@ const CONFIG = {
 if (CONFIG.fontSize)    document.documentElement.style.setProperty('--chat-font-size',    CONFIG.fontSize);
 if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shadow-color', hex8ToCss(CONFIG.shadowColor, '#000000FF'));
 
-// Load custom font if provided
+// Load custom font if provided — extract font-family name from the CSS itself
 if (CONFIG.fontUrl) {
     const link = document.createElement('link');
     link.rel  = 'stylesheet';
     link.href = CONFIG.fontUrl;
     document.head.appendChild(link);
-}
-if (CONFIG.fontFamily) {
-    document.documentElement.style.setProperty('--chat-font-family', CONFIG.fontFamily);
+
+    // Fetch the CSS and pull the first font-family name out of it
+    fetch(CONFIG.fontUrl)
+        .then(r => r.text())
+        .then(css => {
+            const match = css.match(/font-family:\s*['"]([^'"]+)['"]/i);
+            if (match) {
+                document.documentElement.style.setProperty('--chat-font-family', match[1]);
+            }
+        })
+        .catch(() => { /* silently ignore if fetch fails */ });
 }
 
 // Event type color CSS variables

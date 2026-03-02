@@ -459,10 +459,8 @@
 
                 <span class="field-label">Custom Font URL</span>
                 <input type="text" id="fontUrl" placeholder="e.g. https://fonts.cdnfonts.com/css/motley-forces">
-                <span style="font-size:12px;color:#888;margin-top:4px;display:block;">A CSS stylesheet that loads the font. This only tells the browser where to download it — it doesn't tell it <em>which</em> font to actually use.</span>
-                <span class="field-label" style="margin-top:10px;">Font Name</span>
-                <input type="text" id="fontFamily" placeholder="e.g. Motley Forces">
-                <span style="font-size:12px;color:#888;margin-top:4px;display:block;">The exact font name as it appears in the stylesheet. This is what actually applies the font to the chat text. Both fields are required for the font to work.</span>
+                <span style="font-size:12px;color:#888;margin-top:4px;display:block;">Paste a CSS font link — the font name will be extracted automatically.</span>
+
             </div>
         </div>
 
@@ -837,7 +835,6 @@
         const redeemLabel = v('redeemLabel').trim();
         const streakLabel = v('streakLabel').trim();
         const fontUrl     = v('fontUrl').trim();
-        const fontFamily  = v('fontFamily').trim();
 
         const eventParams = [
             `showResubs=${showResubs ? '1':'0'}`,
@@ -870,10 +867,7 @@
             showStreaks && streakLabel && `streakLabel=${encodeURIComponent(streakLabel)}`,
         ].filter(Boolean).join('&');
 
-        const fontParams = [
-            fontUrl    ? `fontUrl=${encodeURIComponent(fontUrl)}`       : '',
-            fontFamily ? `fontFamily=${encodeURIComponent(fontFamily)}` : '',
-        ].filter(Boolean).join('&');
+        const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
 
         const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&fontSize=${v('fontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}${fontParams ? '&'+fontParams : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
 
