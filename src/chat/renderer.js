@@ -18,13 +18,39 @@ function displayMessage(tags, message) {
 
     const userColor     = tags.color || '#ffffff';
     const username      = tags['display-name'] || tags.username;
-    const parsedMessage = parseMessage(message, tags.emotes);
     const badgesHTML    = renderBadges(tags);
 
-    messageElement.innerHTML = `
-        <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-        <span class="message-text">${parsedMessage}</span>
-    `;
+    // ── Reply handling ────────────────────────────────────────────────────────
+    const parentMsgId   = tags['reply-parent-msg-id'];
+    const parentUser    = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
+    const parentBody    = tags['reply-parent-msg-body'] || '';
+
+    let replyHTML = '';
+    if (parentMsgId && parentUser) {
+        // Strip the leading @mention Twitch prepends to reply messages
+        const cleanMessage = message.replace(/^@\S+\s*/, '');
+
+        // Truncate parent body to keep the quote short
+        const snippet = parentBody.length > 60 ? parentBody.slice(0, 60).trimEnd() + '…' : parentBody;
+
+        replyHTML = `
+            <div class="reply-context" data-reply-to="${escapeHTML(parentMsgId)}">
+                <svg class="reply-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                <span class="reply-parent-name">${escapeHTML(parentUser)}</span>
+                <span class="reply-parent-body">${escapeHTML(snippet)}</span>
+            </div>`;
+
+        messageElement.innerHTML = `
+            ${replyHTML}
+            <div class="reply-message-row">
+                <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
+                <span class="message-text">${parseMessage(cleanMessage, tags.emotes)}</span>
+            </div>`;
+    } else {
+        messageElement.innerHTML = `
+            <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
+            <span class="message-text">${parseMessage(message, tags.emotes)}</span>`;
+    }
 
     // Tag for targeted deletion — login name used (not display-name) since
     // moderation events fire with the login name

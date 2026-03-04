@@ -218,3 +218,43 @@ body {
 }
 .bits-message .event-icon  { color: var(--bits-accent); }
 .bits-message .event-label { color: var(--bits-accent); filter: brightness(1.4); }
+
+/* ─── Reply context ─────────────────────────────────────────────────────────── */
+.reply-context {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+    color: #adadb8;
+    margin-bottom: 3px;
+    padding-left: 6px;
+    border-left: 2px solid #4a4a55;
+    opacity: 0.85;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.reply-icon {
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.reply-parent-name {
+    font-weight: 700;
+    color: #efeff1;
+    flex-shrink: 0;
+}
+
+.reply-parent-body {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reply-message-row {
+    display: inline;
+}
