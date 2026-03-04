@@ -415,3 +415,24 @@ input[type="color"] {
     color: #2ecc71;
     box-shadow: 0 0 12px rgba(46,204,113,0.2);
 }
+
+/* ── Select / Dropdown ─────────────────────────────────────────────────────── */
+select {
+    width: 100%;
+    padding: 9px 12px;
+    background: #0e0e10;
+    border: 1px solid #2f2f35;
+    color: #efeff1;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+select:focus { border-color: #9146FF; }
+select option { background: #18181b; }

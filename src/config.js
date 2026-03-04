@@ -25,6 +25,7 @@ const CONFIG = {
     // Excluded prefixes — stored as an array of trimmed strings
     excludedPrefixes: (params.get('excludePrefix') || '').split(',').map(p => p.trim()).filter(Boolean),
     showReplies:      params.get('showReplies') !== '0',
+    meStyle:          params.get('meStyle') || 'colored',
     // Per-type event toggles
     showResubs:      params.get('showResubs')      !== '0' && params.get('showResubs') === '1',
     showGifts:       params.get('showGifts')       !== '0' && params.get('showGifts')  === '1',

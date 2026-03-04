@@ -41,6 +41,10 @@ client.on('message', (channel, tags, message, self) => {
     }
 });
 
+client.on('action', (channel, tags, message, self) => {
+    displayMessage(tags, message, true);
+});
+
 // viewermilestone (watch streaks) doesn't surface through tmi.js named events,
 // so we intercept it at the raw IRC level instead.
 client.on('raw_message', (messageCloned, message) => {

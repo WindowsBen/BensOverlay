@@ -1,24 +1,35 @@
 // ─── chat/renderer.js ─────────────────────────────────────────────────────────
 // Renders a parsed chat message into the DOM.
 
-function displayMessage(tags, message) {
+function displayMessage(tags, message, isAction = false) {
     // Drop messages from excluded users
     if (CONFIG.excludedUsers.size && CONFIG.excludedUsers.has((tags.username || '').toLowerCase())) return;
 
     // Drop messages starting with an excluded prefix
     if (CONFIG.excludedPrefixes.length && CONFIG.excludedPrefixes.some(p => message.startsWith(p))) return;
 
-    const chatContainer = document.getElementById('chat-container');
+    const chatContainer  = document.getElementById('chat-container');
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
+
     if (tags['msg-id'] === 'highlighted-message') {
         if (!CONFIG.showHighlights) return;
         messageElement.classList.add('highlighted-message');
     }
 
-    const userColor     = tags.color || '#ffffff';
-    const username      = tags['display-name'] || tags.username;
-    const badgesHTML    = renderBadges(tags);
+    const userColor  = tags.color || '#ffffff';
+    const username   = tags['display-name'] || tags.username;
+    const badgesHTML = renderBadges(tags);
+
+    // ── /me action styling ────────────────────────────────────────────────────
+    let messageStyle = '';
+    if (isAction && CONFIG.meStyle !== 'none') {
+        if (CONFIG.meStyle === 'colored') {
+            messageStyle = `style="color: ${escapeHTML(userColor)}"`;
+        } else if (CONFIG.meStyle === 'italic') {
+            messageStyle = `style="font-style: italic"`;
+        }
+    }
 
     // ── Reply handling ────────────────────────────────────────────────────────
     const parentMsgId = tags['reply-parent-msg-id'];
@@ -51,12 +62,12 @@ function displayMessage(tags, message) {
             ${replyHTML}
             <div class="reply-message-row">
                 <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-                <span class="message-text">${parseMessage(cleanMessage, tags.emotes)}</span>
+                <span class="message-text" ${messageStyle}>${parseMessage(cleanMessage, tags.emotes)}</span>
             </div>`;
     } else {
         messageElement.innerHTML = `
             <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-            <span class="message-text">${parseMessage(message, tags.emotes)}</span>`;
+            <span class="message-text" ${messageStyle}>${parseMessage(message, tags.emotes)}</span>`;
     }
 
     // Tag for targeted deletion — login name used (not display-name) since
