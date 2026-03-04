@@ -33,8 +33,9 @@ const CONFIG = {
     // Excluded prefixes — messages starting with any of these are hidden (e.g. "!" for commands)
     excludedPrefixes: (params.get('excludePrefix') || '').split(',').map(p => p.trim()).filter(Boolean),
 
-    showReplies: params.get('showReplies') !== '0', // default on
-    meStyle:     params.get('meStyle') || 'colored', // 'colored' | 'italic' | 'none'
+    showReplies:       params.get('showReplies') !== '0', // default on
+    meStyle:           params.get('meStyle') || 'colored', // 'colored' | 'italic' | 'none'
+    showAnnouncements: params.get('showAnnouncements') !== '0', // default on
 
     // Event message toggles — all default off (must be explicitly set to '1')
     showResubs:     params.get('showResubs')     === '1',

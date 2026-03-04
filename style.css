@@ -264,3 +264,39 @@ body {
     width: auto;
     vertical-align: middle;
 }
+
+/* ─── Announcement messages ─────────────────────────────────────────────────── */
+.announcement-message {
+    border: 2px solid var(--announce-color, #efeff1);
+    border-radius: 6px;
+    padding: 6px 10px 8px;
+    background: rgba(0, 0, 0, 0.25);
+    display: block; /* full-width block, not flex like event messages */
+}
+
+/* "Announcement" label above the message */
+.announcement-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--announce-color, #efeff1);
+    margin-bottom: 4px;
+    opacity: 0.9;
+}
+
+.announcement-header svg {
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+}
+
+/* Per-color variants — map Twitch's msg-param-color values */
+.announce-primary { --announce-color: #efeff1; }
+.announce-blue    { --announce-color: #4a90d9; }
+.announce-green   { --announce-color: #3ec95c; }
+.announce-orange  { --announce-color: #e87d2a; }
+.announce-purple  { --announce-color: #9b45e4; }

@@ -106,7 +106,46 @@ function handleCheer(channel, userstate, message) {
     displayEventMessage(ICON_BITS, name, detail, cheerHTML, true, 'bits-message');
 }
 
-// ── Watch Streaks ──────────────────────────────────────────────────────────────
+// ── Announcements ─────────────────────────────────────────────────────────────
+// /announce, /announceblue, /announcegreen, /announceorange, /announcepurple
+// Arrive as USERNOTICE with msg-id="announcement" and msg-param-color set to
+// "PRIMARY", "BLUE", "GREEN", "ORANGE", or "PURPLE".
+
+const ANNOUNCE_COLOR_CLASS = {
+    'PRIMARY': 'announce-primary',
+    'BLUE':    'announce-blue',
+    'GREEN':   'announce-green',
+    'ORANGE':  'announce-orange',
+    'PURPLE':  'announce-purple',
+};
+
+const ANNOUNCE_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
+
+function handleAnnouncement(tags, message) {
+    if (!CONFIG.showAnnouncements) return;
+
+    const colorKey   = (tags['msg-param-color'] || 'PRIMARY').toUpperCase();
+    const colorClass = ANNOUNCE_COLOR_CLASS[colorKey] || 'announce-primary';
+    const username   = tags['display-name'] || tags.login || 'Moderator';
+    const userColor  = tags.color || '#efeff1';
+
+    // Parse emotes from the raw IRC emotes tag
+    const parsedMsg  = parseMessage(message, parseRawEmotesTag(tags.emotes));
+
+    const container = document.getElementById('chat-container');
+    const el        = document.createElement('div');
+    el.className    = `chat-message announcement-message ${colorClass}`;
+
+    el.innerHTML = `
+        <div class="announcement-header">
+            ${ANNOUNCE_ICON} Announcement
+        </div>
+        <span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
+        <span class="message-text">${parsedMsg}</span>`;
+
+    container.appendChild(el);
+    if (container.childNodes.length > 50) container.removeChild(container.firstChild);
+}
 // Fired via raw_message in main.js (not a tmi.js named event) because Twitch
 // delivers these as USERNOTICE with msg-id = "viewermilestone".
 

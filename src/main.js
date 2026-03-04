@@ -62,9 +62,14 @@ client.on('action', (channel, tags, message, self) => {
 // IRC level. The filter on USERNOTICE keeps this from running on every message.
 client.on('raw_message', (messageCloned, message) => {
     if (message.command !== 'USERNOTICE') return;
-    const tags = message.tags || {};
-    if (tags['msg-id'] === 'viewermilestone' && tags['msg-param-category'] === 'watch-streak') {
-        handleWatchStreak(tags, message.params?.[1] || '');
+    const tags  = message.tags || {};
+    const msgId = tags['msg-id'];
+    const text  = message.params?.[1] || '';
+
+    if (msgId === 'viewermilestone' && tags['msg-param-category'] === 'watch-streak') {
+        handleWatchStreak(tags, text);
+    } else if (msgId === 'announcement') {
+        handleAnnouncement(tags, text);
     }
 });
 
