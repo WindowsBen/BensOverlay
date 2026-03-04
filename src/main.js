@@ -35,6 +35,7 @@ client.on('roomstate', (channel, state) => {
 
 client.on('message', (channel, tags, message, self) => {
     // tmi.js fires both 'message' and 'action' for /me — skip here to avoid double render
+    console.log('[message]', tags['message-type'], message.slice(0, 30));
     if (message.startsWith('\x01ACTION')) return;
     if (tags['custom-reward-id']) {
         handleRedemption(broadcasterId, tags, message);
