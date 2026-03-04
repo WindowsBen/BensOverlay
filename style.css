@@ -10,15 +10,24 @@ body {
     background: transparent;
     color: white;
     font-family: var(--chat-font-family, sans-serif);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+#pinned-container {
+    flex-shrink: 0;
+    padding: 10px 10px 0;
 }
 
 #chat-container {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    height: 100vh;
+    flex: 1;
     padding: 10px;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .chat-message {
@@ -263,4 +272,60 @@ body {
     height: 1em;
     width: auto;
     vertical-align: middle;
+}
+
+/* ─── Pinned Message ────────────────────────────────────────────────────────── */
+.pinned-message {
+    background: rgba(20, 20, 24, 0.85);
+    border: 1px solid #4a4a55;
+    border-left: 3px solid #FFD700;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: var(--chat-font-size);
+    line-height: var(--message-line-height, 1.8);
+    overflow: hidden;
+    animation: pinned-slide-in 0.3s ease;
+}
+
+@keyframes pinned-slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.pinned-message.unpinning {
+    animation: pinned-slide-out 0.3s ease forwards;
+}
+
+@keyframes pinned-slide-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-8px); }
+}
+
+.pinned-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75em;
+    color: #FFD700;
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+}
+
+.pinned-header svg {
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+}
+
+.pinned-body {
+    display: block;
+}
+
+.pinned-footer {
+    font-size: 0.72em;
+    color: #888;
+    margin-top: 3px;
 }

@@ -75,6 +75,14 @@
                 <span class="field-label">Replies</span>
                 <label class="checkbox-wrapper"><input type="checkbox" id="showReplies" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show reply context above messages</span></label>
 
+                <span class="field-label">Pinned Messages</span>
+                <label class="checkbox-wrapper"><input type="checkbox" id="showPinned"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show pinned messages at the top</span></label>
+                <span class="field-label" style="margin-top:10px;">Auto-unpin after (seconds)</span>
+                <input type="number" id="pinnedDuration" placeholder="0 = manual only" style="width:160px;" min="0">
+                <span class="hint">Set to 0 to only unpin when a mod manually unpins.</span>
+
+                <hr class="divider">
+
                 <span class="field-label">/me messages</span>
                 <select id="meStyle">
                     <option value="colored" selected>Colored (user's name color)</option>

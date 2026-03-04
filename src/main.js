@@ -48,12 +48,24 @@ client.on('action', (channel, tags, message, self) => {
 
 // viewermilestone (watch streaks) doesn't surface through tmi.js named events,
 // so we intercept it at the raw IRC level instead.
+// We also use this to catch pinned message events and log all USERNOTICEs
+// to help discover what msg-ids fire for manual unpins.
 client.on('raw_message', (messageCloned, message) => {
     if (message.command !== 'USERNOTICE') return;
     const tags = message.tags || {};
-    if (tags['msg-id'] === 'viewermilestone' && tags['msg-param-category'] === 'watch-streak') {
-        const text = message.params?.[1] || '';
+    const msgId = tags['msg-id'];
+    const text  = message.params?.[1] || '';
+
+    if (msgId === 'viewermilestone' && tags['msg-param-category'] === 'watch-streak') {
         handleWatchStreak(tags, text);
+    } else if (msgId === 'pinned-chat-update') {
+        handlePinnedChatUpdate(tags, text);
+    } else if (msgId === 'pinned-chat-remove' || msgId === 'unpin-chat' || msgId === 'moderator-removed-pin') {
+        // Try all known/plausible unpin msg-ids — log will reveal the real one
+        handlePinnedChatRemove(tags);
+    } else if (msgId && msgId.includes('pin')) {
+        // Catch any other pin-related events we don't know about yet
+        console.log('[unknown pin event]', msgId, tags);
     }
 });
 
