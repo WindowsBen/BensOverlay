@@ -94,3 +94,112 @@ function copyLink() {
         }, 2000);
     });
 }
+
+// ── Export / Import ───────────────────────────────────────────────────────────
+
+// All form field IDs to capture — token intentionally excluded
+const CONFIG_FIELDS = [
+    // General
+    { id: 'channel',      type: 'text'     },
+    { id: 'fontSize',     type: 'text'     },
+    { id: 'shadowColor',  type: 'text'     },
+    { id: 'shadowOpacity',type: 'text'     },
+    { id: 'fontUrl',      type: 'text'     },
+    // Events — toggles
+    { id: 'showResubs',     type: 'check' },
+    { id: 'showGifts',      type: 'check' },
+    { id: 'showBits',       type: 'check' },
+    { id: 'showRedeems',    type: 'check' },
+    { id: 'showHighlights', type: 'check' },
+    { id: 'showStreaks',    type: 'check' },
+    // Events — colors
+    { id: 'resubAccent',        type: 'text' }, { id: 'resubAccentOpacity',    type: 'text' },
+    { id: 'resubBg',            type: 'text' }, { id: 'resubBgOpacity',        type: 'text' },
+    { id: 'resubLabel',         type: 'text' },
+    { id: 'giftAccent',         type: 'text' }, { id: 'giftAccentOpacity',     type: 'text' },
+    { id: 'giftBg',             type: 'text' }, { id: 'giftBgOpacity',         type: 'text' },
+    { id: 'giftLabel',          type: 'text' },
+    { id: 'bitsAccent',         type: 'text' }, { id: 'bitsAccentOpacity',     type: 'text' },
+    { id: 'bitsBg',             type: 'text' }, { id: 'bitsBgOpacity',         type: 'text' },
+    { id: 'bitsLabel',          type: 'text' },
+    { id: 'redeemAccent',       type: 'text' }, { id: 'redeemAccentOpacity',   type: 'text' },
+    { id: 'redeemBg',           type: 'text' }, { id: 'redeemBgOpacity',       type: 'text' },
+    { id: 'redeemLabel',        type: 'text' },
+    { id: 'highlightAccent',    type: 'text' }, { id: 'highlightAccentOpacity',type: 'text' },
+    { id: 'highlightBg',        type: 'text' }, { id: 'highlightBgOpacity',    type: 'text' },
+    { id: 'streakAccent',       type: 'text' }, { id: 'streakAccentOpacity',   type: 'text' },
+    { id: 'streakBg',           type: 'text' }, { id: 'streakBgOpacity',       type: 'text' },
+    { id: 'streakLabel',        type: 'text' },
+    // Badges & Cosmetics
+    { id: 'disableAllBadges',     type: 'check' },
+    { id: 'roleOnlyBadges',       type: 'check' },
+    { id: 'showExternalCosmetics',type: 'check' },
+    { id: 'toastEmotes',          type: 'check' },
+];
+
+function exportConfig() {
+    const data = {};
+    CONFIG_FIELDS.forEach(({ id, type }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        data[id] = type === 'check' ? el.checked : el.value;
+    });
+
+    const json    = JSON.stringify(data);
+    const encoded = btoa(json);                  // base64 → alphanumeric string
+
+    document.getElementById('exportLabel').style.display    = 'block';
+    document.getElementById('exportBox').style.display      = 'block';
+    document.getElementById('exportBox').textContent        = encoded;
+    document.getElementById('copyExportBtn').style.display  = 'flex';
+    document.getElementById('copyExportBtnLabel').textContent = 'Copy Config String';
+    document.getElementById('copyExportBtn').classList.remove('copied');
+}
+
+function importConfig() {
+    const input = prompt('Paste your config string:');
+    if (!input) return;
+    let data;
+    try {
+        data = JSON.parse(atob(input.trim()));
+    } catch {
+        alert('Invalid config string — make sure you pasted it correctly.');
+        return;
+    }
+
+    CONFIG_FIELDS.forEach(({ id, type }) => {
+        if (!(id in data)) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (type === 'check') {
+            el.checked = data[id];
+            // Fire onchange handlers so dependent UI updates
+            el.dispatchEvent(new Event('change'));
+        } else {
+            el.value = data[id];
+            // Fire input so opacity labels update
+            el.dispatchEvent(new Event('input'));
+        }
+    });
+
+    // Hide any stale export box
+    document.getElementById('exportLabel').style.display   = 'none';
+    document.getElementById('exportBox').style.display     = 'none';
+    document.getElementById('copyExportBtn').style.display = 'none';
+
+    alert('Config imported! Review the settings and click "Generate Link" when ready.');
+}
+
+function copyExport() {
+    const str = document.getElementById('exportBox').textContent;
+    if (!str) return;
+    navigator.clipboard.writeText(str).then(() => {
+        const btn = document.getElementById('copyExportBtn');
+        btn.classList.add('copied');
+        document.getElementById('copyExportBtnLabel').textContent = 'Copied!';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            document.getElementById('copyExportBtnLabel').textContent = 'Copy Config String';
+        }, 2000);
+    });
+}
