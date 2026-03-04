@@ -74,15 +74,28 @@ function _sendSub(type, objectId) {
 }
 
 function subscribe7TV(type, objectId, handler) {
-    // Key by type:objectId so each user gets their own slot
     const key = objectId ? `${type}:${objectId}` : type;
     _7tvHandlers[key] = handler;
 
-    // Track for reconnect
     if (!_7tvSubs.find(s => s.type === type && s.objectId === objectId)) {
         _7tvSubs.push({ type, objectId });
     }
 
     _sendSub(type, objectId);
     console.log(`[7TV WS] Subscribed to ${type} for ${objectId}`);
+}
+
+function unsubscribe7TV(type, objectId) {
+    const key = objectId ? `${type}:${objectId}` : type;
+    delete _7tvHandlers[key];
+
+    const idx = _7tvSubs.findIndex(s => s.type === type && s.objectId === objectId);
+    if (idx !== -1) _7tvSubs.splice(idx, 1);
+
+    // Send unsubscribe (op 36) to the server
+    const payload = { op: 36, d: { type, condition: { object_id: objectId } } };
+    if (_7tvReady && _7tvWS?.readyState === WebSocket.OPEN) {
+        _7tvWS.send(JSON.stringify(payload));
+    }
+    console.log(`[7TV WS] Unsubscribed from ${type} for ${objectId}`);
 }

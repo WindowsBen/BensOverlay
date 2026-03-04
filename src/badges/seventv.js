@@ -1,31 +1,57 @@
 // ─── badges/seventv.js ────────────────────────────────────────────────────────
 // Fetches per-user 7TV cosmetics (badge + paint) lazily on first message.
-// Subscribes to live user updates so paint/badge changes apply in real time.
-// Results are cached; cache is cleared on update to force a re-fetch.
+// Uses an LRU cache capped at MAX_CACHE_SIZE to avoid memory bloat in large chats.
+// Only subscribes to live updates for cached users; unsubscribes on eviction.
 
-// Cache: twitchUserId → { badgeUrl, paint, sevenTVUserId } | null
-const sevenTVCosmeticsCache = {};
+const MAX_CACHE_SIZE = 200;
 
-// Map sevenTVUserId → twitchUserId so the WS callback can find the right cache key
+// LRU cache: twitchUserId → cosmetics object
+// We maintain insertion order via a Map so oldest entries are easy to evict.
+const sevenTVCosmeticsCache = new Map();
+
+// twitchUserId → sevenTVUserId (for unsubscribing on eviction)
 const sevenTVUserIdMap = {};
 
+// Evict the oldest entry if we're over the cap
+function _evictIfNeeded() {
+    if (sevenTVCosmeticsCache.size <= MAX_CACHE_SIZE) return;
+    const oldestKey = sevenTVCosmeticsCache.keys().next().value;
+    const evicted   = sevenTVCosmeticsCache.get(oldestKey);
+    sevenTVCosmeticsCache.delete(oldestKey);
+
+    // Unsubscribe from live updates for this user
+    const sevenTVId = evicted?.sevenTVUserId || Object.keys(sevenTVUserIdMap).find(k => sevenTVUserIdMap[k] === oldestKey);
+    if (sevenTVId) {
+        unsubscribe7TV('user.update', sevenTVId);
+        delete sevenTVUserIdMap[sevenTVId];
+    }
+}
+
+// Promote a cache entry to "most recently used" (move to end of Map)
+function _touch(twitchUserId) {
+    if (!sevenTVCosmeticsCache.has(twitchUserId)) return;
+    const val = sevenTVCosmeticsCache.get(twitchUserId);
+    sevenTVCosmeticsCache.delete(twitchUserId);
+    sevenTVCosmeticsCache.set(twitchUserId, val);
+}
+
 async function fetch7TVUserCosmetics(twitchUserId) {
-    if (sevenTVCosmeticsCache[twitchUserId] !== undefined) {
-        return sevenTVCosmeticsCache[twitchUserId];
+    if (sevenTVCosmeticsCache.has(twitchUserId)) {
+        _touch(twitchUserId); // bump to MRU
+        return sevenTVCosmeticsCache.get(twitchUserId);
     }
 
-    // Mark as pending so concurrent messages don't trigger duplicate fetches
-    sevenTVCosmeticsCache[twitchUserId] = null;
+    // Mark pending to prevent duplicate fetches from concurrent messages
+    sevenTVCosmeticsCache.set(twitchUserId, null);
 
     try {
         const res = await fetch(`https://7tv.io/v3/users/twitch/${twitchUserId}`);
         if (!res.ok) return null;
 
-        const data        = await res.json();
-        const style       = data?.user?.style;
+        const data          = await res.json();
+        const style         = data?.user?.style;
         const sevenTVUserId = data?.user?.id;
-
-        const cosmetics = { badgeUrl: null, paint: null, sevenTVUserId };
+        const cosmetics     = { badgeUrl: null, paint: null, sevenTVUserId };
 
         if (style?.badge_id) {
             cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/4x.webp`;
@@ -47,12 +73,13 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             }
         }
 
-        sevenTVCosmeticsCache[twitchUserId] = cosmetics;
+        sevenTVCosmeticsCache.set(twitchUserId, cosmetics);
+        _evictIfNeeded();
 
-        // Subscribe to live updates for this user
+        // Subscribe to live updates only for this cached user
         if (sevenTVUserId) {
             sevenTVUserIdMap[sevenTVUserId] = twitchUserId;
-            subscribe7TV(`user.update`, sevenTVUserId, (body) => handle7TVUserUpdate(sevenTVUserId, body));
+            subscribe7TV('user.update', sevenTVUserId, (body) => handle7TVUserUpdate(sevenTVUserId, body));
         }
 
         return cosmetics;
@@ -68,35 +95,30 @@ async function handle7TVUserUpdate(sevenTVUserId, body) {
     const twitchUserId = sevenTVUserIdMap[sevenTVUserId];
     if (!twitchUserId) return;
 
-    // Wait 2s for 7TV's API to propagate the change before fetching
+    // Wait 2s for 7TV's API to propagate the change
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    delete sevenTVCosmeticsCache[twitchUserId];
+    sevenTVCosmeticsCache.delete(twitchUserId);
 
     const cosmetics = await fetch7TVUserCosmetics(twitchUserId);
     if (!cosmetics) return;
 
-    const allMessages = document.querySelectorAll(`[data-seventv-uid]`);
-    allMessages.forEach(msgEl => {
+    document.querySelectorAll('[data-seventv-uid]').forEach(msgEl => {
         if (msgEl.dataset.seventvUid !== twitchUserId) return;
         reapply7TVCosmetics(msgEl, cosmetics);
     });
 }
 
-// Applies 7TV cosmetics to an already-rendered message element
 async function apply7TVCosmetics(twitchUserId, messageElement) {
     if (CONFIG.disableAllBadges || !CONFIG.showExternalCosmetics) return;
 
     const cosmetics = await fetch7TVUserCosmetics(twitchUserId);
     if (!cosmetics) return;
 
-    // Tag the element so we can find it on live updates
     messageElement.dataset.seventvUid = twitchUserId;
-
     reapply7TVCosmetics(messageElement, cosmetics);
 }
 
-// Removes old 7TV cosmetics from a message element and applies new ones
 function reapply7TVCosmetics(messageElement, cosmetics) {
     // ── Remove old badge ──
     messageElement.querySelectorAll('.seventv-badge').forEach(el => el.remove());
@@ -104,14 +126,12 @@ function reapply7TVCosmetics(messageElement, cosmetics) {
     // ── Remove old paint ──
     const usernameSpan = messageElement.querySelector('.username');
     if (usernameSpan) {
-        // Remove any seventv-paint-* classes and associated <style> tags
         [...usernameSpan.classList].forEach(cls => {
             if (cls.startsWith('seventv-paint-')) {
                 usernameSpan.classList.remove(cls);
                 document.querySelector(`style[data-paint="${cls}"]`)?.remove();
             }
         });
-        // Restore inherited text shadow and color
         usernameSpan.style.textShadow = '';
         usernameSpan.style.display    = '';
     }
