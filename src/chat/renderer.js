@@ -21,23 +21,25 @@ function displayMessage(tags, message) {
     const badgesHTML    = renderBadges(tags);
 
     // ── Reply handling ────────────────────────────────────────────────────────
-    const parentMsgId   = tags['reply-parent-msg-id'];
-    const parentUser    = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
-    const parentBody    = tags['reply-parent-msg-body'] || '';
+    const parentMsgId = tags['reply-parent-msg-id'];
+    const parentUser  = tags['reply-parent-display-name'] || tags['reply-parent-user-login'];
+    const parentBody  = tags['reply-parent-msg-body'] || '';
 
     let replyHTML = '';
-    if (parentMsgId && parentUser) {
+    if (CONFIG.showReplies && parentMsgId && parentUser) {
         // Strip the leading @mention Twitch prepends to reply messages
         const cleanMessage = message.replace(/^@\S+\s*/, '');
 
-        // Truncate parent body to keep the quote short
-        const snippet = parentBody.length > 60 ? parentBody.slice(0, 60).trimEnd() + '…' : parentBody;
+        // Truncate parent body to keep the quote short, then parse third-party emotes
+        // (Twitch emote positions aren't available for parent messages)
+        const snippet     = parentBody.length > 60 ? parentBody.slice(0, 60).trimEnd() + '…' : parentBody;
+        const parsedSnippet = parseMessage(snippet, null);
 
         replyHTML = `
             <div class="reply-context" data-reply-to="${escapeHTML(parentMsgId)}">
                 <svg class="reply-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
                 <span class="reply-parent-name">${escapeHTML(parentUser)}</span>
-                <span class="reply-parent-body">${escapeHTML(snippet)}</span>
+                <span class="reply-parent-body">${parsedSnippet}</span>
             </div>`;
 
         messageElement.innerHTML = `

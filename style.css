@@ -258,3 +258,9 @@ body {
 .reply-message-row {
     display: inline;
 }
+
+.reply-parent-body .chat-emote {
+    height: 1em;
+    width: auto;
+    vertical-align: middle;
+}
