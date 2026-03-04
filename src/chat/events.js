@@ -87,10 +87,10 @@ const ICON_STREAK = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M11.5
 
 function handleWatchStreak(tags, message) {
     if (!CONFIG.showStreaks) return;
-    const name   = tags['display-name'] || tags.username;
-    const streak = tags['msg-param-value'] || '?';
-    const verb   = CONFIG.streakLabel || 'is on a';
-    const detail = `${verb} ${streak}-stream watch streak!`;
-    const userMsg = message && message.trim() ? message.trim() : '';
-    displayEventMessage(ICON_STREAK, name, detail, userMsg, false, 'streak-message');
+    const name    = tags['display-name'] || tags.username;
+    const streak  = tags['msg-param-value'] || '?';
+    const verb    = CONFIG.streakLabel || 'is on a';
+    const detail  = `${verb} ${streak}-stream watch streak!`;
+    const parsedMsg = message && message.trim() ? parseMessage(message.trim(), tags.emotes) : '';
+    displayEventMessage(ICON_STREAK, name, detail, parsedMsg, true, 'streak-message');
 }
