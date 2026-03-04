@@ -128,9 +128,10 @@ function handleAnnouncement(tags, message) {
     const colorClass = ANNOUNCE_COLOR_CLASS[colorKey] || 'announce-primary';
     const username   = tags['display-name'] || tags.login || 'Moderator';
     const userColor  = tags.color || '#efeff1';
+    const badgesHTML = renderBadges(tags);
 
     // Parse emotes from the raw IRC emotes tag
-    const parsedMsg  = parseMessage(message, parseRawEmotesTag(tags.emotes));
+    const parsedMsg = parseMessage(message, parseRawEmotesTag(tags.emotes));
 
     const container = document.getElementById('chat-container');
     const el        = document.createElement('div');
@@ -140,11 +141,18 @@ function handleAnnouncement(tags, message) {
         <div class="announcement-header">
             ${ANNOUNCE_ICON} Announcement
         </div>
-        <span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
+        <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
         <span class="message-text">${parsedMsg}</span>`;
+
+    // Tag for moderation targeting
+    if (tags['id'])       el.dataset.msgId   = tags['id'];
+    if (tags['login'])    el.dataset.username = tags['login'].toLowerCase();
 
     container.appendChild(el);
     if (container.childNodes.length > 50) container.removeChild(container.firstChild);
+
+    // Apply 7TV cosmetics (badge + paint) after render
+    if (tags['user-id']) apply7TVCosmetics(tags['user-id'], el);
 }
 // Fired via raw_message in main.js (not a tmi.js named event) because Twitch
 // delivers these as USERNOTICE with msg-id = "viewermilestone".
