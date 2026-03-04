@@ -16,7 +16,7 @@ function renderBadges(tags) {
             if (CONFIG.roleOnlyBadges && !ROLE_BADGES.has(setName)) continue;
             const url = badgeMap[`${setName}/${version}`];
             if (url) {
-                html += `<img class="chat-badge" src="${url}" alt="${escapeHTML(setName)}" title="${escapeHTML(setName)}">`;
+                html += `<img class="chat-badge" src="${url}" alt="${escapeHTML(setName)}" title="${escapeHTML(setName)}" width="18" height="18">`;
             }
         }
     }
@@ -29,14 +29,14 @@ function renderBadges(tags) {
         const ffzBadges = key ? ffzUserBadges[key] : null;
         if (ffzBadges) {
             for (const badge of ffzBadges) {
-                html += `<img class="chat-badge ffz-badge" src="${badge.url}" alt="${escapeHTML(badge.title)}" title="${escapeHTML(badge.title)}">`;
+                html += `<img class="chat-badge ffz-badge" src="${badge.url}" alt="${escapeHTML(badge.title)}" title="${escapeHTML(badge.title)}" width="18" height="18">`;
             }
         }
 
         const chatterinoBadges = tags['user-id'] ? chatterinoUserBadges[String(tags['user-id'])] : null;
         if (chatterinoBadges) {
             for (const badge of chatterinoBadges) {
-                html += `<img class="chat-badge chatterino-badge" src="${badge.url}" alt="${escapeHTML(badge.title)}" title="${escapeHTML(badge.title)}">`;
+                html += `<img class="chat-badge chatterino-badge" src="${badge.url}" alt="${escapeHTML(badge.title)}" title="${escapeHTML(badge.title)}" width="18" height="18">`;
             }
         }
     }

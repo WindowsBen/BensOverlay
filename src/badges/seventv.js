@@ -143,6 +143,8 @@ function reapply7TVCosmetics(messageElement, cosmetics) {
             const img     = document.createElement('img');
             img.className = 'chat-badge seventv-badge';
             img.src       = cosmetics.badgeUrl;
+            img.width     = 18;
+            img.height    = 18;
             img.alt       = '7TV';
             img.title     = '7TV';
             badgesSpan.appendChild(img);
