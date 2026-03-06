@@ -26,6 +26,9 @@ function lockTabs() {
         document.getElementById(`tab-${t}`).classList.add('tab-locked');
         document.getElementById(`tab-${t}`).classList.remove('active');
     });
+    // Show General as a blurred preview so the user knows they need to log in
+    document.getElementById('tab-general').classList.add('active');
+    document.getElementById('tab-btn-general').classList.add('active');
 }
 
 function toggleEventOptions(checkboxId, optionsId) {
