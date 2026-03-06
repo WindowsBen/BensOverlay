@@ -43,10 +43,10 @@ function generateLink() {
     const fontUrl      = v('fontUrl').trim();
     const messageGap     = v('messageGap').trim();
     const lineHeight     = v('lineHeight').trim();
-    const slideDistance  = v('slideDistance').trim();
-    const slideDuration  = v('slideDuration').trim();
-    const messageLifetime = v('messageLifetime').trim();
-    const fadeDuration   = v('fadeDuration').trim();
+    const slideDistance   = v('slideDistance').trim()   || '20';
+    const slideDuration   = v('slideDuration').trim()   || '300';
+    const messageLifetime = v('messageLifetime').trim() || '0';
+    const fadeDuration    = v('fadeDuration').trim()    || '1000';
     const excludedUsers    = v('excludedUsers').trim();
     const excludedPrefixes = v('excludedPrefixes').trim();
 
@@ -90,7 +90,7 @@ function generateLink() {
 
     const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
 
-    const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&nameFontSize=${v('nameFontSize')}px&messageFontSize=${v('messageFontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}${fontParams ? '&'+fontParams : ''}${messageGap ? '&messageGap='+messageGap : ''}${lineHeight ? '&lineHeight='+lineHeight : ''}${slideDistance ? '&slideDistance='+slideDistance : ''}${slideDuration ? '&slideDuration='+slideDuration : ''}${messageLifetime ? '&messageLifetime='+messageLifetime : ''}${fadeDuration ? '&fadeDuration='+fadeDuration : ''}${excludedUsers ? '&exclude='+encodeURIComponent(excludedUsers) : ''}${excludedPrefixes ? '&excludePrefix='+encodeURIComponent(excludedPrefixes) : ''}${!ch('showReplies') ? '&showReplies=0' : ''}${v('meStyle') !== 'colored' ? '&meStyle='+v('meStyle') : ''}${!ch('showAnnouncements') ? '&showAnnouncements=0' : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
+    const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&nameFontSize=${v('nameFontSize')}px&messageFontSize=${v('messageFontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}${fontParams ? '&'+fontParams : ''}${messageGap ? '&messageGap='+messageGap : ''}${lineHeight ? '&lineHeight='+lineHeight : ''}&slideDistance=${slideDistance}&slideDuration=${slideDuration}&messageLifetime=${messageLifetime}&fadeDuration=${fadeDuration}${excludedUsers ? '&exclude='+encodeURIComponent(excludedUsers) : ''}${excludedPrefixes ? '&excludePrefix='+encodeURIComponent(excludedPrefixes) : ''}${!ch('showReplies') ? '&showReplies=0' : ''}${v('meStyle') !== 'colored' ? '&meStyle='+v('meStyle') : ''}${!ch('showAnnouncements') ? '&showAnnouncements=0' : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}${badgeParams}&token=${encodeURIComponent(token)}`;
 
     document.getElementById('resultLink').textContent = url;
 
