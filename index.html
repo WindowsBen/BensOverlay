@@ -14,385 +14,368 @@
         Chat Overlay Configurator
     </div>
 
-    <!-- Row 1: Login (full width) -->
-    <div class="row-full">
-        <div class="accordion open" id="acc-login">
-            <div class="accordion-header" onclick="toggleAccordion('acc-login')">
-                <div class="accordion-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-                    Twitch Login
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="accordion-badge locked-badge" id="login-badge">Not connected</span>
-                    <svg class="accordion-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="auth-status">
-                    <div class="dot dot-grey" id="status-dot"></div>
-                    <span id="status-text">Not connected — login to unlock configuration</span>
-                </div>
-                <div class="btn-row">
-                    <button class="btn btn-primary" id="auth-btn" onclick="loginWithTwitch()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
-                        Login with Twitch
-                    </button>
-                    <button class="btn btn-secondary" id="reauth-btn" onclick="loginWithTwitch()" style="display:none;">Switch account</button>
-                </div>
-            </div>
+    <!-- Login — always visible at top -->
+    <div class="login-card">
+        <div class="login-card-left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+            <div class="dot dot-grey" id="status-dot"></div>
+            <span id="status-text">Not connected — login to unlock configuration</span>
+            <span class="accordion-badge locked-badge" id="login-badge">Not connected</span>
+        </div>
+        <div class="login-card-right">
+            <button class="btn btn-primary" id="auth-btn" onclick="loginWithTwitch()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                Login with Twitch
+            </button>
+            <button class="btn btn-secondary" id="reauth-btn" onclick="loginWithTwitch()" style="display:none;">Switch account</button>
         </div>
     </div>
 
-    <!-- Row 2: General + Event Messages -->
-    <div class="row-split">
-
-        <!-- General -->
-        <div class="accordion" id="acc-general">
-            <div class="accordion-header" onclick="toggleAccordion('acc-general')">
-                <div class="accordion-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-                    General
-                </div>
-                <svg class="accordion-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="accordion-body">
-                <span class="field-label">Channel Name</span>
-                <input type="text" id="channel" placeholder="e.g. xQc">
-
-                <span class="field-label">Name / Badge size (px)</span>
-                <input type="number" id="nameFontSize" value="16" style="width:90px;">
-
-                <span class="field-label">Message size (px)</span>
-                <input type="number" id="messageFontSize" value="16" style="width:90px;">
-
-                <span class="field-label">Text Shadow</span>
-                <div class="event-option-row">
-                    <input type="color" id="shadowColor" value="#000000">
-                    <span class="opacity-tag">Opacity</span>
-                    <input type="range" id="shadowOpacity" min="0" max="100" value="100" class="opacity-slider">
-                    <span class="opacity-label" id="shadowOpacityLabel">100%</span>
-                </div>
-
-                <hr class="divider">
-
-                <span class="field-label">Announcements</span>
-                <label class="checkbox-wrapper"><input type="checkbox" id="showAnnouncements" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show /announce messages</span></label>
-
-                <span class="field-label">Replies</span>
-                <label class="checkbox-wrapper"><input type="checkbox" id="showReplies" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show reply context above messages</span></label>
-
-                <span class="field-label">/me messages</span>
-                <select id="meStyle">
-                    <option value="colored" selected>Colored (user's name color)</option>
-                    <option value="italic">Italic</option>
-                    <option value="none">None</option>
-                </select>
-
-                <hr class="divider">
-
-                <span class="field-label">Space between messages (px)</span>
-                <input type="number" id="messageGap" placeholder="Default: 8" style="width:120px;">
-
-                <span class="field-label">Line height (for long messages)</span>
-                <input type="number" id="lineHeight" placeholder="Default: 1.8" step="0.1" style="width:120px;">
-
-                <hr class="divider">
-
-                <span class="field-label">Excluded users</span>
-                <input type="text" id="excludedUsers" placeholder="e.g. Nightbot, StreamElements">
-                <span class="hint">Comma-separated. These users will not appear in the overlay.</span>
-
-                <span class="field-label">Exclude messages starting with</span>
-                <input type="text" id="excludedPrefixes" placeholder="e.g. !, ?, /">
-                <span class="hint">Comma-separated. Messages beginning with any of these are hidden.</span>
-
-                <hr class="divider">
-
-                <span class="field-label">Custom Font URL</span>
-                <input type="text" id="fontUrl" placeholder="e.g. https://fonts.cdnfonts.com/css/motley-forces">
-                <span class="hint">Paste a CSS font link — the font name will be extracted automatically.</span>
-
-            </div>
-        </div>
-
-        <!-- Event Messages -->
-        <div class="accordion" id="acc-events">
-            <div class="accordion-header" onclick="toggleAccordion('acc-events')">
-                <div class="accordion-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    Event Messages
-                </div>
-                <svg class="accordion-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="accordion-body">
-
-                <!-- Subs -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showResubs" onchange="toggleEventOptions('showResubs','opts-resubs')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Subs &amp; Resubs</strong></span></label>
-                    <div class="event-options" id="opts-resubs">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="resubAccent" value="#9146FF">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="resubAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="resubAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="resubBg" value="#1a0a2e">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="resubBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="resubBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="resubLabel" placeholder="e.g. subscribed">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gifted Subs -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showGifts" onchange="toggleEventOptions('showGifts','opts-gifts')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Gifted Subs</strong></span></label>
-                    <div class="event-options" id="opts-gifts">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="giftAccent" value="#9146FF">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="giftAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="giftAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="giftBg" value="#1a0a2e">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="giftBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="giftBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="giftLabel" placeholder="e.g. gifted">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bits -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showBits" onchange="toggleEventOptions('showBits','opts-bits')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Bits / Cheers</strong></span></label>
-                    <div class="event-options" id="opts-bits">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="bitsAccent" value="#9146FF">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="bitsAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="bitsAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="bitsBg" value="#1a0a2e">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="bitsBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="bitsBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="bitsLabel" placeholder="e.g. cheered">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Redemptions -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showRedeems" onchange="toggleEventOptions('showRedeems','opts-redeems')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Channel Point Redemptions</strong></span></label>
-                    <div class="event-warning">
-                        <span>⚠️</span>
-                        <span>Reward names only resolve in your own channel due to a Twitch API restriction.</span>
-                    </div>
-                    <div class="event-options" id="opts-redeems">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="redeemAccent" value="#FFB800">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="redeemAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="redeemAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="redeemBg" value="#2a1f00">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="redeemBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="redeemBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="redeemLabel" placeholder="e.g. redeemed">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Highlighted Messages -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showHighlights" onchange="toggleEventOptions('showHighlights','opts-highlights')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Highlighted Messages</strong></span></label>
-                    <div class="event-options" id="opts-highlights">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="highlightAccent" value="#FF00FF">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="highlightAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="highlightAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="highlightBg" value="#2a002a">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="highlightBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="highlightBgOpacityLabel">80%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Watch Streaks -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showStreaks" onchange="toggleEventOptions('showStreaks','opts-streaks')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Watch Streaks</strong></span></label>
-                    <div class="event-options" id="opts-streaks">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="streakAccent" value="#FF6400">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="streakAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
-                                <span class="opacity-label" id="streakAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="streakBg" value="#2a0f00">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" id="streakBgOpacity" min="0" max="100" value="80" class="opacity-slider">
-                                <span class="opacity-label" id="streakBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="streakLabel" placeholder="e.g. is on a">
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Raid Incoming -->
-                <div class="event-type-block">
-                    <label class="checkbox-wrapper"><input type="checkbox" id="showRaidIncoming" onchange="toggleEventOptions('showRaidIncoming','opts-raidIncoming')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Incoming Raids</strong></span></label>
-                    <div class="event-options" id="opts-raidIncoming">
-                        <div class="event-options-inner">
-                            <div class="event-option-row">
-                                <span class="option-label">Accent</span>
-                                <input type="color" id="raidIncomingAccent" value="#E91916">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" class="opacity-slider" id="raidIncomingAccentOpacity" min="0" max="100" value="100">
-                                <span class="opacity-label" id="raidIncomingAccentOpacityLabel">100%</span>
-                            </div>
-                            <div class="event-option-row">
-                                <span class="option-label">Background</span>
-                                <input type="color" id="raidIncomingBg" value="#2a0000">
-                                <span class="opacity-tag">Opacity</span>
-                                <input type="range" class="opacity-slider" id="raidIncomingBgOpacity" min="0" max="100" value="80">
-                                <span class="opacity-label" id="raidIncomingBgOpacityLabel">80%</span>
-                            </div>
-                            <div class="text-override-row">
-                                <span class="option-label">Label</span>
-                                <input type="text" id="raidIncomingLabel" placeholder="e.g. is raiding with">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+    <!-- Tab bar -->
+    <div class="tab-bar">
+        <button class="tab-btn" id="tab-btn-general" onclick="switchTab('general')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            General
+        </button>
+        <button class="tab-btn locked" id="tab-btn-events" onclick="switchTab('events')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            Events
+        </button>
+        <button class="tab-btn locked" id="tab-btn-appearance" onclick="switchTab('appearance')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+            Appearance
+        </button>
+        <button class="tab-btn locked" id="tab-btn-generate" onclick="switchTab('generate')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Generate
+        </button>
     </div>
 
-    <!-- Row 3: Badges & Cosmetics + Generate -->
-    <div class="row-split">
+    <!-- ── Tab: General ──────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-general">
 
-        <!-- Badges & Cosmetics -->
-        <div class="accordion" id="acc-badges">
-            <div class="accordion-header" onclick="toggleAccordion('acc-badges')">
-                <div class="accordion-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-                    Badges &amp; Cosmetics
-                </div>
-                <svg class="accordion-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="accordion-body">
-                <span class="field-label">Badges</span>
-                <label class="checkbox-wrapper"><input type="checkbox" id="disableAllBadges" onchange="onDisableAllBadgesChange()"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Disable ALL badges</span></label>
-                <label class="checkbox-wrapper"><input type="checkbox" id="roleOnlyBadges"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Role badges only (Broadcaster, Mod, VIP)</span></label>
-                <label class="checkbox-wrapper"><input type="checkbox" id="showExternalCosmetics" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show 7TV / FFZ / Chatterino badges &amp; paints</span></label>
+        <div class="tab-section">
+            <div class="tab-section-title">Channel</div>
+            <span class="field-label">Channel Name</span>
+            <input type="text" id="channel" placeholder="e.g. xQc">
+        </div>
 
-                <hr class="divider">
+        <div class="tab-section">
+            <div class="tab-section-title">Text Size</div>
+            <span class="field-label">Name / Badge size (px)</span>
+            <input type="number" id="nameFontSize" value="16" style="width:90px;">
+            <span class="field-label">Message size (px)</span>
+            <input type="number" id="messageFontSize" value="16" style="width:90px;">
+        </div>
 
-                <span class="field-label">Emote Notifications</span>
-                <label class="checkbox-wrapper"><input type="checkbox" id="toastEmotes" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show notification when 7TV emotes get added/removed</span></label>
+        <div class="tab-section">
+            <div class="tab-section-title">Text Shadow</div>
+            <div class="event-option-row">
+                <input type="color" id="shadowColor" value="#000000">
+                <span class="opacity-tag">Opacity</span>
+                <input type="range" id="shadowOpacity" min="0" max="100" value="100" class="opacity-slider">
+                <span class="opacity-label" id="shadowOpacityLabel">100%</span>
             </div>
         </div>
 
-        <!-- Generate -->
-        <div class="accordion" id="acc-generate">
-            <div class="accordion-header" onclick="toggleAccordion('acc-generate')">
-                <div class="accordion-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    Generate OBS Link
-                </div>
-                <svg class="accordion-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-            <div class="accordion-body">
-                <button class="btn btn-generate" onclick="generateLink()">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    Generate Link
-                </button>
-                <div class="output-label">OBS Browser Source URL</div>
-                <div class="output-box" id="resultLink">Click "Generate Link" to create your OBS URL.</div>
-                <button class="btn btn-copy" id="copyBtn" onclick="copyLink()" style="display:none;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    <span id="copyBtnLabel">Copy Link</span>
-                </button>
+        <div class="tab-section">
+            <div class="tab-section-title">Spacing</div>
+            <span class="field-label">Space between messages (px)</span>
+            <input type="number" id="messageGap" placeholder="Default: 8" style="width:120px;">
+            <span class="field-label">Line height (for long messages)</span>
+            <input type="number" id="lineHeight" placeholder="Default: 1.8" step="0.1" style="width:120px;">
+        </div>
 
-                <hr class="divider">
+        <div class="tab-section">
+            <div class="tab-section-title">Message Behavior</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="showAnnouncements" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show /announce messages</span></label>
+            <label class="checkbox-wrapper"><input type="checkbox" id="showReplies" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show reply context above messages</span></label>
+            <span class="field-label">/me messages</span>
+            <select id="meStyle">
+                <option value="colored" selected>Colored (user's name color)</option>
+                <option value="italic">Italic</option>
+                <option value="none">None</option>
+            </select>
+        </div>
 
-                <div class="btn-row">
-                    <button class="btn btn-export" onclick="exportConfig()" style="flex:1;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Export Config
-                    </button>
-                    <button class="btn btn-import" onclick="importConfig()" style="flex:1;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/></svg>
-                        Import Config
-                    </button>
-                </div>
-                <div class="output-label" id="exportLabel" style="display:none;">Config String</div>
-                <div class="output-box" id="exportBox" style="display:none;"></div>
-                <button class="btn btn-copy" id="copyExportBtn" onclick="copyExport()" style="display:none;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    <span id="copyExportBtnLabel">Copy Config String</span>
-                </button>
-            </div>
+        <div class="tab-section">
+            <div class="tab-section-title">Filtering</div>
+            <span class="field-label">Excluded users</span>
+            <input type="text" id="excludedUsers" placeholder="e.g. Nightbot, StreamElements">
+            <span class="hint">Comma-separated. These users will not appear in the overlay.</span>
+            <span class="field-label">Exclude messages starting with</span>
+            <input type="text" id="excludedPrefixes" placeholder="e.g. !, ?, /">
+            <span class="hint">Comma-separated. Messages beginning with any of these are hidden.</span>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Custom Font</div>
+            <span class="field-label">CSS Font URL</span>
+            <input type="text" id="fontUrl" placeholder="e.g. https://fonts.cdnfonts.com/css/motley-forces">
+            <span class="hint">Paste a CSS font link — the font name will be extracted automatically.</span>
         </div>
 
     </div>
+
+    <!-- ── Tab: Events ───────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-events">
+
+        <div class="tab-section">
+            <div class="tab-section-title">Subscriptions</div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showResubs" onchange="toggleEventOptions('showResubs','opts-resubs')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Subs &amp; Resubs</strong></span></label>
+                <div class="event-options" id="opts-resubs">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="resubAccent" value="#9146FF">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="resubAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="resubAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="resubBg" value="#1a0a2e">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="resubBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="resubBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="resubLabel" placeholder="e.g. subscribed">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showGifts" onchange="toggleEventOptions('showGifts','opts-gifts')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Gifted Subs</strong></span></label>
+                <div class="event-options" id="opts-gifts">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="giftAccent" value="#9146FF">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="giftAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="giftAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="giftBg" value="#1a0a2e">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="giftBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="giftBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="giftLabel" placeholder="e.g. gifted">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Bits &amp; Points</div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showBits" onchange="toggleEventOptions('showBits','opts-bits')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Bits / Cheers</strong></span></label>
+                <div class="event-options" id="opts-bits">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="bitsAccent" value="#9146FF">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="bitsAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="bitsAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="bitsBg" value="#1a0a2e">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="bitsBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="bitsBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="bitsLabel" placeholder="e.g. cheered">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showRedeems" onchange="toggleEventOptions('showRedeems','opts-redeems')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Channel Point Redemptions</strong></span></label>
+                <div class="event-warning">
+                    <span>⚠️</span>
+                    <span>Reward names only resolve in your own channel due to a Twitch API restriction.</span>
+                </div>
+                <div class="event-options" id="opts-redeems">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="redeemAccent" value="#FFB800">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="redeemAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="redeemAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="redeemBg" value="#2a1f00">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="redeemBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="redeemBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="redeemLabel" placeholder="e.g. redeemed">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Alerts</div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showHighlights" onchange="toggleEventOptions('showHighlights','opts-highlights')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Highlighted Messages</strong></span></label>
+                <div class="event-options" id="opts-highlights">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="highlightAccent" value="#FF00FF">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="highlightAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="highlightAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="highlightBg" value="#2a002a">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="highlightBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="highlightBgOpacityLabel">80%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showStreaks" onchange="toggleEventOptions('showStreaks','opts-streaks')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Watch Streaks</strong></span></label>
+                <div class="event-options" id="opts-streaks">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="streakAccent" value="#FF6400">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="streakAccentOpacity" min="0" max="100" value="100" class="opacity-slider">
+                            <span class="opacity-label" id="streakAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="streakBg" value="#2a0f00">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" id="streakBgOpacity" min="0" max="100" value="80" class="opacity-slider">
+                            <span class="opacity-label" id="streakBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="streakLabel" placeholder="e.g. is on a">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-type-block">
+                <label class="checkbox-wrapper"><input type="checkbox" id="showRaidIncoming" onchange="toggleEventOptions('showRaidIncoming','opts-raidIncoming')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Incoming Raids</strong></span></label>
+                <div class="event-options" id="opts-raidIncoming">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="raidIncomingAccent" value="#E91916">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" class="opacity-slider" id="raidIncomingAccentOpacity" min="0" max="100" value="100">
+                            <span class="opacity-label" id="raidIncomingAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="raidIncomingBg" value="#2a0000">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" class="opacity-slider" id="raidIncomingBgOpacity" min="0" max="100" value="80">
+                            <span class="opacity-label" id="raidIncomingBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="raidIncomingLabel" placeholder="e.g. is raiding with">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Tab: Appearance ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-appearance">
+
+        <div class="tab-section">
+            <div class="tab-section-title">Badges</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="disableAllBadges" onchange="onDisableAllBadgesChange()"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Disable ALL badges</span></label>
+            <label class="checkbox-wrapper"><input type="checkbox" id="roleOnlyBadges"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Role badges only (Broadcaster, Mod, VIP)</span></label>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Third-Party Cosmetics</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="showExternalCosmetics" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show 7TV / FFZ / Chatterino badges &amp; paints</span></label>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Emote Notifications</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="toastEmotes" checked><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label">Show notification when 7TV emotes get added/removed</span></label>
+        </div>
+
+    </div>
+
+    <!-- ── Tab: Generate ────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-generate">
+
+        <div class="tab-section">
+            <div class="tab-section-title">OBS Browser Source URL</div>
+            <button class="btn btn-generate" onclick="generateLink()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Generate Link
+            </button>
+            <div class="output-label">Your URL</div>
+            <div class="output-box" id="resultLink">Click "Generate Link" to create your OBS URL.</div>
+            <button class="btn btn-copy" id="copyBtn" onclick="copyLink()" style="display:none;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="copyBtnLabel">Copy Link</span>
+            </button>
+        </div>
+
+        <div class="tab-section">
+            <div class="tab-section-title">Export / Import Config</div>
+            <div class="btn-row">
+                <button class="btn btn-export" onclick="exportConfig()" style="flex:1;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Export Config
+                </button>
+                <button class="btn btn-import" onclick="importConfig()" style="flex:1;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/></svg>
+                    Import Config
+                </button>
+            </div>
+            <div class="output-label" id="exportLabel" style="display:none;">Config String</div>
+            <div class="output-box" id="exportBox" style="display:none;"></div>
+            <button class="btn btn-copy" id="copyExportBtn" onclick="copyExport()" style="display:none;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="copyExportBtnLabel">Copy Config String</span>
+            </button>
+        </div>
+
+    </div>
+
 </div>
 
 <script src="config/auth.js"></script>
