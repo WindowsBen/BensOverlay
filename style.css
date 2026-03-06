@@ -32,12 +32,14 @@ body {
 .chat-message .badges,
 .chat-message .username {
     font-size: var(--name-font-size);
-    vertical-align: baseline;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .chat-message .message-text {
     font-size: var(--message-font-size);
-    vertical-align: baseline;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .username {
