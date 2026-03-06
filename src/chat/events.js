@@ -198,7 +198,6 @@ function handleWatchStreak(tags, message) {
 // ── Raids ──────────────────────────────────────────────────────────────────────
 
 const ICON_RAID_IN  = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 7v2h2v9h4v-5h4v5h4V9h2V7L10 2z"/></svg>`;
-const ICON_RAID_OUT = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 3h14v2H3zm0 4h9l5 3-5 3H3V7zm0 8h14v2H3z"/></svg>`;
 
 // Incoming raid — someone is raiding this channel.
 // tmi.js fires a dedicated 'raided' event for this, no raw_message needed.
@@ -207,16 +206,4 @@ function handleRaidIncoming(channel, username, viewers) {
     const verb   = CONFIG.raidIncomingLabel || 'is raiding with';
     const detail = `${verb} ${viewers} viewer${viewers === 1 ? '' : 's'}!`;
     displayEventMessage(ICON_RAID_IN, username, detail, '', false, 'raid-incoming-message');
-}
-
-// Outgoing raid — broadcaster used /raid on their own channel.
-// Arrives as USERNOTICE with msg-id="raid" intercepted in raw_message.
-// msg-param-displayName = target channel, msg-param-viewerCount = viewers sent.
-function handleRaidOutgoing(tags) {
-    if (!CONFIG.showRaidOutgoing) return;
-    const target  = tags['msg-param-displayName'] || tags['msg-param-login'] || 'a channel';
-    const viewers = tags['msg-param-viewerCount']  || '?';
-    const verb    = CONFIG.raidOutgoingLabel || 'Raiding';
-    const detail  = `${verb} ${target} with ${viewers} viewer${viewers === 1 ? '' : 's'}!`;
-    displayEventMessage(ICON_RAID_OUT, 'Raid started', detail, '', false, 'raid-outgoing-message');
 }
