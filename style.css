@@ -26,21 +26,27 @@ body {
     text-shadow: 1px 1px 2px var(--chat-shadow-color), -1px -1px 2px var(--chat-shadow-color);
     margin-bottom: var(--message-gap, 8px);
     word-wrap: break-word;
-    line-height: var(--message-line-height, 1.8);
-    font-size: var(--name-font-size); /* drives line box height and badge 1em sizing */
+    line-height: 0; /* collapse the strut so vertical-align: middle aligns children to each other */
 }
 
 .chat-message .badges {
-    display: inline;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
 }
 
 .chat-message .username {
     font-size: var(--name-font-size);
+    display: inline-block;
+    vertical-align: middle;
+    line-height: normal;
 }
 
 .chat-message .message-text {
     font-size: var(--message-font-size);
+    display: inline-block;
     vertical-align: middle;
+    line-height: var(--message-line-height, 1.8); /* controls wrapping of long messages */
 }
 
 .username {
