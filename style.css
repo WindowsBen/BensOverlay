@@ -36,15 +36,17 @@ body {
 .chat-message .badges,
 .chat-message .username {
     font-size: var(--name-font-size);
-    flex-shrink: 0; /* never compress — badges and name always stay on one line */
+    flex-shrink: 0;
+    line-height: 1;
 }
 
 /* Message text fills remaining space and wraps within it */
 .chat-message .message-text {
     font-size: var(--message-font-size);
     flex: 1;
-    min-width: 0;     /* allows text to wrap inside the flex item */
+    min-width: 0;
     word-break: break-word;
+    line-height: 1;
 }
 
 .username {
