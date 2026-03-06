@@ -323,11 +323,3 @@ body {
 }
 .raid-incoming-message .event-icon  { color: var(--raid-incoming-accent); }
 .raid-incoming-message .event-label { color: var(--raid-incoming-accent); filter: brightness(1.4); }
-
-
-.raid-outgoing-message {
-    background: var(--raid-outgoing-bg);
-    border-left-color: var(--raid-outgoing-accent);
-}
-.raid-outgoing-message .event-icon  { color: var(--raid-outgoing-accent); }
-.raid-outgoing-message .event-label { color: var(--raid-outgoing-accent); filter: brightness(1.4); }

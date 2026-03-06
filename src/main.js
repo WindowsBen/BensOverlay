@@ -7,22 +7,10 @@ if (!CONFIG.channelName) {
     throw new Error('No channel specified');
 }
 
-// Build the tmi.js client. If we have a token, connect as the authenticated
-// user so Twitch sends privileged IRC events (outgoing raids, etc.) that are
-// only delivered to broadcaster/mod connections.
-const tmiOptions = {
+const client = new tmi.Client({
     connection: { secure: true, reconnect: true },
     channels: [CONFIG.channelName],
-};
-
-if (CONFIG.token && CONFIG.channelName) {
-    tmiOptions.identity = {
-        username: CONFIG.channelName, // broadcaster's own channel name
-        password: `oauth:${CONFIG.token}`,
-    };
-}
-
-const client = new tmi.Client(tmiOptions);
+});
 
 client.connect();
 
@@ -82,10 +70,6 @@ client.on('raw_message', (messageCloned, message) => {
         handleWatchStreak(tags, text);
     } else if (msgId === 'announcement') {
         handleAnnouncement(tags, text);
-    } else if (msgId === 'raid') {
-        // Only received by authenticated broadcaster/mod connections.
-        // msg-param-displayName = channel being raided, msg-param-viewerCount = viewers sent.
-        handleRaidOutgoing(tags);
     }
 });
 
