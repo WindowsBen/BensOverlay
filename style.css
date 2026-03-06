@@ -27,6 +27,9 @@ body {
     margin-bottom: var(--message-gap, 8px);
     word-wrap: break-word;
     line-height: var(--message-line-height, 1.8);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .chat-message .badges,
@@ -36,6 +39,8 @@ body {
 
 .chat-message .message-text {
     font-size: var(--message-font-size);
+    flex: 1; /* fills remaining space so long messages wrap correctly */
+    min-width: 0;
 }
 
 .username {
@@ -242,7 +247,7 @@ body {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 100%;
+    width: 100%; /* full row above the message */
 }
 
 .reply-icon {
@@ -265,7 +270,11 @@ body {
 }
 
 .reply-message-row {
-    display: inline;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%; /* force it onto its own line below the reply-context */
+    min-width: 0;
 }
 
 .reply-parent-body .chat-emote {
