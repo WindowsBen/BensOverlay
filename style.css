@@ -40,6 +40,11 @@ body {
     line-height: 1;
 }
 
+.chat-message .badges {
+    display: inline-flex;
+    align-items: center;
+}
+
 /* Message text fills remaining space and wraps within it */
 .chat-message .message-text {
     font-size: var(--message-font-size);
@@ -330,3 +335,9 @@ body {
 .announce-green   { --announce-color: #3ec95c; }
 .announce-orange  { --announce-color: #e87d2a; }
 .announce-purple  { --announce-color: #9b45e4; }
+
+/* ─── DEBUG: element box outlines — remove when done ───────────────────────── */
+.chat-message .badges      { outline: 2px solid red; }
+.chat-message .username    { outline: 2px solid blue; }
+.chat-message .message-text { outline: 2px solid green; }
+.chat-badge                 { outline: 2px solid orange; }
