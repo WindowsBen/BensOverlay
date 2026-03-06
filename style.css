@@ -343,10 +343,18 @@ body {
 }
 
 /* ─── Message fade out ───────────────────────────────────────────────────── */
+@keyframes message-fade-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
 .chat-message.fading-out {
-    transition: opacity var(--fade-duration, 1s) ease-out,
-                transform var(--fade-duration, 1s) ease-out;
-    opacity: 0 !important;
-    transform: translateY(-8px); /* subtle upward drift as it disappears */
+    animation: message-fade-out var(--fade-duration, 1000ms) ease-out forwards;
     pointer-events: none;
 }

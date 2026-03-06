@@ -100,8 +100,7 @@ function displayMessage(tags, message, isAction = false) {
     if (CONFIG.messageLifetime > 0) {
         setTimeout(() => {
             messageElement.classList.add('fading-out');
-            const fadeDuration = parseFloat(getComputedStyle(document.documentElement)
-                .getPropertyValue('--fade-duration')) || 1000;
+            const fadeDuration = parseInt(CONFIG.fadeDuration) || 1000;
             setTimeout(() => messageElement.remove(), fadeDuration);
         }, CONFIG.messageLifetime);
     }

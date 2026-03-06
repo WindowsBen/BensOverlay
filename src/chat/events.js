@@ -49,8 +49,7 @@ function displayEventMessage(iconSvg, label, detail, extraMessage = '', messageI
     if (CONFIG.messageLifetime > 0) {
         setTimeout(() => {
             el.classList.add('fading-out');
-            const fadeDuration = parseFloat(getComputedStyle(document.documentElement)
-                .getPropertyValue('--fade-duration')) || 1000;
+            const fadeDuration = parseInt(CONFIG.fadeDuration) || 1000;
             setTimeout(() => el.remove(), fadeDuration);
         }, CONFIG.messageLifetime);
     }
@@ -177,8 +176,7 @@ function handleAnnouncement(tags, message) {
     if (CONFIG.messageLifetime > 0) {
         setTimeout(() => {
             el.classList.add('fading-out');
-            const fadeDuration = parseFloat(getComputedStyle(document.documentElement)
-                .getPropertyValue('--fade-duration')) || 1000;
+            const fadeDuration = parseInt(CONFIG.fadeDuration) || 1000;
             setTimeout(() => el.remove(), fadeDuration);
         }, CONFIG.messageLifetime);
     }
