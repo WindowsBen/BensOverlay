@@ -27,19 +27,24 @@ body {
     margin-bottom: var(--message-gap, 8px);
     word-wrap: break-word;
     line-height: var(--message-line-height, 1.8);
+    display: flex;
+    flex-wrap: wrap;    /* allows reply-context to sit above the message row */
+    align-items: center;
 }
 
+/* Name and badges share the name font size */
 .chat-message .badges,
 .chat-message .username {
     font-size: var(--name-font-size);
-    display: inline-block;
-    vertical-align: middle;
+    flex-shrink: 0; /* never compress — badges and name always stay on one line */
 }
 
+/* Message text fills remaining space and wraps within it */
 .chat-message .message-text {
     font-size: var(--message-font-size);
-    display: inline-block;
-    vertical-align: middle;
+    flex: 1;
+    min-width: 0;     /* allows text to wrap inside the flex item */
+    word-break: break-word;
 }
 
 .username {
@@ -246,7 +251,8 @@ body {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    width: 100%; /* full row above the message */
+    width: 100%; /* force onto its own row above the message */
+    flex-shrink: 0;
 }
 
 .reply-icon {
@@ -269,7 +275,16 @@ body {
 }
 
 .reply-message-row {
-    display: block;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.reply-message-row .message-text {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
 }
 
 .reply-parent-body .chat-emote {
