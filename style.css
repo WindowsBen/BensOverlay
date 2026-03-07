@@ -27,6 +27,7 @@ body {
     margin-bottom: var(--message-gap, 8px);
     word-wrap: break-word;
     line-height: var(--message-line-height, 1.8);
+    font-size: var(--message-font-size);
 }
 
 .chat-message .badges {
@@ -137,7 +138,6 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    font-size: var(--message-font-size);
 }
 
 .sub-message {
@@ -297,6 +297,7 @@ body {
     padding: 6px 10px 8px;
     background: rgba(0, 0, 0, 0.25);
     display: block; /* full-width block, not flex like event messages */
+    font-size: var(--message-font-size);
 }
 
 /* "Announcement" label above the message */
@@ -304,7 +305,7 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 0.75em;
+    font-size: calc(var(--name-font-size) * 0.75);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
