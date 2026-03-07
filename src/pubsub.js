@@ -42,6 +42,7 @@ function connectPubSub(channelId) {
                     `raid.${channelId}`,
                     `polls.${channelId}`,
                     `predictions-channel-v1.${channelId}`,
+                    `hype-train-events-v1.${channelId}`,
                 ],
                 auth_token: CONFIG.token
             }
@@ -118,6 +119,10 @@ function reconnectPubSub() {
 }
 
 function handlePubSubMessage(data) {
+    if (data?.topic?.startsWith('hype-train-events-v1.')) {
+        handlePubSubHypeTrain(data);
+        return;
+    }
     if (data?.topic?.startsWith('predictions-channel-v1.')) {
         handlePubSubPrediction(data);
         return;

@@ -49,6 +49,10 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Predictions
         </button>
+        <button class="tab-btn locked" id="tab-btn-hypetrain" onclick="switchTab('hypetrain')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+            Hype Train
+        </button>
         <button class="tab-btn locked" id="tab-btn-appearance" onclick="switchTab('appearance')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
             Appearance
@@ -474,6 +478,43 @@
                     <div class="text-override-row">
                         <span class="option-label">Linger (ms)</span>
                         <input type="number" id="predictionLingerMs" value="8000" min="1000" max="30000" step="500" style="width:80px">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Tab: Hype Train ───────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-hypetrain">
+        <div class="tab-section">
+            <div class="tab-section-title">Hype Train Widget</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="showHypeTrain" onchange="toggleEventOptions('showHypeTrain','opts-hypetrain')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Show hype train widget</strong></span></label>
+            <div class="event-options" id="opts-hypetrain">
+                <div class="event-options-inner">
+                    <div class="event-option-row">
+                        <span class="option-label">Accent</span>
+                        <input type="color" id="htAccent" value="#FF6B35">
+                        <span class="opacity-tag">Opacity</span>
+                        <input type="range" class="opacity-slider" id="htAccentOpacity" min="0" max="100" value="100">
+                        <span class="opacity-label" id="htAccentOpacityLabel">100%</span>
+                    </div>
+                    <div class="event-option-row">
+                        <span class="option-label">Background</span>
+                        <input type="color" id="htBg" value="#1a0a00">
+                        <span class="opacity-tag">Opacity</span>
+                        <input type="range" class="opacity-slider" id="htBgOpacity" min="0" max="100" value="93">
+                        <span class="opacity-label" id="htBgOpacityLabel">93%</span>
+                    </div>
+                    <div class="event-option-row">
+                        <span class="option-label">Bar colour</span>
+                        <input type="color" id="htBar" value="#FF6B35">
+                        <span class="opacity-tag">Opacity</span>
+                        <input type="range" class="opacity-slider" id="htBarOpacity" min="0" max="100" value="100">
+                        <span class="opacity-label" id="htBarOpacityLabel">100%</span>
+                    </div>
+                    <div class="text-override-row">
+                        <span class="option-label">Linger (ms)</span>
+                        <input type="number" id="hypeTrainLingerMs" value="6000" min="1000" max="30000" step="500" style="width:80px">
                     </div>
                 </div>
             </div>

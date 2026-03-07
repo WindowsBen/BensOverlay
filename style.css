@@ -942,3 +942,170 @@ body {
 .pred-result-label { color: rgba(255,255,255,0.4); }
 .pred-result-name  { color: #FFD700; font-weight: 700; }
 .pred-result-mult  { color: rgba(255,215,0,0.6); margin-left: auto; }
+
+/* ─── Hype Train Widget ──────────────────────────────────────────────────────── */
+
+#hype-train-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 8500;
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+}
+
+.ht-widget {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--ht-bg, #1a0a00EE);
+    border: 1px solid var(--ht-accent, #FF6B35);
+    border-radius: 8px;
+    padding: 8px 14px;
+    min-width: 480px;
+    max-width: 700px;
+    box-shadow:
+        0 0 20px rgba(255, 107, 53, 0.3),
+        0 4px 24px rgba(0,0,0,0.7);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.35s ease-out, transform 0.35s cubic-bezier(0.2, 0, 0.2, 1.3);
+}
+
+.ht-widget.ht-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ht-widget.ht-fading {
+    opacity: 0;
+    transform: translateY(-16px);
+    transition: opacity 0.5s ease-in, transform 0.5s ease-in;
+}
+
+/* Level-up flash */
+@keyframes ht-levelup-flash {
+    0%   { box-shadow: 0 0 20px rgba(255,107,53,0.3), 0 4px 24px rgba(0,0,0,0.7); }
+    25%  { box-shadow: 0 0 60px rgba(255,215,0,0.8),  0 4px 32px rgba(0,0,0,0.8); }
+    100% { box-shadow: 0 0 20px rgba(255,107,53,0.3), 0 4px 24px rgba(0,0,0,0.7); }
+}
+
+@keyframes ht-levelup-bounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.4); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+.ht-widget.ht-levelup {
+    animation: ht-levelup-flash 0.8s ease-out forwards;
+}
+
+.ht-widget.ht-levelup .ht-level {
+    animation: ht-levelup-bounce 0.5s cubic-bezier(0.2, 0, 0.2, 1.5) forwards;
+}
+
+/* Ended state — dim the bar */
+.ht-widget.ht-ended .ht-bar-fill {
+    background: rgba(255,255,255,0.3);
+    transition: background 0.4s ease;
+}
+
+/* ── Left label ──────────────────────────────────────────────────────── */
+.ht-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ht-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--ht-accent, #FF6B35);
+    flex-shrink: 0;
+}
+
+.ht-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ht-accent, #FF6B35);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ── Level badge ─────────────────────────────────────────────────────── */
+.ht-level {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--ht-accent, #FF6B35);
+    border-radius: 5px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    line-height: 1;
+    transform-origin: center;
+}
+
+.ht-level-label {
+    font-size: 7px;
+    font-weight: 900;
+    color: rgba(0,0,0,0.6);
+    letter-spacing: 1px;
+}
+
+.ht-level-num {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+}
+
+/* ── Progress bar section ────────────────────────────────────────────── */
+.ht-bar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.ht-bar-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.ht-bar-fill {
+    height: 100%;
+    background: var(--ht-bar-color, #FF6B35);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px var(--ht-bar-color, #FF6B35);
+}
+
+.ht-pts {
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ── Timer ───────────────────────────────────────────────────────────── */
+.ht-timer {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 32px;
+    text-align: right;
+}

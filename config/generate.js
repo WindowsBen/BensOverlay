@@ -108,6 +108,11 @@ function generateLink() {
         ch('showPredictions') && `predBg=${c8('predBg','predBgOpacity')}`,
         ch('showPredictions') && `predWinnerGlow=${c8('predWinnerGlow','predWinnerGlowOpacity')}`,
         ch('showPredictions') && v('predictionLingerMs') && `predictionLingerMs=${v('predictionLingerMs')}`,
+        `showHypeTrain=${ch('showHypeTrain') ? '1':'0'}`,
+        ch('showHypeTrain') && `htAccent=${c8('htAccent','htAccentOpacity')}`,
+        ch('showHypeTrain') && `htBg=${c8('htBg','htBgOpacity')}`,
+        ch('showHypeTrain') && `htBar=${c8('htBar','htBarOpacity')}`,
+        ch('showHypeTrain') && v('hypeTrainLingerMs') && `hypeTrainLingerMs=${v('hypeTrainLingerMs')}`,
     ].filter(Boolean).join('&');
 
     const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
@@ -212,6 +217,11 @@ const CONFIG_FIELDS = [
     { id: 'predBg',                 type: 'text' }, { id: 'predBgOpacity',          type: 'text' },
     { id: 'predWinnerGlow',         type: 'text' }, { id: 'predWinnerGlowOpacity',  type: 'text' },
     { id: 'predictionLingerMs',     type: 'text' },
+    { id: 'showHypeTrain',          type: 'check' },
+    { id: 'htAccent',               type: 'text' }, { id: 'htAccentOpacity',  type: 'text' },
+    { id: 'htBg',                   type: 'text' }, { id: 'htBgOpacity',      type: 'text' },
+    { id: 'htBar',                  type: 'text' }, { id: 'htBarOpacity',     type: 'text' },
+    { id: 'hypeTrainLingerMs',      type: 'text' },
     // Badges & Cosmetics
     { id: 'disableAllBadges',     type: 'check' },
     { id: 'roleOnlyBadges',       type: 'check' },
