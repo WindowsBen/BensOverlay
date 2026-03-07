@@ -45,6 +45,8 @@ const CONFIG = {
     // Raid toggles — default on
     showRaidIncoming:    params.get('showRaidIncoming')    === '1',
     raidIncomingLabel:   params.get('raidIncomingLabel')   || '',
+    showRaidOutgoing:    params.get('showRaidOutgoing')    === '1',
+    raidOutgoingLabel:   params.get('raidOutgoingLabel')   || '',
 
     // Event message toggles — all default off (must be explicitly set to '1')
     showResubs:     params.get('showResubs')     === '1',
@@ -122,6 +124,8 @@ const cssVars = {
     '--streak-bg':        hex8ToCss(params.get('streakBg'),        '#2a0f00CC'),
     '--raid-incoming-accent': hex8ToCss(params.get('raidIncomingAccent'), '#E91916FF'),
     '--raid-incoming-bg':     hex8ToCss(params.get('raidIncomingBg'),     '#2a0000CC'),
+    '--raid-outgoing-accent': hex8ToCss(params.get('raidOutgoingAccent'), '#FF8C00FF'),
+    '--raid-outgoing-bg':     hex8ToCss(params.get('raidOutgoingBg'),     '#2a1800CC'),
 };
 for (const [key, val] of Object.entries(cssVars)) {
     document.documentElement.style.setProperty(key, val);

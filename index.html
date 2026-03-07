@@ -326,8 +326,31 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
+                <label class="checkbox-wrapper"><input type="checkbox" id="showRaidOutgoing" onchange="toggleEventOptions('showRaidOutgoing','opts-raidOutgoing')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Outgoing Raids</strong></span></label>
+                <div class="event-options" id="opts-raidOutgoing">
+                    <div class="event-options-inner">
+                        <div class="event-option-row">
+                            <span class="option-label">Accent</span>
+                            <input type="color" id="raidOutgoingAccent" value="#FF8C00">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" class="opacity-slider" id="raidOutgoingAccentOpacity" min="0" max="100" value="100">
+                            <span class="opacity-label" id="raidOutgoingAccentOpacityLabel">100%</span>
+                        </div>
+                        <div class="event-option-row">
+                            <span class="option-label">Background</span>
+                            <input type="color" id="raidOutgoingBg" value="#2a1800">
+                            <span class="opacity-tag">Opacity</span>
+                            <input type="range" class="opacity-slider" id="raidOutgoingBgOpacity" min="0" max="100" value="80">
+                            <span class="opacity-label" id="raidOutgoingBgOpacityLabel">80%</span>
+                        </div>
+                        <div class="text-override-row">
+                            <span class="option-label">Label</span>
+                            <input type="text" id="raidOutgoingLabel" placeholder="e.g. raiding">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -86,6 +86,10 @@ function generateLink() {
         ch('showRaidIncoming') && `raidIncomingAccent=${c8('raidIncomingAccent','raidIncomingAccentOpacity')}`,
         ch('showRaidIncoming') && `raidIncomingBg=${c8('raidIncomingBg','raidIncomingBgOpacity')}`,
         ch('showRaidIncoming') && v('raidIncomingLabel').trim() && `raidIncomingLabel=${encodeURIComponent(v('raidIncomingLabel').trim())}`,
+        `showRaidOutgoing=${ch('showRaidOutgoing') ? '1':'0'}`,
+        ch('showRaidOutgoing') && `raidOutgoingAccent=${c8('raidOutgoingAccent','raidOutgoingAccentOpacity')}`,
+        ch('showRaidOutgoing') && `raidOutgoingBg=${c8('raidOutgoingBg','raidOutgoingBgOpacity')}`,
+        ch('showRaidOutgoing') && v('raidOutgoingLabel').trim() && `raidOutgoingLabel=${encodeURIComponent(v('raidOutgoingLabel').trim())}`,
     ].filter(Boolean).join('&');
 
     const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
@@ -170,6 +174,10 @@ const CONFIG_FIELDS = [
     { id: 'raidIncomingAccent',     type: 'text' }, { id: 'raidIncomingAccentOpacity', type: 'text' },
     { id: 'raidIncomingBg',         type: 'text' }, { id: 'raidIncomingBgOpacity',     type: 'text' },
     { id: 'raidIncomingLabel',      type: 'text' },
+    { id: 'showRaidOutgoing',       type: 'check' },
+    { id: 'raidOutgoingAccent',     type: 'text' }, { id: 'raidOutgoingAccentOpacity', type: 'text' },
+    { id: 'raidOutgoingBg',         type: 'text' }, { id: 'raidOutgoingBgOpacity',     type: 'text' },
+    { id: 'raidOutgoingLabel',      type: 'text' },
     // Badges & Cosmetics
     { id: 'disableAllBadges',     type: 'check' },
     { id: 'roleOnlyBadges',       type: 'check' },

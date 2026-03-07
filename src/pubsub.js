@@ -9,7 +9,7 @@
 //
 // Flow:
 //   1. Connect to wss://pubsub-edge.twitch.tv
-//   2. LISTEN on channel-points-channel-v1.<broadcasterId>
+//   2. LISTEN on channel-points-channel-v1.<broadcasterId> and raid.<broadcasterId>
 //   3. Send a PING every 4 minutes to keep the connection alive
 //   4. On PONG timeout or error, reconnect with exponential backoff
 //   5. On redemption message, call handlePubSubRedemption()
@@ -36,7 +36,10 @@ function connectPubSub(channelId) {
             type: 'LISTEN',
             nonce: 'cp_' + Date.now(),
             data: {
-                topics: [`channel-points-channel-v1.${channelId}`],
+                topics: [
+                    `channel-points-channel-v1.${channelId}`,
+                    `raid.${channelId}`,
+                ],
                 auth_token: CONFIG.token
             }
         }));
@@ -115,6 +118,10 @@ function reconnectPubSub() {
 }
 
 function handlePubSubMessage(data) {
+    if (data?.topic?.startsWith('raid.')) {
+        handlePubSubRaid(data);
+        return;
+    }
     if (!data?.topic?.startsWith('channel-points-channel-v1.')) return;
 
     let inner;
@@ -134,4 +141,23 @@ function handlePubSubMessage(data) {
     if (rewardId) rewardNameCache[rewardId] = rewardName;
 
     handlePubSubRedemption(rewardId, rewardName, username, userInput);
+}
+// Handles outgoing raid events from PubSub topic raid.<channelId>.
+// Fires when the broadcaster initiates a raid to another channel.
+function handlePubSubRaid(data) {
+    if (!CONFIG.showRaidOutgoing) return;
+
+    let inner;
+    try { inner = JSON.parse(data.message); } catch { return; }
+
+    // PubSub fires multiple raid events during the countdown — only show
+    // the initial 'raid_go_v2' which confirms the raid actually went through
+    if (inner.type !== 'raid_go_v2') return;
+
+    const raid        = inner.raid;
+    if (!raid) return;
+
+    const targetLogin = raid.target_display_name || raid.target_login || '';
+    const viewers     = Number(raid.viewer_count) || 0;
+    handleRaidOutgoing(targetLogin, viewers);
 }

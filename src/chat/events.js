@@ -225,3 +225,16 @@ function handleRaidIncoming(channel, username, viewers, tags) {
     const detail = `${verb} ${count} viewer${count === 1 ? '' : 's'}!`;
     displayEventMessage(ICON_RAID_IN, username, detail, '', false, 'raid-incoming-message');
 }
+
+// Outgoing raid — we are raiding someone else.
+// Fired via PubSub raid.<channelId> topic (raid_go_v2 event).
+// IRC never fires for outgoing raids so PubSub is the only way to catch this.
+const ICON_RAID_OUT = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2l8 5v2h-2v9h-4v-5H8v5H4V9H2V7l8-5zm4 13v-7.764l-4-2.5-4 2.5V15h2v-5h4v5h2z"/></svg>`;
+
+function handleRaidOutgoing(targetName, viewers) {
+    if (!CONFIG.showRaidOutgoing) return;
+    const count  = Number(viewers) || 0;
+    const verb   = CONFIG.raidOutgoingLabel || 'raiding';
+    const detail = `${verb} ${escapeHTML(targetName)} with ${count} viewer${count === 1 ? '' : 's'}!`;
+    displayEventMessage(ICON_RAID_OUT, 'Outgoing Raid', detail, '', false, 'raid-outgoing-message');
+}
