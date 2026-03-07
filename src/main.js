@@ -37,6 +37,10 @@ client.on('roomstate', (channel, state) => {
     ]).then(() => {
         console.log(`[Init] Ready. Emotes: ${Object.keys(emoteMap).length}, Badges: ${Object.keys(badgeMap).length}`);
     });
+
+    // Connect to PubSub for channel point redemptions (catches no-input redeems
+    // which never arrive over IRC)
+    connectPubSub(twitchUserId);
 });
 
 // Regular chat messages and channel point redemptions (which also arrive as PRIVMSG)
