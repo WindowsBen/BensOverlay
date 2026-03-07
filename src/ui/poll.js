@@ -15,14 +15,22 @@ let _pollFadeId = null;  // setTimeout ID for the post-completion fade
 
 // Entry point called from pubsub.js when a polls.<channelId> message arrives
 function handlePubSubPoll(data) {
-    if (!CONFIG.showPolls) return;
+    console.log('[Poll] raw message:', data?.message?.slice(0, 400));
+    if (!CONFIG.showPolls) {
+        console.log('[Poll] showPolls is off, skipping');
+        return;
+    }
 
     let inner;
-    try { inner = JSON.parse(data.message); } catch { return; }
+    try { inner = JSON.parse(data.message); } catch (e) { console.error('[Poll] parse error', e); return; }
 
+    console.log('[Poll] type:', inner.type, '| keys:', Object.keys(inner.data || {}));
     const type = inner.type;
     const poll = inner.data?.poll;
-    if (!poll) return;
+    if (!poll) {
+        console.log('[Poll] no poll object found in data, full inner:', JSON.stringify(inner).slice(0, 500));
+        return;
+    }
 
     if (type === 'POLL_CREATE') {
         _showPoll(poll, false);
