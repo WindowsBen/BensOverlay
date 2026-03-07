@@ -32,7 +32,7 @@ function connectPubSub(channelId) {
         _pubsubReconnectMs = 1000; // reset backoff on successful connect
 
         // Subscribe to channel point redemptions
-        const listenPayload = {
+        _pubsubWS.send(JSON.stringify({
             type: 'LISTEN',
             nonce: 'cp_' + Date.now(),
             data: {
@@ -42,8 +42,7 @@ function connectPubSub(channelId) {
                 ],
                 auth_token: CONFIG.token
             }
-        };
-        console.log('[PubSub] Sending LISTEN:', JSON.stringify(listenPayload).replace(CONFIG.token, 'TOKEN_REDACTED'));
+        }));
         _pubsubWS.send(JSON.stringify(listenPayload));
 
         schedulePubSubPing();
@@ -67,7 +66,8 @@ function connectPubSub(channelId) {
         }
 
         if (msg.type === 'RESPONSE') {
-            console.log('[PubSub] RESPONSE:', JSON.stringify(msg));
+            if (msg.error) console.warn('[PubSub] LISTEN error:', msg.error);
+            else console.log('[PubSub] Subscribed successfully');
             return;
         }
 
@@ -116,8 +116,6 @@ function reconnectPubSub() {
 }
 
 function handlePubSubMessage(data) {
-    // Log ALL incoming PubSub messages to diagnose missing events
-    console.log('[PubSub] message topic:', data?.topic, '| raw:', data?.message?.slice(0, 200));
     if (data?.topic?.startsWith('raid.')) {
         handlePubSubRaid(data);
         return;
@@ -142,24 +140,30 @@ function handlePubSubMessage(data) {
 
     handlePubSubRedemption(rewardId, rewardName, username, userInput);
 }
+// raid id → true, prevents duplicate messages if Twitch fires the event
+// multiple times during the countdown.
+const _shownRaids = {};
+
 // Handles outgoing raid events from PubSub topic raid.<channelId>.
 // Fires when the broadcaster initiates a raid to another channel.
 function handlePubSubRaid(data) {
-    console.log('[PubSub] raid message received, showRaidOutgoing:', CONFIG.showRaidOutgoing);
     if (!CONFIG.showRaidOutgoing) return;
 
     let inner;
     try { inner = JSON.parse(data.message); } catch { return; }
 
-    // PubSub fires multiple raid events during the countdown — only show
-    // the initial 'raid_go_v2' which confirms the raid actually went through
-    console.log('[PubSub] raid inner type:', inner.type, '| data:', JSON.stringify(inner).slice(0, 300));
-    if (inner.type !== 'raid_go_v2') return;
+    // Twitch fires raid_update_v2 during the countdown and raid_go_v2 when
+    // it actually sends — accept either but deduplicate by raid ID so we
+    // only show the message once per raid.
+    if (inner.type !== 'raid_update_v2' && inner.type !== 'raid_go_v2') return;
 
-    const raid        = inner.raid;
+    const raid = inner.raid;
     if (!raid) return;
 
-    const targetLogin = raid.target_display_name || raid.target_login || '';
-    const viewers     = Number(raid.viewer_count) || 0;
-    handleRaidOutgoing(targetLogin, viewers);
+    if (_shownRaids[raid.id]) return;
+    _shownRaids[raid.id] = true;
+
+    const targetName = raid.target_display_name || raid.target_login || '';
+    const viewers    = Number(raid.viewer_count) || 0;
+    handleRaidOutgoing(targetName, viewers);
 }
