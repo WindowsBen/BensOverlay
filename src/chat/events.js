@@ -217,9 +217,12 @@ const ICON_RAID_IN = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 
 
 // Incoming raid — someone is raiding this channel.
 // tmi.js fires a dedicated 'raided' event for this, no raw_message needed.
-function handleRaidIncoming(channel, username, viewers) {
+function handleRaidIncoming(channel, username, viewers, tags) {
     if (!CONFIG.showRaidIncoming) return;
-    const count  = parseInt(viewers) || 0;
+    // tmi.js passes viewers as a number; fall back to msg-param-viewerCount from tags
+    const raw   = viewers ?? tags?.['msg-param-viewerCount'];
+    const count = Number(raw);
+    console.log('[Raid] channel:', channel, 'username:', username, 'viewers arg:', viewers, 'raw:', raw, 'count:', count);
     const verb   = CONFIG.raidIncomingLabel || 'is raiding with';
     const detail = `${verb} ${count} viewer${count === 1 ? '' : 's'}!`;
     displayEventMessage(ICON_RAID_IN, username, detail, '', false, 'raid-incoming-message');
