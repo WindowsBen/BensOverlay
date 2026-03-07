@@ -36,9 +36,14 @@ function handlePubSubPrediction(data) {
     let inner;
     try { inner = JSON.parse(data.message); } catch { return; }
 
+    console.log('[Prediction] type:', inner.type, '| keys:', Object.keys(inner.data || {}));
+
     const type       = inner.type;
     const prediction = inner.data?.event;
-    if (!prediction) return;
+    if (!prediction) {
+        console.log('[Prediction] no event object, full data:', JSON.stringify(inner).slice(0, 400));
+        return;
+    }
 
     if (type === 'event-created') {
         _showPrediction(prediction, 'open');
