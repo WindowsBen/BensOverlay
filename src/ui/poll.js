@@ -11,26 +11,19 @@
 // visible the old widget is replaced immediately.
 
 let _pollEl     = null;  // current widget DOM element, or null
-let _pollFadeId = null;  // setTimeout ID for the post-completion fade
+let _pollFadeId      = null;  // setTimeout ID for the post-completion fade
+let _pollCountdownId = null;  // setInterval ID for the live countdown
 
 // Entry point called from pubsub.js when a polls.<channelId> message arrives
 function handlePubSubPoll(data) {
-    console.log('[Poll] raw message:', data?.message?.slice(0, 400));
-    if (!CONFIG.showPolls) {
-        console.log('[Poll] showPolls is off, skipping');
-        return;
-    }
+    if (!CONFIG.showPolls) return;
 
     let inner;
     try { inner = JSON.parse(data.message); } catch (e) { console.error('[Poll] parse error', e); return; }
 
-    console.log('[Poll] type:', inner.type, '| keys:', Object.keys(inner.data || {}));
     const type = inner.type;
     const poll = inner.data?.poll;
-    if (!poll) {
-        console.log('[Poll] no poll object found in data, full inner:', JSON.stringify(inner).slice(0, 500));
-        return;
-    }
+    if (!poll) return;
 
     if (type === 'POLL_CREATE') {
         _showPoll(poll, false);
@@ -38,10 +31,13 @@ function handlePubSubPoll(data) {
         // If a widget already exists update it in place, otherwise create it
         if (_pollEl) {
             _updatePollBars(poll, false);
+            // Restart countdown in case ended_at was just provided in this update
+            if (!_pollCountdownId) _startCountdown(poll);
         } else {
             _showPoll(poll, false);
         }
     } else if (type === 'POLL_COMPLETE' || type === 'POLL_TERMINATE') {
+        if (_pollCountdownId) { clearInterval(_pollCountdownId); _pollCountdownId = null; }
         if (_pollEl) {
             _updatePollBars(poll, true);
             _schedulePollDismiss();
@@ -64,6 +60,34 @@ function _showPoll(poll, completed) {
 
     // Trigger fade-in on next frame
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('poll-visible')));
+
+    // Start live countdown if poll is still running
+    if (!completed) _startCountdown(poll);
+}
+
+// Starts a 1-second interval updating the footer countdown.
+// Uses ended_at timestamp if available, otherwise falls back to duration_seconds.
+function _startCountdown(poll) {
+    if (_pollCountdownId) clearInterval(_pollCountdownId);
+
+    const endTime = poll.ended_at ? new Date(poll.ended_at).getTime()
+                  : poll.ends_at  ? new Date(poll.ends_at).getTime()
+                  : Date.now() + ((poll.duration_seconds ?? poll.duration ?? 0) * 1000);
+
+    function tick() {
+        if (!_pollEl) return;
+        const footer = _pollEl.querySelector('.poll-footer');
+        if (!footer) return;
+        const secsLeft = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+        footer.textContent = secsLeft > 0 ? `${secsLeft}s` : 'Ending…';
+        if (secsLeft <= 0) {
+            clearInterval(_pollCountdownId);
+            _pollCountdownId = null;
+        }
+    }
+
+    tick(); // run immediately so there's no 1s delay on first render
+    _pollCountdownId = setInterval(tick, 1000);
 }
 
 // Updates vote bars and counts on the existing widget element
@@ -115,8 +139,9 @@ function _schedulePollDismiss() {
 
 // Removes the widget from the DOM immediately (no animation)
 function _clearPoll() {
-    if (_pollFadeId) { clearTimeout(_pollFadeId); _pollFadeId = null; }
-    if (_pollEl)     { _pollEl.remove(); _pollEl = null; }
+    if (_pollFadeId)      { clearTimeout(_pollFadeId);       _pollFadeId      = null; }
+    if (_pollCountdownId) { clearInterval(_pollCountdownId); _pollCountdownId = null; }
+    if (_pollEl)          { _pollEl.remove(); _pollEl = null; }
 }
 
 // Returns total votes for a choice (bits + channel points combined)
@@ -148,8 +173,7 @@ function _buildPollHTML(poll, completed) {
             </div>`;
     }).join('');
 
-    const durationSecs = poll.duration_seconds ?? poll.duration ?? 0;
-    const footerText   = completed ? 'Poll ended' : (durationSecs ? `${durationSecs}s` : '');
+    const footerText = completed ? 'Poll ended' : '…';
 
     return `
         <div class="poll-header">

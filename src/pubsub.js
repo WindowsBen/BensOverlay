@@ -117,7 +117,6 @@ function reconnectPubSub() {
 }
 
 function handlePubSubMessage(data) {
-    console.log('[PubSub] topic:', data?.topic, '| preview:', data?.message?.slice(0, 100));
     if (data?.topic?.startsWith('polls.')) {
         handlePubSubPoll(data);
         return;
