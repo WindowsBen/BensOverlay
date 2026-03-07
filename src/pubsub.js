@@ -22,7 +22,8 @@ let _pubsubChannelId   = null;
 
 function connectPubSub(channelId) {
     if (!CONFIG.token) return;
-    if (!CONFIG.showRedeems) return;
+    // PubSub is used for redeems, raids, and polls — connect as long as we
+    // have a token, regardless of which individual features are enabled.
     _pubsubChannelId = channelId;
 
     _pubsubWS = new WebSocket('wss://pubsub-edge.twitch.tv');
