@@ -273,6 +273,15 @@ body {
     display: block;
 }
 
+.reply-message-row .badges,
+.reply-message-row .username {
+    font-size: var(--name-font-size);
+}
+
+.reply-message-row .message-text {
+    font-size: var(--message-font-size);
+}
+
 .reply-parent-body .chat-emote {
     height: 1em;
     width: auto;

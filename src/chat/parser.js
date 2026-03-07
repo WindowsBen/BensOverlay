@@ -11,6 +11,10 @@
 //   2. Scan remaining text word-by-word for third-party emotes
 //   3. Stack any zero-width emotes onto the previous emote token
 
+// Passive cache of Twitch emote name → CDN URL, built from messages we've seen.
+// Used to render Twitch emotes in reply snippets where position data is unavailable.
+const twitchEmoteByName = {};
+
 // Builds a flat array of tokens from the message.
 // Each token: { html: string, isEmote: bool, stacked: bool }
 function buildTokens(message, twitchEmotes) {
@@ -20,11 +24,11 @@ function buildTokens(message, twitchEmotes) {
         for (const [emoteId, positions] of Object.entries(twitchEmotes)) {
             for (const pos of positions) {
                 const [start, end] = pos.split('-').map(Number);
-                ranges.push({
-                    start, end,
-                    name: message.slice(start, end + 1),
-                    url:  `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`
-                });
+                const name = message.slice(start, end + 1);
+                const url  = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
+                // Passively cache name→url so reply snippets can render these emotes
+                if (name) twitchEmoteByName[name] = url;
+                ranges.push({ start, end, name, url });
             }
         }
         ranges.sort((a, b) => a.start - b.start);
@@ -86,6 +90,14 @@ function buildTokens(message, twitchEmotes) {
             if (emoteMap[raw]) {
                 const isZeroWidth = zeroWidthEmotes.has(raw);
                 const img = `<img class="chat-emote${isZeroWidth ? ' zero-width' : ''}" src="${emoteMap[raw]}" alt="${escapeHTML(word)}" title="${escapeHTML(word)}">`;
+            } else if (twitchEmoteByName[raw]) {
+                // Twitch emote matched by name from passive cache (used in reply snippets)
+                tokens.push({
+                    html: `<img class="chat-emote" src="${twitchEmoteByName[raw]}" alt="${escapeHTML(word)}" title="${escapeHTML(word)}">`,
+                    isEmote: true
+                });
+                tokens.push({ html: ' ', isEmote: false });
+                continue;
 
                 if (isZeroWidth) {
                     // Zero-width: find the last real emote token and stack onto it

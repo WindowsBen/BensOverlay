@@ -45,7 +45,8 @@ client.on('message', (channel, tags, message, self) => {
     if (tags['message-type'] === 'action') return;
 
     if (tags['custom-reward-id']) {
-        // Channel point redemption with text input
+        // Channel point redemption with text input — tmi.js only emits 'message'
+        // for redeems that have text input. No-input redeems are caught via raw_message.
         handleRedemption(broadcasterId, tags, message);
     } else {
         displayMessage(tags, message);
@@ -57,10 +58,33 @@ client.on('action', (channel, tags, message, self) => {
     displayMessage(tags, message, true); // isAction=true triggers /me styling
 });
 
+// Catch channel point redeems that have NO text input — tmi.js does not emit
+// a 'message' event for these, but they still arrive as PRIVMSG with a
+// custom-reward-id tag and an empty body.
 // Watch streaks arrive as USERNOTICE with msg-id="viewermilestone".
 // tmi.js doesn't expose a named event for this, so we intercept at the raw
 // IRC level. The filter on USERNOTICE keeps this from running on every message.
 client.on('raw_message', (messageCloned, message) => {
+    if (message.command === 'PRIVMSG') {
+        const tags     = message.tags || {};
+        const rewardId = tags['custom-reward-id'];
+        const body     = message.params?.[1] || '';
+        // Only handle if tmi.js won't — i.e. the body is empty (no text input)
+        if (rewardId && !body.trim()) {
+            // Parse raw IRC badges string into object format for renderBadges
+            if (typeof tags.badges === 'string') {
+                const parsed = {};
+                for (const pair of tags.badges.split(',')) {
+                    const [set, version] = pair.split('/');
+                    if (set) parsed[set] = version || '1';
+                }
+                tags.badges = parsed;
+            }
+            handleRedemption(broadcasterId, tags, '');
+        }
+        return;
+    }
+
     if (message.command !== 'USERNOTICE') return;
     const tags  = message.tags || {};
     const msgId = tags['msg-id'];
