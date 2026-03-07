@@ -9,7 +9,7 @@
 //
 // Flow:
 //   1. Connect to wss://pubsub-edge.twitch.tv
-//   2. LISTEN on channel-points-channel-v1.<broadcasterId>, raid.<broadcasterId>, and polls.<broadcasterId>
+//   2. LISTEN on channel-points-channel-v1.<broadcasterId>, raid.<broadcasterId>, polls.<broadcasterId>, and predictions-channel-v1.<broadcasterId>
 //   3. Send a PING every 4 minutes to keep the connection alive
 //   4. On PONG timeout or error, reconnect with exponential backoff
 //   5. On redemption message, call handlePubSubRedemption()
@@ -41,6 +41,7 @@ function connectPubSub(channelId) {
                     `channel-points-channel-v1.${channelId}`,
                     `raid.${channelId}`,
                     `polls.${channelId}`,
+                    `predictions-channel-v1.${channelId}`,
                 ],
                 auth_token: CONFIG.token
             }
@@ -117,6 +118,10 @@ function reconnectPubSub() {
 }
 
 function handlePubSubMessage(data) {
+    if (data?.topic?.startsWith('predictions-channel-v1.')) {
+        handlePubSubPrediction(data);
+        return;
+    }
     if (data?.topic?.startsWith('polls.')) {
         handlePubSubPoll(data);
         return;

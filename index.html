@@ -45,6 +45,10 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             Polls
         </button>
+        <button class="tab-btn locked" id="tab-btn-predictions" onclick="switchTab('predictions')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Predictions
+        </button>
         <button class="tab-btn locked" id="tab-btn-appearance" onclick="switchTab('appearance')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
             Appearance
@@ -440,6 +444,36 @@
                     <div class="text-override-row">
                         <span class="option-label">Linger (ms)</span>
                         <input type="number" id="pollLingerMs" value="6000" min="1000" max="30000" step="500" style="width:80px">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Tab: Predictions ─────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-predictions">
+        <div class="tab-section">
+            <div class="tab-section-title">Prediction Widget</div>
+            <label class="checkbox-wrapper"><input type="checkbox" id="showPredictions" onchange="toggleEventOptions('showPredictions','opts-predictions')"><div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span class="cb-label"><strong>Show prediction widget</strong></span></label>
+            <div class="event-options" id="opts-predictions">
+                <div class="event-options-inner">
+                    <div class="event-option-row">
+                        <span class="option-label">Background</span>
+                        <input type="color" id="predBg" value="#0d0d1a">
+                        <span class="opacity-tag">Opacity</span>
+                        <input type="range" class="opacity-slider" id="predBgOpacity" min="0" max="100" value="93">
+                        <span class="opacity-label" id="predBgOpacityLabel">93%</span>
+                    </div>
+                    <div class="event-option-row">
+                        <span class="option-label">Win glow</span>
+                        <input type="color" id="predWinnerGlow" value="#FFD700">
+                        <span class="opacity-tag">Opacity</span>
+                        <input type="range" class="opacity-slider" id="predWinnerGlowOpacity" min="0" max="100" value="67">
+                        <span class="opacity-label" id="predWinnerGlowOpacityLabel">67%</span>
+                    </div>
+                    <div class="text-override-row">
+                        <span class="option-label">Linger (ms)</span>
+                        <input type="number" id="predictionLingerMs" value="8000" min="1000" max="30000" step="500" style="width:80px">
                     </div>
                 </div>
             </div>

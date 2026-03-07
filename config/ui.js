@@ -1,6 +1,6 @@
 // ─── config/ui.js ─────────────────────────────────────────────────────────────
 
-const TABS = ['general', 'events', 'polls', 'appearance', 'generate'];
+const TABS = ['general', 'events', 'polls', 'predictions', 'appearance', 'generate'];
 
 function switchTab(id) {
     TABS.forEach(t => {

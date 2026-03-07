@@ -104,6 +104,10 @@ function generateLink() {
         ch('showPolls') && `pollBar=${c8('pollBar','pollBarOpacity')}`,
         ch('showPolls') && `pollWinner=${c8('pollWinner','pollWinnerOpacity')}`,
         ch('showPolls') && v('pollLingerMs') && `pollLingerMs=${v('pollLingerMs')}`,
+        `showPredictions=${ch('showPredictions') ? '1':'0'}`,
+        ch('showPredictions') && `predBg=${c8('predBg','predBgOpacity')}`,
+        ch('showPredictions') && `predWinnerGlow=${c8('predWinnerGlow','predWinnerGlowOpacity')}`,
+        ch('showPredictions') && v('predictionLingerMs') && `predictionLingerMs=${v('predictionLingerMs')}`,
     ].filter(Boolean).join('&');
 
     const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
@@ -204,6 +208,10 @@ const CONFIG_FIELDS = [
     { id: 'pollBar',                type: 'text' }, { id: 'pollBarOpacity',     type: 'text' },
     { id: 'pollWinner',             type: 'text' }, { id: 'pollWinnerOpacity',  type: 'text' },
     { id: 'pollLingerMs',           type: 'text' },
+    { id: 'showPredictions',        type: 'check' },
+    { id: 'predBg',                 type: 'text' }, { id: 'predBgOpacity',          type: 'text' },
+    { id: 'predWinnerGlow',         type: 'text' }, { id: 'predWinnerGlowOpacity',  type: 'text' },
+    { id: 'predictionLingerMs',     type: 'text' },
     // Badges & Cosmetics
     { id: 'disableAllBadges',     type: 'check' },
     { id: 'roleOnlyBadges',       type: 'check' },
