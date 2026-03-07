@@ -82,8 +82,17 @@ function displayMessage(tags, message, isAction = false) {
         }
 
         // Cap snippet at 60 chars to keep the quote bar compact.
-        // Twitch emote positions aren't available for parent messages so we
-        // pass null — third-party emotes still render via word matching.
+        // Seed twitchEmoteByName from this message's emote tags first — the
+        // snippet is parsed before the main message so the cache isn't warm yet.
+        if (tags.emotes) {
+            for (const [id, positions] of Object.entries(tags.emotes)) {
+                // We just need one position to get the name from the full message string
+                const pos  = positions[0];
+                const [s, e] = pos.split('-').map(Number);
+                const name = message.slice(s, e + 1);
+                if (name) twitchEmoteByName[name] = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`;
+            }
+        }
         const snippet       = parentBody.length > 60 ? parentBody.slice(0, 60).trimEnd() + '…' : parentBody;
         const parsedSnippet = parseMessage(snippet, null);
 
