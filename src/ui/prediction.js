@@ -54,13 +54,14 @@ function handlePubSubPrediction(data) {
         }
 
     } else if (status === 'LOCKED' || type === 'event-locked') {
-        // Betting closed — stop countdown, show lock badge
+        // Betting closed — stop countdown, show lock badge, then dismiss after linger
         if (_predCountdownId) { clearInterval(_predCountdownId); _predCountdownId = null; }
         if (_predEl) {
             _updatePredictionBars(prediction, 'locked');
         } else {
             _showPrediction(prediction, 'locked');
         }
+        _schedulePredictionDismiss();
 
     } else if (status === 'RESOLVED' || type === 'event-resolved') {
         if (_predCountdownId) { clearInterval(_predCountdownId); _predCountdownId = null; }
@@ -74,7 +75,10 @@ function handlePubSubPrediction(data) {
 
     } else if (status === 'CANCELED' || status === 'CANCEL_PENDING' || type === 'event-canceled') {
         if (_predCountdownId) { clearInterval(_predCountdownId); _predCountdownId = null; }
-        _clearPrediction();
+        // CANCEL_PENDING lingers until CANCELED confirms, then dismiss after linger time
+        if (status === 'CANCELED') {
+            _schedulePredictionDismiss();
+        }
     }
 }
 
