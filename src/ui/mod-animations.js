@@ -75,7 +75,7 @@ function showBanAnimation(username) {
     stage.appendChild(nameEl);
 
     // Phase 1 (0ms): stage fades in, hammer in wind-up position
-    requestAnimationFrame(() => stage.classList.add('visible'));
+    requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.add('visible')));
 
     // Phase 2 (400ms): hammer swings down
     setTimeout(() => hammer.classList.add('swinging'), 400);
@@ -162,7 +162,7 @@ function showTimeoutAnimation(username, duration) {
     stage.appendChild(nameEl);
 
     // Phase 1 (0ms): fade in, clock starts above
-    requestAnimationFrame(() => stage.classList.add('visible'));
+    requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.add('visible')));
 
     // Phase 2 (150ms): clock descends onto the name
     setTimeout(() => clockEl.classList.add('descending'), 150);
