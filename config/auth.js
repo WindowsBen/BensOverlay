@@ -8,7 +8,7 @@ function loginWithTwitch() {
     authUrl.searchParams.set('client_id',     CLIENT_ID);
     authUrl.searchParams.set('redirect_uri',  redirectUri);
     authUrl.searchParams.set('response_type', 'token');
-    authUrl.searchParams.set('scope',         'user:read:chat channel:read:redemptions');
+    authUrl.searchParams.set('scope',         'user:read:chat channel:read:redemptions channel:read:hype_train channel:read:polls channel:read:predictions');
     window.location.href = authUrl.toString();
 }
 
