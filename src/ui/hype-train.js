@@ -17,14 +17,16 @@ let _htCountdownId = null;   // setInterval for expiry countdown
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function handlePubSubHypeTrain(data) {
-    if (!CONFIG.showHypeTrain) return;
+    console.log('[HypeTrain] raw:', data?.message?.slice(0, 300));
+    if (!CONFIG.showHypeTrain) { console.log('[HypeTrain] disabled'); return; }
 
     let inner;
     try { inner = JSON.parse(data.message); } catch { return; }
 
+    console.log('[HypeTrain] type:', inner.type, '| data keys:', Object.keys(inner.data || {}));
     const type  = inner.type;
     const train = inner.data;
-    if (!train) return;
+    if (!train) { console.log('[HypeTrain] no data object'); return; }
 
     if (type === 'hype-train-start') {
         _showHypeTrain(train);
