@@ -183,7 +183,7 @@ function _miniTimeoutAnimated(accentId, accentOpId) {
 // Shadow color swatch
 function _miniShadow() {
     const color = _rgba('shadowColor', 'shadowOpacity', '#000000');
-    const nameSz = Math.min(parseInt(document.getElementById('nameFontSize')?.value || 16), 16);
+    const nameSz = parseInt(document.getElementById("nameFontSize")?.value || 16);
     return `<div style="padding:3px 0;${_font()}">
         <span style="color:#9B59B6;font-weight:700;font-size:${nameSz}px;text-shadow:2px 2px 4px ${color},0 0 8px ${color};">CoolViewer99</span>
         <span style="color:rgba(255,255,255,0.85);font-size:${nameSz - 1}px;"> Hey chat!</span>
@@ -192,8 +192,8 @@ function _miniShadow() {
 
 // Chat message (font size / font preview)
 function _miniChat() {
-    const nameSz = Math.min(parseInt(document.getElementById('nameFontSize')?.value  || 16), 16);
-    const msgSz  = Math.min(parseInt(document.getElementById('messageFontSize')?.value || 16), 15);
+    const nameSz = parseInt(document.getElementById('nameFontSize')?.value || 16);
+    const msgSz  = parseInt(document.getElementById('messageFontSize')?.value || 16);
     return `<div style="${_font()};padding:2px 0;">
         <span style="color:#9B59B6;font-weight:700;font-size:${nameSz}px;">CoolViewer99</span>
         <span style="color:rgba(255,255,255,0.85);font-size:${msgSz}px;"> Hey, great stream!</span>
