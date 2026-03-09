@@ -254,7 +254,7 @@ function _miniHypeTrain() {
 
 // ── Settings map ──────────────────────────────────────────────────────────────
 const SETTING_TIPS = {
-    channel:          { desc: 'The Twitch channel name to connect to (without the #).' },
+    channel:          { desc: 'The Twitch channel name to connect to.' },
     nameFontSize:     { desc: 'Size of the username text in chat messages.',      preview: _miniChat },
     messageFontSize:  { desc: 'Size of the message body text in chat messages.',  preview: _miniChat },
     shadowColor:      { desc: 'Drop-shadow color and opacity applied behind usernames.', preview: _miniShadow },
@@ -269,7 +269,7 @@ const SETTING_TIPS = {
     excludedPrefixes: { desc: 'Hide messages starting with these prefixes. Comma-separated (e.g. ! hides bot commands).' },
     showAnnouncements:{ desc: 'Show /announce messages posted by mods or the broadcaster.' },
     showReplies:      { desc: 'Show the quoted parent message above reply messages.' },
-    toastEmotes:      { desc: 'Float emote-only messages as a large emote above chat.' },
+    toastEmotes:      { desc: 'Displays when a 7TV emote is added to the current set (Notification above chat).' },
     meStyle:          { desc: 'How /me action messages are styled — colored, italic, or plain.', preview: _miniChat },
     disableAllBadges:      { desc: 'Hide every badge — Twitch, 7TV, FFZ, and Chatterino.' },
     roleOnlyBadges:        { desc: 'Only show Broadcaster, Mod, and VIP badges.' },
