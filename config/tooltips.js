@@ -19,7 +19,13 @@ function _loadPreviewFont() {
     // Extract font-family name from the CSS
     fetch(url).then(r => r.text()).then(css => {
         const match = css.match(/font-family:\s*['"]([^'"]+)['"]/i);
-        if (match) _previewFontFamily = match[1];
+        if (match) {
+            _previewFontFamily = match[1];
+            // Wait for the font to actually load before re-rendering
+            document.fonts.load(`16px "${_previewFontFamily}"`).finally(() => {
+                _rerenderActiveTip();
+            });
+        }
     }).catch(() => {});
 }
 
