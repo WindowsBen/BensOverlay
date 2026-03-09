@@ -370,9 +370,10 @@ const SETTING_TIPS = {
 };
 
 // ── Tooltip DOM ───────────────────────────────────────────────────────────────
-let _tipEl      = null;
-let _activeTip  = null;  // currently shown tip object
+let _tipEl        = null;
+let _activeTip    = null;
 let _activeAnchor = null;
+let _hideTimer    = null;  // delay before truly clearing _activeTip
 
 function _createTooltip() {
     _tipEl = document.createElement('div');
@@ -380,21 +381,46 @@ function _createTooltip() {
     _tipEl.style.display = 'none';
     document.body.appendChild(_tipEl);
 
-    // Re-render preview whenever any input changes while a tooltip is open
+    // On any input change, re-render + re-show the tooltip if one is active
     document.addEventListener('input',  _rerenderActiveTip);
     document.addEventListener('change', _rerenderActiveTip);
 }
 
 function _rerenderActiveTip() {
-    if (!_activeTip || !_tipEl || _tipEl.style.display === 'none') return;
+    if (!_activeTip || !_tipEl || !_activeAnchor) return;
+
+    // Rebuild preview content
     const previewEl = _tipEl.querySelector('.tip-preview');
     if (previewEl && _activeTip.preview) {
         previewEl.innerHTML = _activeTip.preview();
     }
+
+    // Re-show and reposition if currently hidden (user moved to the input to type)
+    if (_tipEl.style.display === 'none') {
+        _tipEl.style.display = 'block';
+        _positionTip(_activeAnchor, _activeTip.preview ? 280 : 220);
+    }
+}
+
+function _positionTip(anchor, tipW) {
+    const r    = anchor.getBoundingClientRect();
+    let   left = r.left + r.width / 2 - tipW / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+    if (r.top > 80) {
+        _tipEl.style.top       = (r.top - 8 + window.scrollY) + 'px';
+        _tipEl.style.transform = 'translateY(-100%)';
+    } else {
+        _tipEl.style.top       = (r.bottom + 6 + window.scrollY) + 'px';
+        _tipEl.style.transform = 'translateY(0)';
+    }
+    _tipEl.style.left = left + 'px';
 }
 
 function _showTip(tip, anchor) {
     if (!_tipEl) return;
+    // Cancel any pending hide so switching tips is instant
+    if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
+
     _activeTip    = tip;
     _activeAnchor = anchor;
 
@@ -406,25 +432,18 @@ function _showTip(tip, anchor) {
     const tipW = tip.preview ? 280 : 220;
     _tipEl.style.width   = tipW + 'px';
     _tipEl.style.display = 'block';
-
-    const r    = anchor.getBoundingClientRect();
-    let   left = r.left + r.width / 2 - tipW / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
-
-    if (r.top > 80) {
-        _tipEl.style.top       = (r.top - 8 + window.scrollY) + 'px';
-        _tipEl.style.transform = 'translateY(-100%)';
-    } else {
-        _tipEl.style.top       = (r.bottom + 6 + window.scrollY) + 'px';
-        _tipEl.style.transform = 'translateY(0)';
-    }
-    _tipEl.style.left = left + 'px';
+    _positionTip(anchor, tipW);
 }
 
 function _hideTip() {
     if (_tipEl) _tipEl.style.display = 'none';
-    _activeTip    = null;
-    _activeAnchor = null;
+    // Keep _activeTip alive for 4s so input changes still re-show the tooltip
+    if (_hideTimer) clearTimeout(_hideTimer);
+    _hideTimer = setTimeout(() => {
+        _activeTip    = null;
+        _activeAnchor = null;
+        _hideTimer    = null;
+    }, 4000);
 }
 
 // ── Injection ─────────────────────────────────────────────────────────────────
