@@ -57,4 +57,14 @@ function initSliders() {
         const label = document.getElementById(slider.id + 'Label');
         if (label) slider.addEventListener('input', () => { label.textContent = slider.value + '%'; });
     });
+
+    // Bubble motion slider live label
+    const bm = document.getElementById('bubbleMotion');
+    const bmv = document.getElementById('bubbleMotionVal');
+    if (bm && bmv) bm.addEventListener('input', () => { bmv.textContent = bm.value; });
+
+    // Sync locked state on page load (in case importConfig restored bubbles)
+    const cs = document.getElementById('chatStyle');
+    const bo = document.getElementById('bubble-options');
+    if (cs && bo) bo.classList.toggle('locked', cs.value !== 'bubbles');
 }

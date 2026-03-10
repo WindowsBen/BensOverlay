@@ -41,6 +41,7 @@ const CONFIG = {
     showReplies:       params.get('showReplies') !== '0', // default on
     meStyle:           params.get('meStyle') || 'colored', // 'colored' | 'italic' | 'none'
     chatStyle:         params.get('chatStyle') || 'default', // 'default' | 'bubbles'
+    bubbleMotion:      Number(params.get('bubbleMotion')) || 5, // 1–10, bubble speed+range
     showAnnouncements: params.get('showAnnouncements') !== '0', // default on
 
     // Raid toggles — default on

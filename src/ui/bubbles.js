@@ -232,42 +232,85 @@ function _rand(min, max)  { return min + Math.random() * (max - min); }
 function _pick(arr)       { return arr[Math.floor(Math.random() * arr.length)]; }
 function _bubbleOverlay() { return document.getElementById('bubble-overlay'); }
 
-// ── Per-bubble random drift ────────────────────────────────────────────────────
-// Generates a unique @keyframes rule with 5 random waypoints so every bubble
-// moves differently. A counter ensures the class name is globally unique.
+// ── Per-bubble smooth drift ────────────────────────────────────────────────────
+// Uses two independent looping sine-wave animations (X and Y at co-prime periods)
+// so the path is a continuous Lissajous-like figure — never stops, never repeats.
+// bubbleMotion (1–10) scales both amplitude and speed.
 let _driftCounter = 0;
-function _startBubbleDrift(el, driftDur) {
-    const id   = 'bd-' + (++_driftCounter);
-    const steps = 5;
-    // Each waypoint: wobble left/right ±40px, drift upward 0→90px over lifetime
-    let keyframeCSS = '@keyframes ' + id + '{';
-    for (let i = 0; i <= steps; i++) {
-        const pct = Math.round((i / steps) * 100);
-        const tx  = Math.round(_rand(-40, 40));
-        const ty  = -Math.round(_rand(10, 20) * i);   // steadily drifts upward
-        keyframeCSS += pct + '%{translate:' + tx + 'px ' + ty + 'px;}';
-    }
-    keyframeCSS += '}';
+function _startBubbleDrift(el, motionScale) {
+    const id = 'bd-' + (++_driftCounter);
+
+    // Amplitude: 20–120px horizontal, 15–80px vertical, scaled by motionScale (1–10)
+    const ax  = Math.round(_rand(20, 60)  * motionScale / 5);   // x amplitude
+    const ay  = Math.round(_rand(15, 40)  * motionScale / 5);   // y amplitude
+
+    // Co-prime periods ensure the path never closes/repeats visibly
+    const tx  = (_rand(4, 8)  * (11 - motionScale) / 5).toFixed(1);  // x period (s)
+    const ty  = (_rand(5, 11) * (11 - motionScale) / 5).toFixed(1);  // y period (s)
+
+    // Random phase offsets so bubbles don't all start moving in the same direction
+    const px  = _rand(0, 360).toFixed(0);
+    const py  = _rand(0, 360).toFixed(0);
+
+    // Gentle upward drift: translate the anchor point upward over the lifetime
+    const driftUp  = Math.round(_rand(60, 140) * motionScale / 5);
+    const lifetime = (CONFIG.messageLifetime > 0 ? CONFIG.messageLifetime : 8000) / 1000;
+
+    const keyframeCSS =
+        '@keyframes ' + id + '-x{' +
+            '0%  {--bx:' + Math.round(Math.sin(px * Math.PI/180) * ax) + 'px}' +
+            '25% {--bx:' + ax  + 'px}' +
+            '50% {--bx:-'+ ax  + 'px}' +
+            '75% {--bx:' + ax  + 'px}' +
+            '100%{--bx:' + Math.round(Math.sin(px * Math.PI/180) * ax) + 'px}' +
+        '}' +
+        '@keyframes ' + id + '-y{' +
+            '0%  {--by:' + Math.round(Math.sin(py * Math.PI/180) * ay) + 'px}' +
+            '25% {--by:' + ay  + 'px}' +
+            '50% {--by:-'+ ay  + 'px}' +
+            '75% {--by:' + ay  + 'px}' +
+            '100%{--by:' + Math.round(Math.sin(py * Math.PI/180) * ay) + 'px}' +
+        '}' +
+        '@keyframes ' + id + '-up{' +
+            '0%  {--bu:0px}' +
+            '100%{--bu:-' + driftUp + 'px}' +
+        '}' +
+        // Composite: the element reads all three custom properties via transform
+        '.' + id + '{' +
+            'translate:var(--bx,0px) calc(var(--by,0px) + var(--bu,0px));' +
+            'animation:' +
+                'bubble-iridescence 5s linear infinite,' +
+                id + '-x ' + tx + 's ease-in-out infinite,' +
+                id + '-y ' + ty + 's ease-in-out infinite,' +
+                id + '-up ' + lifetime + 's linear forwards;' +
+        '}';
 
     const style = document.createElement('style');
     style.dataset.bubbleDrift = id;
     style.textContent = keyframeCSS;
     document.head.appendChild(style);
 
-    // Lock the inflated state as inline styles BEFORE overwriting the animation
-    // property. Without this, replacing animation removes the bubble-inflate
-    // `forwards` fill and the base CSS opacity:0/scale(0) snaps back instantly.
+    // Lock the inflated state before touching the animation property,
+    // otherwise the forwards fill from bubble-inflate disappears and
+    // the base CSS opacity:0/scale(0) snaps back for one frame.
     el.style.opacity   = '1';
     el.style.transform = 'scale(1)';
 
-    el.style.animation = 'bubble-iridescence 5s linear infinite, ' + id + ' ' + driftDur + 's cubic-bezier(0.45,0.05,0.55,0.95) forwards';
-    el._driftStyleId   = id;  // stored so we can remove it on pop
+    // One rAF so the browser parses the new @keyframes block before we
+    // reference it — without this the animation name is unknown and nothing moves.
+    requestAnimationFrame(function () {
+        el.classList.add(id);
+        el._driftStyleId  = id;
+        el._driftClass    = id;
+    });
 }
 
 function _cleanupDriftStyle(el) {
     if (el._driftStyleId) {
         document.querySelector('style[data-bubble-drift="' + el._driftStyleId + '"]')?.remove();
+        if (el._driftClass) el.classList.remove(el._driftClass);
         el._driftStyleId = null;
+        el._driftClass   = null;
     }
 }
 
@@ -286,11 +329,11 @@ function _popBubble(el, isEvent) {
     //    so we set opacity/transform first, then force a reflow, then clear.
     el.style.opacity   = '1';
     el.style.transform = 'scale(1)';
-    el.style.animation = 'none';
     el.style.translate  = 'none';
     el.style.left       = rect.left + 'px';
     el.style.top        = rect.top  + 'px';
-    _cleanupDriftStyle(el);
+    _cleanupDriftStyle(el);   // removes drift class + @keyframes style tag
+    el.style.animation  = 'none';
 
     // 3. Force a reflow so the position change takes effect before the pop
     void el.offsetWidth;
@@ -370,9 +413,9 @@ function displayBubbleMessage(tags, parsedMessageHTML, isAction) {
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('bubble-visible')));
 
     // Phase 2 — start drifting after inflate animation completes (~700ms)
-    const driftDur = _rand(6, 11);
+    const motionScale = CONFIG.bubbleMotion || 5;
     setTimeout(function () {
-        _startBubbleDrift(el, driftDur);
+        _startBubbleDrift(el, motionScale);
     }, 700);
 
     // Phase 3 — pop at end of lifetime

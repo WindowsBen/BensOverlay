@@ -125,10 +125,17 @@
                 <option value="none">None</option>
             </select>
             <span class="field-label">Chat style</span>
-            <select id="chatStyle">
+            <select id="chatStyle" onchange="document.getElementById('bubble-options').classList.toggle('locked', this.value !== 'bubbles')">
                 <option value="default" selected>Default</option>
                 <option value="bubbles">Bubbles 🫧</option>
             </select>
+            <div id="bubble-options" class="locked" style="margin-top:8px;">
+                <span class="field-label">Bubble motion (1 = gentle drift, 10 = chaotic)</span>
+                <input type="range" id="bubbleMotion" min="1" max="10" value="5" style="width:100%">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-top:2px;">
+                    <span>Gentle</span><span id="bubbleMotionVal">5</span><span>Chaotic</span>
+                </div>
+            </div>
         </div>
 
         <div class="tab-section">
