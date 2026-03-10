@@ -49,48 +49,29 @@
         '.soap-bubble span.b-s {',
         '    position:absolute; border-radius:50%; pointer-events:none;',
         '}',
-        '.soap-bubble span.b-s:nth-child(1){inset:6px; border-left:  12px solid #0fb4ff;filter:blur(7px);}',
-        '.soap-bubble span.b-s:nth-child(2){inset:6px; border-right: 12px solid #ff4484;filter:blur(7px);}',
-        '.soap-bubble span.b-s:nth-child(3){inset:6px; border-top:   12px solid #ffeb3b;filter:blur(7px);}',
-        '.soap-bubble span.b-s:nth-child(4){inset:20px;border-left:  12px solid #ff4484;filter:blur(10px);}',
-        '.soap-bubble span.b-s:nth-child(5){inset:6px; border-bottom:8px  solid #fff;   filter:blur(7px);transform:rotate(330deg);}',
+        '.soap-bubble span.b-s:nth-child(1){inset:6px; border-left:  12px solid #0fb4ff;}',
+        '.soap-bubble span.b-s:nth-child(2){inset:6px; border-right: 12px solid #ff4484;}',
+        '.soap-bubble span.b-s:nth-child(3){inset:6px; border-top:   12px solid #ffeb3b;}',
+        '.soap-bubble span.b-s:nth-child(4){inset:20px;border-left:  12px solid #ff4484;}',
+        '.soap-bubble span.b-s:nth-child(5){inset:6px; border-bottom:8px  solid #fff;   ;transform:rotate(330deg);}',
 
         // ── White highlight blobs ─────────────────────────────────────────────
         '.soap-bubble::before{',
         '    content:"";position:absolute;',
         '    top:22%;left:14%;width:18px;height:18px;',
-        '    border-radius:50%;background:#fff;z-index:10;filter:blur(2px);pointer-events:none;',
+        '    border-radius:50%;background:#fff;z-index:10;pointer-events:none;',
         '}',
         '.soap-bubble::after{',
         '    content:"";position:absolute;',
         '    top:40%;left:26%;width:12px;height:12px;',
-        '    border-radius:50%;background:#fff;z-index:10;filter:blur(2px);pointer-events:none;',
+        '    border-radius:50%;background:#fff;z-index:10;pointer-events:none;',
         '}',
 
         // ── Content floats above the color spans ──────────────────────────────
         '.bubble-content{position:relative;z-index:5;}',
 
         // ── Drift animations ──────────────────────────────────────────────────
-        '@keyframes bubble-drift-a{',
-        '  0%  {translate:0px 0px;}   30%{translate:18px -28px;}',
-        '  60% {translate:-12px -55px;} 100%{translate:8px -90px;}',
-        '}',
-        '@keyframes bubble-drift-b{',
-        '  0%  {translate:0px 0px;}   35%{translate:-22px -20px;}',
-        '  65% {translate:10px -52px;} 100%{translate:-16px -80px;}',
-        '}',
-        '@keyframes bubble-drift-c{',
-        '  0%  {translate:0px 0px;}   40%{translate:25px -15px;}',
-        '  70% {translate:5px -48px;}  100%{translate:20px -75px;}',
-        '}',
-        '@keyframes bubble-drift-d{',
-        '  0%  {translate:0px 0px;}   30%{translate:-8px -35px;}',
-        '  60% {translate:15px -58px;} 100%{translate:-5px -88px;}',
-        '}',
-        '.bubble-drift-a{animation:bubble-drift-a var(--drift-dur,7s) ease-in-out forwards;}',
-        '.bubble-drift-b{animation:bubble-drift-b var(--drift-dur,7s) ease-in-out forwards;}',
-        '.bubble-drift-c{animation:bubble-drift-c var(--drift-dur,7s) ease-in-out forwards;}',
-        '.bubble-drift-d{animation:bubble-drift-d var(--drift-dur,7s) ease-in-out forwards;}',
+        // drift keyframes injected per-bubble by _startBubbleDrift()
 
         // ── Pop ───────────────────────────────────────────────────────────────
         '@keyframes bubble-pop{',
@@ -115,13 +96,13 @@
         '    min-width:200px;max-width:340px;padding:18px 24px;border-radius:999px;',
         '    box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 30px rgba(160,100,255,0.35);',
         '}',
-        '.soap-bubble-event::before{width:24px;height:24px;top:18%;left:12%;filter:blur(3px);}',
-        '.soap-bubble-event::after {width:16px;height:16px;top:38%;left:24%;filter:blur(3px);}',
-        '.soap-bubble-event span.b-s:nth-child(1){inset:8px; border-left:  16px solid #0fb4ff;filter:blur(10px);}',
-        '.soap-bubble-event span.b-s:nth-child(2){inset:8px; border-right: 16px solid #ff4484;filter:blur(10px);}',
-        '.soap-bubble-event span.b-s:nth-child(3){inset:8px; border-top:   16px solid #ffeb3b;filter:blur(10px);}',
-        '.soap-bubble-event span.b-s:nth-child(4){inset:25px;border-left:  16px solid #a855f7;filter:blur(14px);}',
-        '.soap-bubble-event span.b-s:nth-child(5){inset:8px; border-bottom:12px solid #fff;   filter:blur(10px);transform:rotate(330deg);}',
+        '.soap-bubble-event::before{width:24px;height:24px;top:18%;left:12%;}',
+        '.soap-bubble-event::after {width:16px;height:16px;top:38%;left:24%;}',
+        '.soap-bubble-event span.b-s:nth-child(1){inset:8px; border-left:  16px solid #0fb4ff;}',
+        '.soap-bubble-event span.b-s:nth-child(2){inset:8px; border-right: 16px solid #ff4484;}',
+        '.soap-bubble-event span.b-s:nth-child(3){inset:8px; border-top:   16px solid #ffeb3b;}',
+        '.soap-bubble-event span.b-s:nth-child(4){inset:25px;border-left:  16px solid #a855f7;}',
+        '.soap-bubble-event span.b-s:nth-child(5){inset:8px; border-bottom:12px solid #fff;   ;transform:rotate(330deg);}',
         '@keyframes event-bubble-glow{',
         '  0%,100%{box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 25px rgba(160,100,255,0.35);}',
         '  50%    {box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 50px rgba(160,100,255,0.65),0 0 80px rgba(80,160,255,0.25);}',
@@ -146,18 +127,18 @@
         '}',
         '.ht-bubble::before{',
         '    content:"";position:absolute;top:14%;left:18%;width:10px;height:10px;',
-        '    border-radius:50%;background:#fff;z-index:10;filter:blur(1.5px);',
+        '    border-radius:50%;background:#fff;z-index:10;',
         '}',
         '.ht-bubble::after{',
         '    content:"";position:absolute;top:28%;left:28%;width:7px;height:7px;',
-        '    border-radius:50%;background:#fff;z-index:10;filter:blur(1.5px);',
+        '    border-radius:50%;background:#fff;z-index:10;',
         '}',
         '.ht-bubble span.b-s{position:absolute;border-radius:50%;pointer-events:none;}',
-        '.ht-bubble span.b-s:nth-child(1){inset:4px; border-left:  8px solid #FF6B35;filter:blur(5px);}',
-        '.ht-bubble span.b-s:nth-child(2){inset:4px; border-right: 8px solid #ff4484;filter:blur(5px);}',
-        '.ht-bubble span.b-s:nth-child(3){inset:4px; border-top:   8px solid #ffeb3b;filter:blur(5px);}',
-        '.ht-bubble span.b-s:nth-child(4){inset:12px;border-left:  8px solid #ff4484;filter:blur(7px);}',
-        '.ht-bubble span.b-s:nth-child(5){inset:4px; border-bottom:6px  solid #fff;  filter:blur(5px);transform:rotate(330deg);}',
+        '.ht-bubble span.b-s:nth-child(1){inset:4px; border-left:  8px solid #FF6B35;}',
+        '.ht-bubble span.b-s:nth-child(2){inset:4px; border-right: 8px solid #ff4484;}',
+        '.ht-bubble span.b-s:nth-child(3){inset:4px; border-top:   8px solid #ffeb3b;}',
+        '.ht-bubble span.b-s:nth-child(4){inset:12px;border-left:  8px solid #ff4484;}',
+        '.ht-bubble span.b-s:nth-child(5){inset:4px; border-bottom:6px  solid #fff;  ;transform:rotate(330deg);}',
         '.ht-bubble.ht-bubble-visible{opacity:1;transform:scale(1);}',
         '.ht-bubble-icon {position:relative;z-index:5;font-size:20px;line-height:1;}',
         '.ht-bubble-level{position:relative;z-index:5;font-size:9px;font-weight:800;color:rgba(255,220,120,0.95);letter-spacing:0.5px;margin-top:2px;}',
@@ -179,7 +160,6 @@
 })();
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
-const _DRIFT_CLASSES  = ['bubble-drift-a','bubble-drift-b','bubble-drift-c','bubble-drift-d'];
 const _BOB_CLASSES    = ['ht-bubble-bob-a','ht-bubble-bob-b','ht-bubble-bob-c'];
 const _SPARKLE_COLORS = [
     '#ffffff','#ffe0ff','#e0f0ff','#ffd0a0',
@@ -190,16 +170,62 @@ function _rand(min, max)  { return min + Math.random() * (max - min); }
 function _pick(arr)       { return arr[Math.floor(Math.random() * arr.length)]; }
 function _bubbleOverlay() { return document.getElementById('bubble-overlay'); }
 
+// ── Per-bubble random drift ────────────────────────────────────────────────────
+// Generates a unique @keyframes rule with 5 random waypoints so every bubble
+// moves differently. A counter ensures the class name is globally unique.
+let _driftCounter = 0;
+function _startBubbleDrift(el, driftDur) {
+    const id   = 'bd-' + (++_driftCounter);
+    const steps = 5;
+    // Each waypoint: wobble left/right ±40px, drift upward 0→90px over lifetime
+    let keyframeCSS = '@keyframes ' + id + '{';
+    for (let i = 0; i <= steps; i++) {
+        const pct = Math.round((i / steps) * 100);
+        const tx  = Math.round(_rand(-40, 40));
+        const ty  = -Math.round(_rand(10, 20) * i);   // steadily drifts upward
+        keyframeCSS += pct + '%{translate:' + tx + 'px ' + ty + 'px;}';
+    }
+    keyframeCSS += '}';
+
+    const style = document.createElement('style');
+    style.dataset.bubbleDrift = id;
+    style.textContent = keyframeCSS;
+    document.head.appendChild(style);
+
+    el.style.animation = id + ' ' + driftDur + 's cubic-bezier(0.45,0.05,0.55,0.95) forwards';
+    el._driftStyleId   = id;  // stored so we can remove it on pop
+}
+
+function _cleanupDriftStyle(el) {
+    if (el._driftStyleId) {
+        document.querySelector('style[data-bubble-drift="' + el._driftStyleId + '"]')?.remove();
+        el._driftStyleId = null;
+    }
+}
+
 // Shared iridescent span markup — same 5 spans used in every bubble type
 const _SPANS = '<span class="b-s"></span><span class="b-s"></span><span class="b-s"></span><span class="b-s"></span><span class="b-s"></span>';
 
 // ── Pop effect ─────────────────────────────────────────────────────────────────
-// Triggers the collapse animation, spawns colour particles at the bubble center,
-// then removes the element from the DOM.
+// Snapshots the bubble's current screen position, clears the drift animation
+// (which would snap it back to origin), then fires the pop + particles.
 function _popBubble(el, isEvent) {
+    // 1. Snapshot where the bubble actually is right now
+    const rect = el.getBoundingClientRect();
+
+    // 2. Freeze it there — clear drift animation, set left/top to visual position
+    el.style.animation = 'none';
+    el.style.translate  = 'none';
+    el.style.left       = rect.left + 'px';
+    el.style.top        = rect.top  + 'px';
+    _cleanupDriftStyle(el);
+
+    // 3. Force a reflow so the position change takes effect before the pop
+    void el.offsetWidth;
+
+    // 4. Now fire the pop animation (safe — no drift to snap back from)
     el.classList.add('bubble-popping');
 
-    const rect    = el.getBoundingClientRect();
     const cx      = rect.left + rect.width  / 2;
     const cy      = rect.top  + rect.height / 2;
     const count   = isEvent ? 16 : 9;
@@ -257,7 +283,7 @@ function displayBubbleMessage(tags, parsedMessageHTML, isAction) {
         _SPANS +
         '<div class="bubble-content">' +
             '<span class="badges">' + badgesHTML + '</span>' +
-            '<span class="bubble-username" style="color:' + userColor + '">' + escapeHTML(username) + '</span>' +
+            '<span class="bubble-username username" style="color:' + userColor + '">' + escapeHTML(username) + '</span>' +
             '<span class="bubble-message"' + (msgStyle ? ' style="' + msgStyle + '"' : '') + '> ' + parsedMessageHTML + '</span>' +
         '</div>';
 
@@ -273,10 +299,9 @@ function displayBubbleMessage(tags, parsedMessageHTML, isAction) {
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('bubble-visible')));
 
     // Phase 2 — start drifting after blow-up settles (~450ms)
-    const driftDur = _rand(5, 9);
+    const driftDur = _rand(6, 11);
     setTimeout(function () {
-        el.classList.add(_pick(_DRIFT_CLASSES));
-        el.style.setProperty('--drift-dur', driftDur + 's');
+        _startBubbleDrift(el, driftDur);
     }, 450);
 
     // Phase 3 — pop at end of lifetime
