@@ -2,304 +2,209 @@
 // "Bubbles" chat style — every chat message spawns as a floating soap bubble
 // that drifts gently before popping. Special variants for events and hype train.
 //
-// Guard: every public function checks CONFIG.chatStyle === 'bubbles' first.
-// Integration points:
-//   • displayMessage()      in renderer.js  → calls displayBubbleMessage()
-//   • displayEventMessage() in events.js    → calls displayBubbleEvent() for subs/bits
-//   • handlePubSubHypeTrain() in hype-train.js → calls bubbleHypeTrainUpdate()
+// Visual technique from Uiverse.io (by Dennyhml):
+//   5 absolutely-positioned border-spans with blur create iridescent refraction.
+//   Two white blobs via ::before/::after act as specular highlights.
+//   The shell itself is transparent — the sphere illusion is pure CSS.
+//
+// Integration points (all guarded by CONFIG.chatStyle === 'bubbles'):
+//   • displayMessage()        in renderer.js   → displayBubbleMessage()
+//   • displayEventMessage()   in events.js     → displayBubbleEvent()
+//   • handlePubSubHypeTrain() in hype-train.js → bubbleHypeTrainShow/Update/End()
 
 // ── Inject CSS once ────────────────────────────────────────────────────────────
+// CSS is built as an array-join rather than a template-literal so that the
+// backtick characters inside JS template strings below never conflict with
+// the CSS string boundary.
 (function _injectBubbleCSS() {
     const s = document.createElement('style');
     s.id = 'bubble-styles';
-    s.textContent = `
-    /* ── Base bubble ──────────────────────────────────────────────────────── */
-    #bubble-overlay {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 10;
-    }
+    s.textContent = [
+        // ── Overlay container ────────────────────────────────────────────────
+        '#bubble-overlay {',
+        '    position:fixed; inset:0;',
+        '    pointer-events:none; overflow:hidden; z-index:10;',
+        '}',
 
-    .soap-bubble {
-        position: absolute;
-        max-width: 260px;
-        min-width: 120px;
-        padding: 10px 14px;
-        border-radius: 24px;
-        background: radial-gradient(ellipse at 30% 25%,
-            rgba(255,255,255,0.18) 0%,
-            rgba(180,210,255,0.08) 40%,
-            rgba(10,10,30,0.55) 100%);
-        border: 1.5px solid rgba(180,220,255,0.6);
-        box-shadow:
-            inset 2px 3px 8px rgba(255,255,255,0.25),
-            inset -2px -2px 6px rgba(100,180,255,0.1),
-            0 0 12px rgba(100,180,255,0.2);
-        color: rgba(255,255,255,0.92);
-        font-size: var(--message-font-size, 15px);
-        font-family: var(--chat-font-family, sans-serif);
-        line-height: 1.4;
-        word-break: break-word;
-        pointer-events: none;
+        // ── Base soap bubble shell ───────────────────────────────────────────
+        '.soap-bubble {',
+        '    position:absolute;',
+        '    min-width:140px; max-width:270px;',
+        '    border-radius:999px;',
+        '    padding:12px 18px;',
+        '    background:transparent;',
+        '    box-shadow:inset 0 0 25px rgba(255,255,255,0.08);',
+        '    color:rgba(255,255,255,0.95);',
+        '    font-size:var(--message-font-size,15px);',
+        '    font-family:var(--chat-font-family,sans-serif);',
+        '    line-height:1.4; word-break:break-word;',
+        '    pointer-events:none;',
+        '    isolation:isolate; overflow:hidden;',
+        '    transform:scale(0); opacity:0;',
+        '    transition:transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;',
+        '}',
+        '.soap-bubble.bubble-visible { opacity:1; transform:scale(1); }',
 
-        /* enter: scale up from 0 */
-        transform: scale(0);
-        opacity: 0;
-        transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
-                    opacity 0.2s ease;
-    }
-    .soap-bubble.bubble-visible {
-        opacity: 1;
-        transform: scale(1);
-    }
+        // ── Iridescent span layers (Uiverse.io technique) ────────────────────
+        '.soap-bubble span.b-s {',
+        '    position:absolute; border-radius:50%; pointer-events:none;',
+        '}',
+        '.soap-bubble span.b-s:nth-child(1){inset:6px; border-left:  12px solid #0fb4ff;filter:blur(7px);}',
+        '.soap-bubble span.b-s:nth-child(2){inset:6px; border-right: 12px solid #ff4484;filter:blur(7px);}',
+        '.soap-bubble span.b-s:nth-child(3){inset:6px; border-top:   12px solid #ffeb3b;filter:blur(7px);}',
+        '.soap-bubble span.b-s:nth-child(4){inset:20px;border-left:  12px solid #ff4484;filter:blur(10px);}',
+        '.soap-bubble span.b-s:nth-child(5){inset:6px; border-bottom:8px  solid #fff;   filter:blur(7px);transform:rotate(330deg);}',
 
-    /* iridescent shimmer on the border */
-    @keyframes bubble-shimmer {
-        0%   { border-color: rgba(180,220,255,0.65); }
-        20%  { border-color: rgba(200,160,255,0.65); }
-        40%  { border-color: rgba(160,255,210,0.65); }
-        60%  { border-color: rgba(255,210,160,0.65); }
-        80%  { border-color: rgba(160,210,255,0.65); }
-        100% { border-color: rgba(180,220,255,0.65); }
-    }
-    .soap-bubble { animation: bubble-shimmer 4s linear infinite; }
+        // ── White highlight blobs ─────────────────────────────────────────────
+        '.soap-bubble::before{',
+        '    content:"";position:absolute;',
+        '    top:22%;left:14%;width:18px;height:18px;',
+        '    border-radius:50%;background:#fff;z-index:10;filter:blur(2px);pointer-events:none;',
+        '}',
+        '.soap-bubble::after{',
+        '    content:"";position:absolute;',
+        '    top:40%;left:26%;width:12px;height:12px;',
+        '    border-radius:50%;background:#fff;z-index:10;filter:blur(2px);pointer-events:none;',
+        '}',
 
-    /* white highlight crescent — top-left of bubble */
-    .soap-bubble::before {
-        content: '';
-        position: absolute;
-        top: 6px; left: 10px;
-        width: 30%; height: 18%;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.22);
-        pointer-events: none;
-        transform: rotate(-20deg);
-    }
+        // ── Content floats above the color spans ──────────────────────────────
+        '.bubble-content{position:relative;z-index:5;}',
 
-    /* ── Drift animations ─────────────────────────────────────────────────── */
-    @keyframes bubble-drift-a {
-        0%   { translate: 0px 0px; }
-        30%  { translate: 18px -28px; }
-        60%  { translate: -12px -50px; }
-        100% { translate: 8px -80px; }
-    }
-    @keyframes bubble-drift-b {
-        0%   { translate: 0px 0px; }
-        35%  { translate: -22px -20px; }
-        65%  { translate: 10px -48px; }
-        100% { translate: -16px -75px; }
-    }
-    @keyframes bubble-drift-c {
-        0%   { translate: 0px 0px; }
-        40%  { translate: 25px -15px; }
-        70%  { translate: 5px -45px; }
-        100% { translate: 20px -70px; }
-    }
-    @keyframes bubble-drift-d {
-        0%   { translate: 0px 0px; }
-        30%  { translate: -8px -35px; }
-        60%  { translate: 15px -55px; }
-        100% { translate: -5px -85px; }
-    }
+        // ── Drift animations ──────────────────────────────────────────────────
+        '@keyframes bubble-drift-a{',
+        '  0%  {translate:0px 0px;}   30%{translate:18px -28px;}',
+        '  60% {translate:-12px -55px;} 100%{translate:8px -90px;}',
+        '}',
+        '@keyframes bubble-drift-b{',
+        '  0%  {translate:0px 0px;}   35%{translate:-22px -20px;}',
+        '  65% {translate:10px -52px;} 100%{translate:-16px -80px;}',
+        '}',
+        '@keyframes bubble-drift-c{',
+        '  0%  {translate:0px 0px;}   40%{translate:25px -15px;}',
+        '  70% {translate:5px -48px;}  100%{translate:20px -75px;}',
+        '}',
+        '@keyframes bubble-drift-d{',
+        '  0%  {translate:0px 0px;}   30%{translate:-8px -35px;}',
+        '  60% {translate:15px -58px;} 100%{translate:-5px -88px;}',
+        '}',
+        '.bubble-drift-a{animation:bubble-drift-a var(--drift-dur,7s) ease-in-out forwards;}',
+        '.bubble-drift-b{animation:bubble-drift-b var(--drift-dur,7s) ease-in-out forwards;}',
+        '.bubble-drift-c{animation:bubble-drift-c var(--drift-dur,7s) ease-in-out forwards;}',
+        '.bubble-drift-d{animation:bubble-drift-d var(--drift-dur,7s) ease-in-out forwards;}',
 
-    .bubble-drift-a { animation: bubble-shimmer 4s linear infinite, bubble-drift-a var(--drift-dur,6s) ease-in-out forwards; }
-    .bubble-drift-b { animation: bubble-shimmer 4s linear infinite, bubble-drift-b var(--drift-dur,6s) ease-in-out forwards; }
-    .bubble-drift-c { animation: bubble-shimmer 4s linear infinite, bubble-drift-c var(--drift-dur,6s) ease-in-out forwards; }
-    .bubble-drift-d { animation: bubble-shimmer 4s linear infinite, bubble-drift-d var(--drift-dur,6s) ease-in-out forwards; }
+        // ── Pop ───────────────────────────────────────────────────────────────
+        '@keyframes bubble-pop{',
+        '  0%  {transform:scale(1);   opacity:1; filter:brightness(1);}',
+        '  35% {transform:scale(1.15);opacity:0.9;filter:brightness(2);}',
+        '  100%{transform:scale(0.05);opacity:0;}',
+        '}',
+        '.bubble-popping{animation:bubble-pop 0.25s ease-in forwards !important;}',
 
-    /* ── Pop ──────────────────────────────────────────────────────────────── */
-    @keyframes bubble-pop {
-        0%   { transform: scale(1);   opacity: 1; }
-        40%  { transform: scale(1.18); opacity: 0.8; }
-        100% { transform: scale(0.1); opacity: 0; }
-    }
-    .bubble-popping {
-        animation: bubble-pop 0.22s ease-in forwards !important;
-        border-color: rgba(255,255,255,0.9) !important;
-        box-shadow: 0 0 24px rgba(200,230,255,0.7) !important;
-    }
+        // ── Pop particles ─────────────────────────────────────────────────────
+        '.bubble-particle,.bubble-sparkle{',
+        '    position:absolute;border-radius:50%;opacity:1;pointer-events:none;',
+        '    animation:bubble-particle-fly var(--fly-dur,0.5s) ease-out forwards;',
+        '}',
+        '@keyframes bubble-particle-fly{',
+        '  0%  {translate:0 0;opacity:1;scale:1;}',
+        '  100%{translate:var(--fx) var(--fy);opacity:0;scale:0.2;}',
+        '}',
 
-    /* ── Pop particle ─────────────────────────────────────────────────────── */
-    .bubble-particle {
-        position: absolute;
-        width: 5px; height: 5px;
-        border-radius: 50%;
-        opacity: 1;
-        pointer-events: none;
-        animation: bubble-particle-fly var(--fly-dur, 0.5s) ease-out forwards;
-    }
-    @keyframes bubble-particle-fly {
-        0%   { translate: 0 0; opacity: 1; scale: 1; }
-        100% { translate: var(--fx) var(--fy); opacity: 0; scale: 0.2; }
-    }
+        // ── Event bubble (subs / bits) ────────────────────────────────────────
+        '.soap-bubble-event{',
+        '    min-width:200px;max-width:340px;padding:18px 24px;border-radius:999px;',
+        '    box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 30px rgba(160,100,255,0.35);',
+        '}',
+        '.soap-bubble-event::before{width:24px;height:24px;top:18%;left:12%;filter:blur(3px);}',
+        '.soap-bubble-event::after {width:16px;height:16px;top:38%;left:24%;filter:blur(3px);}',
+        '.soap-bubble-event span.b-s:nth-child(1){inset:8px; border-left:  16px solid #0fb4ff;filter:blur(10px);}',
+        '.soap-bubble-event span.b-s:nth-child(2){inset:8px; border-right: 16px solid #ff4484;filter:blur(10px);}',
+        '.soap-bubble-event span.b-s:nth-child(3){inset:8px; border-top:   16px solid #ffeb3b;filter:blur(10px);}',
+        '.soap-bubble-event span.b-s:nth-child(4){inset:25px;border-left:  16px solid #a855f7;filter:blur(14px);}',
+        '.soap-bubble-event span.b-s:nth-child(5){inset:8px; border-bottom:12px solid #fff;   filter:blur(10px);transform:rotate(330deg);}',
+        '@keyframes event-bubble-glow{',
+        '  0%,100%{box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 25px rgba(160,100,255,0.35);}',
+        '  50%    {box-shadow:inset 0 0 40px rgba(255,255,255,0.10),0 0 50px rgba(160,100,255,0.65),0 0 80px rgba(80,160,255,0.25);}',
+        '}',
+        '.soap-bubble-event.bubble-visible{animation:event-bubble-glow 2s ease-in-out infinite;}',
 
-    /* ── Event bubble (subs / bits) ───────────────────────────────────────── */
-    .soap-bubble-event {
-        max-width: 320px;
-        min-width: 200px;
-        padding: 16px 20px;
-        border-radius: 28px;
-        border-width: 2px;
-        background: radial-gradient(ellipse at 30% 25%,
-            rgba(255,255,255,0.22) 0%,
-            rgba(200,180,255,0.10) 40%,
-            rgba(10,5,30,0.70) 100%);
-    }
+        // ── Inner text layout ─────────────────────────────────────────────────
+        '.bubble-username{font-weight:700;font-size:var(--name-font-size,15px);display:inline;}',
+        '.bubble-message {display:inline;color:rgba(255,255,255,0.9);}',
+        '.bubble-event-icon  {display:block;font-size:22px;text-align:center;margin-bottom:5px;}',
+        '.bubble-event-label {display:block;font-weight:800;font-size:14px;letter-spacing:0.5px;text-align:center;margin-bottom:2px;}',
+        '.bubble-event-detail{display:block;font-size:11px;text-align:center;color:rgba(255,255,255,0.6);font-style:italic;}',
 
-    @keyframes event-bubble-pulse {
-        0%,100% { box-shadow:
-            inset 2px 3px 10px rgba(255,255,255,0.3),
-            0 0 20px rgba(160,100,255,0.4),
-            0 0 40px rgba(160,100,255,0.2); }
-        50%     { box-shadow:
-            inset 2px 3px 10px rgba(255,255,255,0.3),
-            0 0 30px rgba(160,100,255,0.65),
-            0 0 60px rgba(160,100,255,0.35); }
-    }
-    .soap-bubble-event.bubble-visible {
-        animation: bubble-shimmer 3s linear infinite, event-bubble-pulse 2s ease-in-out infinite;
-    }
+        // ── Hype train edge bubbles ───────────────────────────────────────────
+        '.ht-bubble{',
+        '    position:absolute;width:72px;height:72px;border-radius:50%;',
+        '    background:transparent;box-shadow:inset 0 0 20px rgba(255,255,255,0.08);',
+        '    overflow:hidden;isolation:isolate;',
+        '    display:flex;flex-direction:column;align-items:center;justify-content:center;',
+        '    pointer-events:none;opacity:0;transform:scale(0);',
+        '    transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.34,1.56,0.64,1);',
+        '}',
+        '.ht-bubble::before{',
+        '    content:"";position:absolute;top:14%;left:18%;width:10px;height:10px;',
+        '    border-radius:50%;background:#fff;z-index:10;filter:blur(1.5px);',
+        '}',
+        '.ht-bubble::after{',
+        '    content:"";position:absolute;top:28%;left:28%;width:7px;height:7px;',
+        '    border-radius:50%;background:#fff;z-index:10;filter:blur(1.5px);',
+        '}',
+        '.ht-bubble span.b-s{position:absolute;border-radius:50%;pointer-events:none;}',
+        '.ht-bubble span.b-s:nth-child(1){inset:4px; border-left:  8px solid #FF6B35;filter:blur(5px);}',
+        '.ht-bubble span.b-s:nth-child(2){inset:4px; border-right: 8px solid #ff4484;filter:blur(5px);}',
+        '.ht-bubble span.b-s:nth-child(3){inset:4px; border-top:   8px solid #ffeb3b;filter:blur(5px);}',
+        '.ht-bubble span.b-s:nth-child(4){inset:12px;border-left:  8px solid #ff4484;filter:blur(7px);}',
+        '.ht-bubble span.b-s:nth-child(5){inset:4px; border-bottom:6px  solid #fff;  filter:blur(5px);transform:rotate(330deg);}',
+        '.ht-bubble.ht-bubble-visible{opacity:1;transform:scale(1);}',
+        '.ht-bubble-icon {position:relative;z-index:5;font-size:20px;line-height:1;}',
+        '.ht-bubble-level{position:relative;z-index:5;font-size:9px;font-weight:800;color:rgba(255,220,120,0.95);letter-spacing:0.5px;margin-top:2px;}',
 
-    /* big sparkle particles for events */
-    .bubble-sparkle {
-        position: absolute;
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        pointer-events: none;
-        animation: bubble-particle-fly var(--fly-dur, 0.7s) ease-out forwards;
-    }
+        '@keyframes ht-bubble-bob-a{0%,100%{translate:0 -8px;}50%{translate: 6px 8px;}}',
+        '@keyframes ht-bubble-bob-b{0%,100%{translate:0 -8px;}50%{translate:-8px 8px;}}',
+        '@keyframes ht-bubble-bob-c{0%,100%{translate:0 -8px;}50%{translate:10px 6px;}}',
+        '.ht-bubble-bob-a{animation:ht-bubble-bob-a var(--bob-dur,3s) ease-in-out infinite;}',
+        '.ht-bubble-bob-b{animation:ht-bubble-bob-b var(--bob-dur,3s) ease-in-out infinite;}',
+        '.ht-bubble-bob-c{animation:ht-bubble-bob-c var(--bob-dur,3s) ease-in-out infinite;}',
 
-    /* ── Bubble inner layout ──────────────────────────────────────────────── */
-    .bubble-username {
-        font-weight: 700;
-        font-size: var(--name-font-size, 15px);
-        display: inline;
-    }
-    .bubble-message {
-        display: inline;
-        color: rgba(255,255,255,0.88);
-    }
-    .bubble-event-icon {
-        display: block;
-        font-size: 20px;
-        text-align: center;
-        margin-bottom: 4px;
-    }
-    .bubble-event-label {
-        font-weight: 800;
-        font-size: 13px;
-        letter-spacing: 0.5px;
-        display: block;
-        text-align: center;
-        margin-bottom: 2px;
-    }
-    .bubble-event-detail {
-        font-size: 11px;
-        text-align: center;
-        color: rgba(255,255,255,0.65);
-        font-style: italic;
-        display: block;
-    }
-
-    /* ── Hype train bubbles ───────────────────────────────────────────────── */
-    .ht-bubble {
-        position: absolute;
-        width: 72px; height: 72px;
-        border-radius: 50%;
-        background: radial-gradient(ellipse at 30% 25%,
-            rgba(255,255,255,0.2) 0%,
-            rgba(255,140,50,0.12) 50%,
-            rgba(15,5,0,0.65) 100%);
-        border: 2px solid rgba(255,140,60,0.7);
-        box-shadow:
-            inset 2px 3px 8px rgba(255,255,255,0.2),
-            0 0 14px rgba(255,110,30,0.35);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-        opacity: 0;
-        transform: scale(0);
-        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .ht-bubble::before {
-        content: '';
-        position: absolute;
-        top: 6px; left: 10px;
-        width: 28%; height: 18%;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.22);
-        transform: rotate(-20deg);
-    }
-    .ht-bubble.ht-bubble-visible {
-        opacity: 1;
-        transform: scale(1);
-    }
-    .ht-bubble-icon  { font-size: 18px; line-height: 1; }
-    .ht-bubble-level { font-size: 10px; font-weight: 800; color: rgba(255,200,100,0.9); letter-spacing: 0.5px; }
-
-    @keyframes ht-bubble-bob-a {
-        0%,100% { translate: 0 0; }
-        50%     { translate: 6px -12px; }
-    }
-    @keyframes ht-bubble-bob-b {
-        0%,100% { translate: 0 0; }
-        50%     { translate: -8px -8px; }
-    }
-    @keyframes ht-bubble-bob-c {
-        0%,100% { translate: 0 0; }
-        50%     { translate: 10px -6px; }
-    }
-    @keyframes ht-bubble-shimmer {
-        0%   { border-color: rgba(255,140,60,0.7); }
-        33%  { border-color: rgba(255,80,200,0.6); }
-        66%  { border-color: rgba(80,200,255,0.6); }
-        100% { border-color: rgba(255,140,60,0.7); }
-    }
-    .ht-bubble-bob-a { animation: ht-bubble-shimmer 3s linear infinite, ht-bubble-bob-a var(--bob-dur,3s) ease-in-out infinite; }
-    .ht-bubble-bob-b { animation: ht-bubble-shimmer 3s linear infinite, ht-bubble-bob-b var(--bob-dur,3s) ease-in-out infinite; }
-    .ht-bubble-bob-c { animation: ht-bubble-shimmer 3s linear infinite, ht-bubble-bob-c var(--bob-dur,3s) ease-in-out infinite; }
-
-    @keyframes ht-bubble-flyoff {
-        0%   { opacity: 1; }
-        100% { opacity: 0; translate: var(--flyoff-x, 0px) var(--flyoff-y, -300px); }
-    }
-    .ht-bubble-flying {
-        animation: ht-bubble-flyoff 1.2s ease-in forwards !important;
-    }
-    `;
+        '@keyframes ht-bubble-flyoff{',
+        '  0%  {opacity:1;}',
+        '  100%{opacity:0;translate:var(--flyoff-x,0px) var(--flyoff-y,-300px);}',
+        '}',
+        '.ht-bubble-flying{animation:ht-bubble-flyoff 1.2s ease-in forwards !important;}',
+    ].join('\n');
     document.head.appendChild(s);
 })();
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
-const _DRIFT_CLASSES = ['bubble-drift-a','bubble-drift-b','bubble-drift-c','bubble-drift-d'];
-const _BOB_CLASSES   = ['ht-bubble-bob-a','ht-bubble-bob-b','ht-bubble-bob-c'];
+const _DRIFT_CLASSES  = ['bubble-drift-a','bubble-drift-b','bubble-drift-c','bubble-drift-d'];
+const _BOB_CLASSES    = ['ht-bubble-bob-a','ht-bubble-bob-b','ht-bubble-bob-c'];
 const _SPARKLE_COLORS = [
     '#ffffff','#ffe0ff','#e0f0ff','#ffd0a0',
     '#c0e0ff','#ffb0e0','#b0ffe0','#fff0a0',
 ];
 
-function _rand(min, max) { return min + Math.random() * (max - min); }
-function _randInt(min, max) { return Math.floor(_rand(min, max + 1)); }
-function _pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
+function _rand(min, max)  { return min + Math.random() * (max - min); }
+function _pick(arr)       { return arr[Math.floor(Math.random() * arr.length)]; }
 function _bubbleOverlay() { return document.getElementById('bubble-overlay'); }
 
+// Shared iridescent span markup — same 5 spans used in every bubble type
+const _SPANS = '<span class="b-s"></span><span class="b-s"></span><span class="b-s"></span><span class="b-s"></span><span class="b-s"></span>';
+
 // ── Pop effect ─────────────────────────────────────────────────────────────────
-// Fires the pop animation on a bubble, spawns particles at its center,
-// then removes the bubble element from the DOM.
-function _popBubble(el, isEvent = false) {
+// Triggers the collapse animation, spawns colour particles at the bubble center,
+// then removes the element from the DOM.
+function _popBubble(el, isEvent) {
     el.classList.add('bubble-popping');
 
-    const rect   = el.getBoundingClientRect();
-    const cx     = rect.left + rect.width  / 2;
-    const cy     = rect.top  + rect.height / 2;
-    const count  = isEvent ? 16 : 9;
-    const spread = isEvent ? 90 : 55;
-    const dur    = isEvent ? 0.75 : 0.5;
+    const rect    = el.getBoundingClientRect();
+    const cx      = rect.left + rect.width  / 2;
+    const cy      = rect.top  + rect.height / 2;
+    const count   = isEvent ? 16 : 9;
+    const spread  = isEvent ? 90 : 55;
+    const dur     = isEvent ? 0.75 : 0.5;
     const overlay = _bubbleOverlay();
 
     for (let i = 0; i < count; i++) {
@@ -310,52 +215,53 @@ function _popBubble(el, isEvent = false) {
         const size  = isEvent ? _rand(5, 10) : _rand(3, 6);
 
         const p = document.createElement('div');
-        p.className = isEvent ? 'bubble-sparkle' : 'bubble-particle';
-        p.style.cssText = `
-            left:${cx - size/2}px; top:${cy - size/2}px;
-            width:${size}px; height:${size}px;
-            background:${_pick(_SPARKLE_COLORS)};
-            --fx:${fx}px; --fy:${fy}px;
-            --fly-dur:${dur + _rand(0, 0.2)}s;
-        `;
+        p.className        = isEvent ? 'bubble-sparkle' : 'bubble-particle';
+        p.style.left       = (cx - size / 2) + 'px';
+        p.style.top        = (cy - size / 2) + 'px';
+        p.style.width      = size + 'px';
+        p.style.height     = size + 'px';
+        p.style.background = _pick(_SPARKLE_COLORS);
+        p.style.setProperty('--fx',      fx + 'px');
+        p.style.setProperty('--fy',      fy + 'px');
+        p.style.setProperty('--fly-dur', (dur + _rand(0, 0.2)) + 's');
         overlay.appendChild(p);
         setTimeout(() => p.remove(), (dur + 0.3) * 1000);
     }
 
-    setTimeout(() => el.remove(), 250);
+    setTimeout(() => el.remove(), 280);
 }
 
 // ── Chat bubble ────────────────────────────────────────────────────────────────
-// Replaces the normal chat message flow when chatStyle === 'bubbles'.
-// Spawns a bubble at a random screen position, drifts it, then pops it.
-function displayBubbleMessage(tags, parsedMessageHTML, isAction = false) {
+// Called from renderer.js when chatStyle === 'bubbles'.
+function displayBubbleMessage(tags, parsedMessageHTML, isAction) {
     const overlay = _bubbleOverlay();
     if (!overlay) return;
 
-    const username  = tags['display-name'] || tags.username || 'chatter';
-    const userColor = tags.color || '#b0d0ff';
+    const username   = tags['display-name'] || tags.username || 'chatter';
+    const userColor  = tags.color || '#b0d0ff';
     const badgesHTML = typeof renderBadges === 'function' ? renderBadges(tags) : '';
 
-    // /me styling
     let msgStyle = '';
     if (isAction && CONFIG.meStyle !== 'none') {
-        msgStyle = CONFIG.meStyle === 'colored'
-            ? `color:${userColor}`
-            : CONFIG.meStyle === 'italic' ? 'font-style:italic' : '';
+        if      (CONFIG.meStyle === 'colored') msgStyle = 'color:' + userColor;
+        else if (CONFIG.meStyle === 'italic')  msgStyle = 'font-style:italic';
     }
 
     const el = document.createElement('div');
     el.className = 'soap-bubble';
 
-    // Tag for moderation removal
-    if (tags['id'])       el.dataset.msgId   = tags['id'];
-    if (tags.username)    el.dataset.username = tags.username.toLowerCase();
+    if (tags['id'])    el.dataset.msgId   = tags['id'];
+    if (tags.username) el.dataset.username = tags.username.toLowerCase();
 
-    el.innerHTML = `
-        <span class="badges">${badgesHTML}</span><span class="bubble-username" style="color:${userColor}">${escapeHTML(username)}</span>
-        <span class="bubble-message"${msgStyle ? ` style="${msgStyle}"` : ''}> ${parsedMessageHTML}</span>`;
+    el.innerHTML =
+        _SPANS +
+        '<div class="bubble-content">' +
+            '<span class="badges">' + badgesHTML + '</span>' +
+            '<span class="bubble-username" style="color:' + userColor + '">' + escapeHTML(username) + '</span>' +
+            '<span class="bubble-message"' + (msgStyle ? ' style="' + msgStyle + '"' : '') + '> ' + parsedMessageHTML + '</span>' +
+        '</div>';
 
-    // Random position — keep bubbles away from the very edge
+    // Random spawn position — keep away from screen edges
     const maxL = Math.max(10, window.innerWidth  - 280);
     const maxT = Math.max(10, window.innerHeight - 120);
     el.style.left = _rand(5, maxL) + 'px';
@@ -363,136 +269,122 @@ function displayBubbleMessage(tags, parsedMessageHTML, isAction = false) {
 
     overlay.appendChild(el);
 
-    // Phase 1 — blow up
+    // Phase 1 — blow up (double rAF ensures transition fires)
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('bubble-visible')));
 
-    // Phase 2 — start drifting after blow-up completes
+    // Phase 2 — start drifting after blow-up settles (~450ms)
     const driftDur = _rand(5, 9);
-    setTimeout(() => {
+    setTimeout(function () {
         el.classList.add(_pick(_DRIFT_CLASSES));
         el.style.setProperty('--drift-dur', driftDur + 's');
     }, 450);
 
     // Phase 3 — pop at end of lifetime
-    const lifetime = (CONFIG.messageLifetime > 0 ? CONFIG.messageLifetime : 8000);
-    setTimeout(() => _popBubble(el, false), lifetime);
+    const lifetime = CONFIG.messageLifetime > 0 ? CONFIG.messageLifetime : 8000;
+    setTimeout(function () { _popBubble(el, false); }, lifetime);
 
-    // 7TV cosmetics
     if (tags['user-id'] && typeof apply7TVCosmetics === 'function') {
         apply7TVCosmetics(tags['user-id'], el);
     }
 }
 
 // ── Event bubble (subs / bits) ─────────────────────────────────────────────────
-// Large glowing bubble centered on screen for big events.
+// Returns true if handled; false to fall back to normal event message rendering.
 function displayBubbleEvent(iconSvg, label, detail, typeClass) {
-    // Only intercept subs and bits — other events stay as normal messages
-    const isSpecial = typeClass.includes('sub-message') ||
+    const isSpecial = typeClass.includes('sub-message')  ||
                       typeClass.includes('gift-message') ||
                       typeClass.includes('bits-message');
-    if (!isSpecial) return false; // caller should fall back to normal
+    if (!isSpecial) return false;
 
     const overlay = _bubbleOverlay();
     if (!overlay) return true;
 
     const el = document.createElement('div');
-    el.className = 'soap-bubble soap-bubble-event';
+    el.className        = 'soap-bubble soap-bubble-event';
+    el.style.left       = '50%';
+    el.style.top        = '40%';
+    el.style.transform  = 'translateX(-50%) scale(0)';
+    el.style.opacity    = '0';
+    el.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
 
-    // Center on screen
-    el.style.left      = '50%';
-    el.style.top       = '40%';
-    el.style.transform = 'translateX(-50%) scale(0)';
-    el.style.marginLeft = '0';
-
-    el.innerHTML = `
-        <span class="bubble-event-icon">${iconSvg}</span>
-        <span class="bubble-event-label">${escapeHTML(label)}</span>
-        <span class="bubble-event-detail">${escapeHTML(detail)}</span>`;
+    el.innerHTML =
+        _SPANS +
+        '<div class="bubble-content">' +
+            '<span class="bubble-event-icon">'   + iconSvg          + '</span>' +
+            '<span class="bubble-event-label">'  + escapeHTML(label)  + '</span>' +
+            '<span class="bubble-event-detail">' + escapeHTML(detail) + '</span>' +
+        '</div>';
 
     overlay.appendChild(el);
 
-    // Override transform to allow scale transition from center
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        el.style.transform = 'translateX(-50%) scale(1)';
-        el.style.opacity   = '1';
-        el.classList.add('bubble-visible');
-    }));
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+            el.style.transform = 'translateX(-50%) scale(1)';
+            el.style.opacity   = '1';
+            el.classList.add('bubble-visible');
+        });
+    });
 
-    // Pop after 5s
-    setTimeout(() => {
-        // Temporarily fix position so particles spawn correctly
-        const rect = el.getBoundingClientRect();
+    // Pop after 5 seconds — snapshot position first so particles spawn at the right place
+    setTimeout(function () {
+        var rect = el.getBoundingClientRect();
         el.style.left      = rect.left + 'px';
         el.style.top       = rect.top  + 'px';
         el.style.transform = 'none';
         _popBubble(el, true);
     }, 5000);
 
-    return true; // handled
+    return true;
 }
 
 // ── Hype Train bubble mode ─────────────────────────────────────────────────────
-// Spawns N bubbles around the edges of the screen for the duration of the train.
-// Exported functions are called from hype-train.js when chatStyle === 'bubbles'.
+var HT_BUBBLE_COUNT = 5;
+var _htBubbles      = [];
+var _htBubbleLevel  = 1;
 
-const HT_BUBBLE_COUNT = 5;
-let _htBubbles = [];
-let _htBubbleLevel = 1;
-
-// Generate random edge positions — spread around the screen perimeter
 function _edgePositions(n) {
-    const positions = [];
-    const margin    = 20;
-    const bSize     = 72;
-    const W = window.innerWidth,  H = window.innerHeight;
-
-    for (let i = 0; i < n; i++) {
-        const edge = i % 4; // 0=top, 1=right, 2=bottom, 3=left
-        let x, y;
-        switch (edge) {
-            case 0: x = _rand(margin, W - bSize - margin); y = margin + _rand(0, 30); break;
-            case 1: x = W - bSize - margin - _rand(0, 30); y = _rand(margin + bSize, H - bSize - margin); break;
-            case 2: x = _rand(margin, W - bSize - margin); y = H - bSize - margin - _rand(0, 30); break;
-            case 3: x = margin + _rand(0, 30);             y = _rand(margin + bSize, H - bSize - margin); break;
-        }
-        positions.push({ x, y, edge });
+    var margin = 20, bSize = 72;
+    var W = window.innerWidth, H = window.innerHeight;
+    var positions = [];
+    for (var i = 0; i < n; i++) {
+        var edge = i % 4, x, y;
+        if      (edge === 0) { x = _rand(margin, W - bSize - margin); y = margin + _rand(0, 30); }
+        else if (edge === 1) { x = W - bSize - margin - _rand(0, 30); y = _rand(margin + bSize, H - bSize - margin); }
+        else if (edge === 2) { x = _rand(margin, W - bSize - margin); y = H - bSize - margin - _rand(0, 30); }
+        else                 { x = margin + _rand(0, 30);             y = _rand(margin + bSize, H - bSize - margin); }
+        positions.push({ x: x, y: y });
     }
     return positions;
 }
 
 function _buildHtBubble(pos, level) {
-    const el = document.createElement('div');
-    el.className = 'ht-bubble';
-    el.style.left = pos.x + 'px';
-    el.style.top  = pos.y + 'px';
-
-    const bobClass = _pick(_BOB_CLASSES);
-    const bobDur   = _rand(2.5, 4.5).toFixed(1);
-
-    el.innerHTML = `<span class="ht-bubble-icon">🚂</span><span class="ht-bubble-level">LVL ${level}</span>`;
-    el.dataset.bobClass = bobClass;
-    el.dataset.bobDur   = bobDur;
+    var el = document.createElement('div');
+    el.className        = 'ht-bubble';
+    el.style.left       = pos.x + 'px';
+    el.style.top        = pos.y + 'px';
+    el.dataset.bobClass = _pick(_BOB_CLASSES);
+    el.dataset.bobDur   = _rand(2.5, 4.5).toFixed(1);
+    el.innerHTML =
+        _SPANS +
+        '<span class="ht-bubble-icon">🚂</span>' +
+        '<span class="ht-bubble-level">LVL ' + level + '</span>';
     return el;
 }
 
 function bubbleHypeTrainShow(level) {
-    const overlay = _bubbleOverlay();
+    var overlay = _bubbleOverlay();
     if (!overlay) return;
-    _htBubbles.forEach(b => b.remove());
-    _htBubbles = [];
-    _htBubbleLevel = level ?? 1;
+    _htBubbles.forEach(function (b) { b.remove(); });
+    _htBubbles     = [];
+    _htBubbleLevel = level || 1;
 
-    const positions = _edgePositions(HT_BUBBLE_COUNT);
-    positions.forEach((pos, i) => {
-        const el = _buildHtBubble(pos, _htBubbleLevel);
+    _edgePositions(HT_BUBBLE_COUNT).forEach(function (pos, i) {
+        var el = _buildHtBubble(pos, _htBubbleLevel);
         overlay.appendChild(el);
         _htBubbles.push(el);
-
-        // staggered entrance
-        setTimeout(() => {
+        setTimeout(function () {
             el.classList.add('ht-bubble-visible');
-            // start bobbing only after entrance
-            setTimeout(() => {
+            setTimeout(function () {
                 el.classList.add(el.dataset.bobClass);
                 el.style.setProperty('--bob-dur', el.dataset.bobDur + 's');
             }, 450);
@@ -501,29 +393,25 @@ function bubbleHypeTrainShow(level) {
 }
 
 function bubbleHypeTrainUpdate(level) {
-    _htBubbleLevel = level ?? _htBubbleLevel;
-    _htBubbles.forEach(el => {
-        const lvlEl = el.querySelector('.ht-bubble-level');
-        if (lvlEl) lvlEl.textContent = `LVL ${_htBubbleLevel}`;
-        // brief flash
+    _htBubbleLevel = level || _htBubbleLevel;
+    _htBubbles.forEach(function (el) {
+        var lvl = el.querySelector('.ht-bubble-level');
+        if (lvl) lvl.textContent = 'LVL ' + _htBubbleLevel;
         el.style.transition = 'box-shadow 0.1s';
         el.style.boxShadow  = '0 0 30px rgba(255,200,50,0.8)';
-        setTimeout(() => { el.style.boxShadow = ''; el.style.transition = ''; }, 300);
+        setTimeout(function () { el.style.boxShadow = ''; el.style.transition = ''; }, 300);
     });
 }
 
 function bubbleHypeTrainEnd() {
-    _htBubbles.forEach((el, i) => {
-        const angle = _rand(-40, 40); // fly up with slight angle
-        const fx    = Math.round(Math.sin(angle * Math.PI / 180) * 200);
-        const fy    = -_rand(250, 400);
-        el.style.setProperty('--flyoff-x', fx + 'px');
-        el.style.setProperty('--flyoff-y', fy + 'px');
-
-        setTimeout(() => {
-            el.classList.remove(..._BOB_CLASSES);
+    _htBubbles.forEach(function (el, i) {
+        var angle = _rand(-40, 40);
+        el.style.setProperty('--flyoff-x', Math.round(Math.sin(angle * Math.PI / 180) * 200) + 'px');
+        el.style.setProperty('--flyoff-y', '-' + Math.round(_rand(250, 400)) + 'px');
+        setTimeout(function () {
+            _BOB_CLASSES.forEach(function (c) { el.classList.remove(c); });
             el.classList.add('ht-bubble-flying');
-            setTimeout(() => el.remove(), 1300);
+            setTimeout(function () { el.remove(); }, 1300);
         }, i * 100);
     });
     _htBubbles = [];
