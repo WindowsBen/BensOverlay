@@ -254,7 +254,13 @@ function _startBubbleDrift(el, driftDur) {
     style.textContent = keyframeCSS;
     document.head.appendChild(style);
 
-    el.style.animation = id + ' ' + driftDur + 's cubic-bezier(0.45,0.05,0.55,0.95) forwards';
+    // Lock the inflated state as inline styles BEFORE overwriting the animation
+    // property. Without this, replacing animation removes the bubble-inflate
+    // `forwards` fill and the base CSS opacity:0/scale(0) snaps back instantly.
+    el.style.opacity   = '1';
+    el.style.transform = 'scale(1)';
+
+    el.style.animation = 'bubble-iridescence 5s linear infinite, ' + id + ' ' + driftDur + 's cubic-bezier(0.45,0.05,0.55,0.95) forwards';
     el._driftStyleId   = id;  // stored so we can remove it on pop
 }
 
@@ -274,7 +280,12 @@ function _popBubble(el, isEvent) {
     // 1. Snapshot where the bubble actually is right now
     const rect = el.getBoundingClientRect();
 
-    // 2. Freeze it there — clear drift animation, set left/top to visual position
+    // 2. Freeze it there — lock current position as inline styles, then clear
+    //    the drift animation. Setting animation:'none' would let the base CSS
+    //    opacity:0/scale(0) snap in for one frame before bubble-popping starts,
+    //    so we set opacity/transform first, then force a reflow, then clear.
+    el.style.opacity   = '1';
+    el.style.transform = 'scale(1)';
     el.style.animation = 'none';
     el.style.translate  = 'none';
     el.style.left       = rect.left + 'px';
@@ -358,11 +369,11 @@ function displayBubbleMessage(tags, parsedMessageHTML, isAction) {
     // Phase 1 — blow up (double rAF ensures transition fires)
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('bubble-visible')));
 
-    // Phase 2 — start drifting after blow-up settles (~450ms)
+    // Phase 2 — start drifting after inflate animation completes (~700ms)
     const driftDur = _rand(6, 11);
     setTimeout(function () {
         _startBubbleDrift(el, driftDur);
-    }, 450);
+    }, 700);
 
     // Phase 3 — pop at end of lifetime
     const lifetime = CONFIG.messageLifetime > 0 ? CONFIG.messageLifetime : 8000;
