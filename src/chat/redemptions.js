@@ -13,9 +13,30 @@
 const rewardNameCache = {};
 // rewardId → true if a fetch is already in flight
 const rewardFetchPending = {};
-// "rewardId:username" → timestamp — deduplicates IRC vs PubSub double-fires
-const recentRedemptions = {};
-const REDEEM_DEDUP_MS   = 5000;
+
+// Two separate dedup stores with different TTLs:
+//
+//  recentRedemptionIds   — keyed by Twitch's unique redemption UUID.
+//                          Long TTL (5 min) so status-transition re-fires
+//                          (UNFULFILLED → FULFILLED, streamer fulfils 60s later)
+//                          don't render a second time.
+//
+//  recentRedemptionRace  — keyed by "rewardId:username".
+//                          Short TTL (5s) — only exists to handle the IRC/PubSub
+//                          race where both paths fire within milliseconds for the
+//                          same text-input redeem.
+const recentRedemptionIds  = {};  // redemptionId  → timestamp
+const recentRedemptionRace = {};  // rewardId:user → timestamp
+
+const REDEEM_ID_TTL   = 5 * 60 * 1000;  // 5 minutes  — covers any fulfil delay
+const REDEEM_RACE_TTL = 5 * 1000;        // 5 seconds  — IRC vs PubSub overlap
+
+// Periodically evict expired entries so the maps don't grow indefinitely
+setInterval(() => {
+    const now = Date.now();
+    for (const k in recentRedemptionIds)  if (now - recentRedemptionIds[k]  > REDEEM_ID_TTL)   delete recentRedemptionIds[k];
+    for (const k in recentRedemptionRace) if (now - recentRedemptionRace[k] > REDEEM_RACE_TTL) delete recentRedemptionRace[k];
+}, 60 * 1000);
 
 async function getRewardName(broadcasterId, rewardId) {
     if (rewardNameCache[rewardId]) return rewardNameCache[rewardId];
@@ -92,45 +113,43 @@ async function handleRedemption(broadcasterId, tags, message) {
     if (!rewardId) return;
 
     const username = tags['display-name'] || tags.username || '';
-    const dedupKey = `${rewardId}:${username.toLowerCase()}`;
+    const raceKey  = `${rewardId}:${username.toLowerCase()}`;
     const now      = Date.now();
 
-    // First check — bail immediately if PubSub already rendered before we started
-    if (recentRedemptions[dedupKey] && now - recentRedemptions[dedupKey] < REDEEM_DEDUP_MS) return;
+    // Bail immediately if PubSub already rendered before we started
+    if (recentRedemptionRace[raceKey] && now - recentRedemptionRace[raceKey] < REDEEM_RACE_TTL) return;
 
-    // Stamp the key now so a concurrent IRC duplicate is suppressed
-    recentRedemptions[dedupKey] = now;
+    // Stamp the race key so a concurrent IRC duplicate is suppressed
+    recentRedemptionRace[raceKey] = now;
 
     const rewardName = await getRewardName(broadcasterId, rewardId);
 
-    // Second check — PubSub may have fired and rendered during the await above.
-    // If its timestamp is newer than what we wrote, it got there first — skip.
-    const stamp = recentRedemptions[dedupKey];
-    if (stamp && stamp !== now) return;
+    // Second check — PubSub may have fired and updated the race key during the
+    // await above. If its timestamp is newer than ours, it won the race — skip.
+    if (recentRedemptionRace[raceKey] !== now) return;
 
     renderRedemption(username, rewardName, message || '');
 }
 
 // Called from PubSub path (all redeems, with and without text input).
 // redemptionId is the unique per-event UUID from Twitch — used as the primary
-// dedup key so that multiple status-update events for the same redemption
-// (e.g. UNFULFILLED → FULFILLED) don't render more than once.
+// dedup key. A long TTL ensures that status-update re-fires (e.g. streamer
+// fulfils the reward 30 seconds later) never render a second time.
 function handlePubSubRedemption(rewardId, rewardName, username, userInput, redemptionId) {
     if (!CONFIG.showRedeems) return;
 
     const now = Date.now();
 
-    // Dedup by unique redemption ID (most reliable — each physical redemption has one)
+    // Dedup by unique redemption ID — blocks any status-transition re-fire
     if (redemptionId) {
-        if (recentRedemptions[redemptionId] && now - recentRedemptions[redemptionId] < REDEEM_DEDUP_MS) return;
-        recentRedemptions[redemptionId] = now;
+        if (recentRedemptionIds[redemptionId] && now - recentRedemptionIds[redemptionId] < REDEEM_ID_TTL) return;
+        recentRedemptionIds[redemptionId] = now;
     }
 
-    // Stamp the reward:user key with a fresh timestamp so that if the IRC path
-    // is mid-await when we render, its post-await check sees our newer timestamp
-    // and knows PubSub got there first.
-    const userKey = `${rewardId}:${username.toLowerCase()}`;
-    recentRedemptions[userKey] = Date.now();
+    // Stamp the race key so that if the IRC path is mid-await for the same
+    // text-input redeem, its post-await check sees our newer timestamp and skips.
+    const raceKey = `${rewardId}:${username.toLowerCase()}`;
+    recentRedemptionRace[raceKey] = now;
 
     renderRedemption(username, rewardName, userInput);
 }
