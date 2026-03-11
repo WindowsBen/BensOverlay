@@ -113,6 +113,96 @@ function _msgEvent(icon, name, detail, aId, aOId, bId, bOId, extra='') {
     </div>`;
 }
 
+function _msgAnnouncement() {
+    // Uses a fixed primary colour — colour variants only differ in border hue
+    const accent = 'rgba(169,112,255,0.85)';
+    const bg     = 'rgba(80,40,160,0.15)';
+    const ICON   = `<svg style="width:13px;height:13px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
+    const gap    = _pnum('messageGap', 8);
+    const lh     = parseFloat(_pv('lineHeight','')) || 1.4;
+    return `<div style="border-left:3px solid ${accent};background:${bg};border-radius:4px;padding:6px 8px;margin-bottom:${gap}px;line-height:${lh};${_pfont()}">
+        <div style="color:${accent};font-size:11px;font-weight:700;margin-bottom:3px;">${ICON}Announcement</div>
+        ${_nameSpan('ModeratorBot','#9146FF')}<span style="color:rgba(255,255,255,0.88);"> Remember to follow the community guidelines! 📋</span>
+    </div>`;
+}
+
+function _msgBan() {
+    const accent = _prgba('banAccent','banAccentOpacity','#FF4444');
+    const bg     = _prgba('banBg','banBgOpacity','#2a0000');
+    const gap    = _pnum('messageGap', 8);
+    return `<div style="background:${bg};border:1px solid ${accent};border-radius:5px;padding:8px 10px;margin-bottom:${gap}px;display:flex;align-items:center;gap:8px;${_pfont()}">
+        <svg style="width:20px;height:20px;flex-shrink:0;color:${accent};" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        <span style="color:${accent};font-weight:700;font-size:13px;">BadUser</span>
+        <span style="color:rgba(255,255,255,0.55);font-size:12px;">was banned</span>
+    </div>`;
+}
+
+function _msgTimeout() {
+    const accent = _prgba('timeoutAccent','timeoutAccentOpacity','#FF8C00');
+    const bg     = _prgba('timeoutBg','timeoutBgOpacity','#1a1200');
+    const gap    = _pnum('messageGap', 8);
+    return `<div style="background:${bg};border:1px solid ${accent};border-radius:5px;padding:8px 10px;margin-bottom:${gap}px;display:flex;align-items:center;gap:8px;${_pfont()}">
+        <svg style="width:20px;height:20px;flex-shrink:0;color:${accent};" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+        <span style="color:${accent};font-weight:700;font-size:13px;">SlowpokeFan</span>
+        <span style="color:rgba(255,255,255,0.55);font-size:12px;">timed out for 10m</span>
+    </div>`;
+}
+
+function _widgetPoll() {
+    const accent  = _prgba('pollAccent','pollAccentOpacity','#A970FF');
+    const bg      = _prgba('pollBg','pollBgOpacity','#0e0e1e');
+    const bar     = _prgba('pollBar','pollBarOpacity','#A970FF');
+    const winner  = _prgba('pollWinner','pollWinnerOpacity','#FFD700');
+    const gap     = _pnum('messageGap', 8);
+    const choices = [['Elden Ring','72%',true],['Hollow Knight','28%',false]];
+    return `<div style="background:${bg};border:1px solid ${accent};border-radius:8px;padding:10px 12px;margin-bottom:${gap}px;${_pfont()}">
+        <div style="color:${accent};font-weight:700;font-size:13px;margin-bottom:7px;">📊 What game next?</div>
+        ${choices.map(([t,p,w]) => `
+        <div style="margin-bottom:5px;">
+            <div style="display:flex;justify-content:space-between;color:${w?winner:'rgba(255,255,255,0.7)'};font-weight:${w?700:400};font-size:12px;margin-bottom:3px;"><span>${t}</span><span>${p}</span></div>
+            <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:${p};background:${w?winner:bar};border-radius:3px;"></div></div>
+        </div>`).join('')}
+        <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:5px;">1,240 votes · 45s remaining</div>
+    </div>`;
+}
+
+function _widgetPrediction() {
+    const bg     = _prgba('predBg','predBgOpacity','#0d0d1a');
+    const glow   = _prgba('predWinnerGlow','predWinnerGlowOpacity','#FFD700');
+    const gap    = _pnum('messageGap', 8);
+    const colors = ['#5b8dd9','#d95b5b'];
+    const opts   = [['Yes, ez clap','62%',0],['No chance','38%',1]];
+    return `<div style="background:${bg};border:1px solid rgba(169,112,255,0.4);border-radius:8px;padding:10px 12px;margin-bottom:${gap}px;${_pfont()}">
+        <div style="color:rgba(255,255,255,0.85);font-weight:700;font-size:13px;margin-bottom:7px;">🔮 Will I beat the boss?</div>
+        ${opts.map(([t,p,i]) => `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0;"></div>
+            <span style="color:rgba(255,255,255,0.75);flex:1;font-size:12px;">${t}</span>
+            <span style="color:${colors[i]};font-weight:700;font-size:12px;">${p}</span>
+        </div>`).join('')}
+        <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:5px;">3,800 points wagered · Locked</div>
+    </div>`;
+}
+
+function _widgetHypeTrain() {
+    const accent = _prgba('htAccent','htAccentOpacity','#FF6B35');
+    const bg     = _prgba('htBg','htBgOpacity','#1a0a00');
+    const bar    = _prgba('htBar','htBarOpacity','#FF6B35');
+    const gap    = _pnum('messageGap', 8);
+    return `<div style="background:${bg};border:1px solid ${accent};border-radius:8px;padding:8px 12px;margin-bottom:${gap}px;display:flex;align-items:center;gap:8px;${_pfont()}">
+        <span style="color:${accent};font-size:12px;font-weight:800;letter-spacing:1px;white-space:nowrap;">🚂 HYPE TRAIN</span>
+        <div style="background:${accent};border-radius:4px;padding:1px 6px;font-size:12px;font-weight:900;color:#fff;">2</div>
+        <div style="flex:1;"><div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="width:55%;height:100%;background:${bar};border-radius:3px;box-shadow:0 0 6px ${bar};"></div></div></div>
+        <span style="color:rgba(255,255,255,0.35);font-size:11px;white-space:nowrap;">142s</span>
+    </div>`;
+}
+
+// ── Checkbox helper ────────────────────────────────────────────────────────────
+function _on(id) {
+    const el = document.getElementById(id);
+    return el ? el.checked : true; // default to showing if element not found
+}
+
 // ── Full preview render ────────────────────────────────────────────────────────
 function renderChatPreview() {
     const panel = document.getElementById('preview-chat');
@@ -126,19 +216,29 @@ function renderChatPreview() {
     const redeemLabel = _pv('redeemLabel', 'redeemed')      || 'redeemed';
 
     try {
-        panel.innerHTML = [
+        const parts = [
+            _on('showHypeTrain')     && _widgetHypeTrain(),
             _msgChat('StreamerDude','#9146FF','Hey chat, welcome to the stream! 👋'),
             _msgChat('CoolViewer99','#FF6B6B','Let\'s go! PogChamp'),
-            _msgReply(),
-            _msgMe(),
-            _msgHighlight(),
-            _msgEvent('⭐','NightOwl',`${resubLabel} (6 months, Tier 1)!`,'resubAccent','resubAccentOpacity','resubBg','resubBgOpacity'),
-            _msgEvent('🎁','GenGifter',`${giftLabel} 5 Tier 1 subs to the channel!`,'giftAccent','giftAccentOpacity','giftBg','giftBgOpacity'),
-            _msgEvent('💎','BitsBoss',`${bitsLabel} 500 bits!`,'bitsAccent','bitsAccentOpacity','bitsBg','bitsBgOpacity','"GG streamers!"'),
-            _msgEvent('⚡','PointSpender',`${redeemLabel} Hydrate!`,'redeemAccent','redeemAccentOpacity','redeemBg','redeemBgOpacity'),
-            _msgEvent('🔥','MarathonFan',`${streakLabel} 30-stream watch streak!`,'streakAccent','streakAccentOpacity','streakBg','streakBgOpacity'),
-            _msgEvent('🚀','BigRaider',`${raidLabel} 250 viewers!`,'raidIncomingAccent','raidIncomingAccentOpacity','raidIncomingBg','raidIncomingBgOpacity'),
-        ].join('');
+            _on('showReplies')       && _msgReply(),
+            _pv('meStyle','colored') !== 'none' && _msgMe(),
+            _on('showAnnouncements') && _msgAnnouncement(),
+            _on('showHighlights')    && _msgHighlight(),
+            _on('showResubs')        && _msgEvent('⭐','NightOwl',`${resubLabel} (6 months, Tier 1)!`,'resubAccent','resubAccentOpacity','resubBg','resubBgOpacity'),
+            _on('showGifts')         && _msgEvent('🎁','GenGifter',`${giftLabel} 5 Tier 1 subs to the channel!`,'giftAccent','giftAccentOpacity','giftBg','giftBgOpacity'),
+            _on('showBits')          && _msgEvent('💎','BitsBoss',`${bitsLabel} 500 bits!`,'bitsAccent','bitsAccentOpacity','bitsBg','bitsBgOpacity','"GG streamers!"'),
+            _on('showRedeems')       && _msgEvent('⚡','PointSpender',`${redeemLabel} Hydrate!`,'redeemAccent','redeemAccentOpacity','redeemBg','redeemBgOpacity'),
+            _on('showStreaks')        && _msgEvent('🔥','MarathonFan',`${streakLabel} 30-stream watch streak!`,'streakAccent','streakAccentOpacity','streakBg','streakBgOpacity'),
+            _on('showRaidIncoming')  && _msgEvent('🚀','BigRaider',`${raidLabel} 250 viewers!`,'raidIncomingAccent','raidIncomingAccentOpacity','raidIncomingBg','raidIncomingBgOpacity'),
+            _on('showBans')          && _msgBan(),
+            _on('showTimeouts')      && _msgTimeout(),
+            _on('showPolls')         && _widgetPoll(),
+            _on('showPredictions')   && _widgetPrediction(),
+        ];
+
+        const html = parts.filter(Boolean).join('');
+        panel.innerHTML = html ||
+            `<div style="color:rgba(255,255,255,0.25);font-size:12px;padding:12px;font-style:italic;">All messages hidden — enable some settings to see a preview.</div>`;
     } catch(e) {
         panel.innerHTML = `<div style="color:rgba(255,255,255,0.3);font-size:12px;padding:8px;">Preview unavailable</div>`;
         console.warn('Preview render error:', e);
