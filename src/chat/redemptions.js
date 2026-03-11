@@ -98,16 +98,22 @@ async function handleRedemption(broadcasterId, tags, message) {
     if (!rewardId) return;
 
     const username = tags['display-name'] || tags.username || '';
-
-    // Suppress if PubSub already rendered this within the dedup window.
-    // IRC always fires after PubSub for text-input redeems, so if PubSub
-    // already wrote the key we can safely skip.
     const dedupKey = `${rewardId}:${username.toLowerCase()}`;
-    const now = Date.now();
+    const now      = Date.now();
+
+    // First check — bail immediately if PubSub already rendered before we started
     if (recentRedemptions[dedupKey] && now - recentRedemptions[dedupKey] < REDEEM_DEDUP_MS) return;
+
+    // Stamp the key now so a concurrent IRC duplicate is suppressed
     recentRedemptions[dedupKey] = now;
 
     const rewardName = await getRewardName(broadcasterId, rewardId);
+
+    // Second check — PubSub may have fired and rendered during the await above.
+    // If its timestamp is newer than what we wrote, it got there first — skip.
+    const stamp = recentRedemptions[dedupKey];
+    if (stamp && stamp !== now) return;
+
     renderRedemption(username, rewardName, message || '');
 }
 
@@ -126,9 +132,11 @@ function handlePubSubRedemption(rewardId, rewardName, username, userInput, redem
         recentRedemptions[redemptionId] = now;
     }
 
-    // Also stamp the reward:user key so the IRC path skips its duplicate fire
+    // Stamp the reward:user key with a fresh timestamp so that if the IRC path
+    // is mid-await when we render, its post-await check sees our newer timestamp
+    // and knows PubSub got there first.
     const userKey = `${rewardId}:${username.toLowerCase()}`;
-    recentRedemptions[userKey] = now;
+    recentRedemptions[userKey] = Date.now();
 
     renderRedemption(username, rewardName, userInput);
 }
