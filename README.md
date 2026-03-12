@@ -1,6 +1,6 @@
 # Twitch Chat Overlay
 
-A fully configurable Twitch chat overlay designed for OBS and other broadcast software. Runs entirely in a browser source — no applications to install, no subscriptions, no tracking.
+A self-hosted, fully configurable Twitch chat overlay designed for OBS and other broadcast software. Runs entirely in a browser source — no applications to install, no subscriptions, no tracking.
 
 ---
 
@@ -57,7 +57,7 @@ A fully configurable Twitch chat overlay designed for OBS and other broadcast so
 
 ### 1. Open the Configurator
 
-Visit the **[main website](https://windowsben.github.io/BensOverlay/)** — you'll land on the configuration page directly. No account, no install, nothing to download.
+Visit **[windowsben.github.io/\<repo-name\>](https://windowsben.github.io)** — you'll land on the configuration page directly. No account, no install, nothing to download.
 
 > A custom domain is coming soon.
 
@@ -199,4 +199,4 @@ Use of each service is subject to their respective Terms of Service. See `LICENS
 
 This project is released under the **MIT Licence** — free to use, modify, and distribute for any purpose, including commercial use, as long as the original licence notice is retained.
 
-See [LICENSE](./LICENSE) for the full text, including attribution notices for all third-party components.
+See [LICENSE](./LICENSE) for the full licence text and [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) for attribution notices covering all bundled and consumed third-party components.
