@@ -19,7 +19,7 @@ code and assets.
 
 - **Source:** https://dev.twitch.tv
 - **Terms:** [Twitch Developer Agreement](https://www.twitch.tv/p/en/legal/developer-agreement/)
-- **Used as:** Helix REST API (badges, cheermotes, channel points, user IDs) and PubSub WebSocket (channel point redemptions, raids, polls, predictions, hype train events)
+- **Used as:** Helix REST API (badges, cheermotes, channel points, user IDs, shared chat channel avatars) and PubSub WebSocket (channel point redemptions, raids, polls, predictions, hype train events)
 - **Note:** This project does not redistribute any Twitch code or assets. It accesses public Twitch APIs under their Developer Agreement.
 
 ---

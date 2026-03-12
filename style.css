@@ -64,6 +64,17 @@ body {
     object-fit: contain;
 }
 
+/* ─── Shared chat source badge ─────────────────────────────────────── */
+/* Profile picture of the guest channel, shown as a circular badge      */
+/* before the user's regular badges during a shared chat session.       */
+.source-channel-badge {
+    border-radius: 50%;
+    border: 1.5px solid rgba(145, 70, 255, 0.7);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+    object-fit: cover;
+    background: rgba(145, 70, 255, 0.15);
+}
+
 /* ─── Emote Images ─────────────────────────────────────────────────── */
 .chat-emote {
     height: 1.6em;
