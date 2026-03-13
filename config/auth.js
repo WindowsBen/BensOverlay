@@ -3,11 +3,7 @@
 const CLIENT_ID = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
 
 function loginWithTwitch() {
-    // Hardcoded rather than window.location.origin + pathname because GitHub Pages
-    // sometimes serves index.html under both / and /index.html, causing the dynamic
-    // URI to alternate between the two and produce a redirect_mismatch error from
-    // Twitch when the value at click time differs from the value Twitch expects.
-    const redirectUri = 'https://yacofo.chat/';
+    const redirectUri = window.location.origin + window.location.pathname;
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id',     CLIENT_ID);
     authUrl.searchParams.set('redirect_uri',  redirectUri);
