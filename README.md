@@ -1,6 +1,6 @@
-# Twitch Chat Overlay
+# YACOFO — Yet Another Chat Overlay For OBS
 
-A self-hosted, fully configurable Twitch chat overlay designed for OBS and other broadcast software. Runs entirely in a browser source — no applications to install, no subscriptions, no tracking.
+A fully configurable Twitch chat overlay for OBS and other broadcast software. Runs entirely in a browser source — no applications to install, no subscriptions, no tracking.
 
 ---
 
@@ -18,7 +18,7 @@ A self-hosted, fully configurable Twitch chat overlay designed for OBS and other
 - `/me` action message styling (coloured, italic, or plain)
 - Announcement messages (`/announce`)
 - Message filtering by username or message prefix
-- Shared chat support - guest channel messages show the channel's profile picture as a badge
+- Shared chat support — guest channel messages show the channel's profile picture as a badge
 
 **Events**
 - Subscriptions and resubscriptions (with Twitch emote rendering in resub messages)
@@ -200,4 +200,4 @@ Use of each service is subject to their respective Terms of Service. See `LICENS
 
 This project is released under the **MIT Licence** — free to use, modify, and distribute for any purpose, including commercial use, as long as the original licence notice is retained.
 
-See [LICENSE](./LICENSE) for the full licence text and [THIRD PARTY NOTICES](./THIRD-PARTY-NOTICES.md) for attribution notices covering all bundled and consumed third-party components.
+See [LICENSE](./LICENSE) for the full licence text and [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) for attribution notices covering all bundled and consumed third-party components.
