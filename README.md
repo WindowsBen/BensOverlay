@@ -18,7 +18,7 @@ A self-hosted, fully configurable Twitch chat overlay designed for OBS and other
 - `/me` action message styling (coloured, italic, or plain)
 - Announcement messages (`/announce`)
 - Message filtering by username or message prefix
-- Shared chat support - guest channel messages show the chanenl's profile picture as a badge
+- Shared chat support - guest channel messages show the channel's profile picture as a badge
 
 **Events**
 - Subscriptions and resubscriptions (with Twitch emote rendering in resub messages)
