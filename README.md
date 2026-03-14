@@ -1,4 +1,4 @@
-# YACOFO — Yet Another Chat Overlay For OBS
+# YaCoFo — Yet Another Chat Overlay For OBS
 
 A fully configurable Twitch chat overlay for OBS and other broadcast software. Runs entirely in a browser source — no applications to install, no subscriptions, no tracking.
 
@@ -43,7 +43,13 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 - Fade-out animation with configurable duration
 - Badge control: disable all, role-only (Broadcaster/Mod/VIP), or all third-party cosmetics
 
-**Configurator**
+**VOD Export** *(Chrome 94+ required)*
+- Fetch the full chat log from any public Twitch VOD
+- Export as a transparent WebM video matching your exact YACOFO style settings
+- Drop the file on a track above footage in DaVinci Resolve, Premiere, or Final Cut — no chroma key needed
+- Solid background colour option (including green for chroma key) for editors who prefer it
+- Real-time progress display with speed indicator (typically 5–20× faster than real-time)
+- Streams output directly to disk via the File System Access API on supported browsers to keep memory usage flat on long VODs
 - Visual config page with live preview window that updates as you change settings
 - Light/dark preview background toggle to test against any stream layout
 - All event types shown or hidden in the preview based on your toggle settings

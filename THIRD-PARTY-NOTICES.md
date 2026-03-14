@@ -19,7 +19,7 @@ code and assets.
 
 - **Source:** https://dev.twitch.tv
 - **Terms:** [Twitch Developer Agreement](https://www.twitch.tv/p/en/legal/developer-agreement/)
-- **Used as:** Helix REST API (badges, cheermotes, channel points, user IDs, shared chat channel's avatars) and PubSub WebSocket (channel point redemptions, raids, polls, predictions, hype train events)
+- **Used as:** Helix REST API (badges, cheermotes, channel points, user IDs, shared chat channel avatars) and PubSub WebSocket (channel point redemptions, raids, polls, predictions, hype train events)
 - **Note:** This project does not redistribute any Twitch code or assets. It accesses public Twitch APIs under their Developer Agreement.
 
 ---
@@ -48,6 +48,23 @@ code and assets.
 - **Terms:** [FrankerFaceZ Terms of Service](https://www.frankerfacez.com/p/tos)
 - **Used as:** REST API (global emotes, channel emotes, FFZ badges)
 - **Note:** This project does not redistribute any FFZ code or assets. Emote images are served directly from the FFZ CDN (`cdn.frankerfacez.com`).
+
+---
+
+## Twitch GQL API (VOD chat)
+
+- **Source:** https://dev.twitch.tv
+- **Terms:** [Twitch Developer Agreement](https://www.twitch.tv/p/en/legal/developer-agreement/)
+- **Used as:** Unofficial GQL endpoint (`https://gql.twitch.tv/gql`) for fetching VOD chat replay data. This endpoint is used by numerous third-party Twitch tools and does not require an OAuth token for public VOD access.
+- **Note:** This project does not redistribute any Twitch code or assets.
+
+---
+
+## webm-muxer
+
+- **Source:** https://github.com/Vanilagy/webm-muxer
+- **Licence:** [MIT License](https://github.com/Vanilagy/webm-muxer/blob/main/LICENSE)
+- **Used as:** Browser-side WebM muxer for the VOD chat export feature. Loaded from the jsDelivr CDN at runtime.
 
 ---
 

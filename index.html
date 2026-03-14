@@ -30,7 +30,7 @@
 
     <div class="page-title">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
-        YACOFO — Configurator
+        YaCoFo — Configurator
     </div>
 
     <!-- Login — always visible at top -->
@@ -83,6 +83,10 @@
         <button class="tab-btn locked" id="tab-btn-generate" onclick="switchTab('generate')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Generate
+        </button>
+        <button class="tab-btn locked" id="tab-btn-vod" onclick="switchTab('vod')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            VOD Export
         </button>
     </div>
 
@@ -635,6 +639,66 @@
 
     </div> <!-- /.tab-panel#tab-generate -->
 
+    <!-- ── Tab: VOD Export ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-vod">
+
+        <div class="tab-section">
+            <div class="tab-section-title">VOD Chat Export</div>
+            <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:0 0 12px;">
+                Fetch the full chat log from a Twitch VOD and export it as a transparent WebM video
+                matching your YACOFO style settings. Drop it on a track above your footage in
+                DaVinci Resolve, Premiere, or Final Cut — no chroma key needed.<br><br>
+                Requires Chrome 94+ or any Chromium-based browser.
+            </p>
+            <div class="text-override-row">
+                <span class="option-label">VOD URL / ID</span>
+                <input type="text" id="vod-url" placeholder="https://www.twitch.tv/videos/123456789" style="flex:1;min-width:0;">
+                <button id="vod-fetch-btn" class="btn-generate" style="margin-left:8px;padding:6px 14px;" onclick="vodFetch()">Fetch</button>
+            </div>
+            <div id="vod-status" style="font-size:12px;margin-top:8px;min-height:18px;color:rgba(255,255,255,0.55);"></div>
+        </div>
+
+        <div class="tab-section" id="vod-info-section" style="display:none;">
+            <div class="tab-section-title">VOD Info</div>
+            <div id="vod-info-text" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6;"></div>
+        </div>
+
+        <div class="tab-section" id="vod-export-section" style="display:none;">
+            <div class="tab-section-title">Export Settings</div>
+            <div class="text-override-row">
+                <span class="option-label">Video size</span>
+                <input type="number" id="vod-width"  value="400"  min="100" max="1920" step="10" style="width:70px;">
+                <span style="color:rgba(255,255,255,0.4);margin:0 4px;">×</span>
+                <input type="number" id="vod-height" value="1080" min="100" max="1920" step="10" style="width:70px;">
+                <span style="color:rgba(255,255,255,0.4);font-size:11px;margin-left:6px;">px — match your OBS browser source size</span>
+            </div>
+            <div class="text-override-row" style="margin-top:6px;">
+                <label class="checkbox-wrapper" style="margin:0;">
+                    <input type="checkbox" id="vod-transparent" checked onchange="vodTransparentChange()">
+                    <div class="checkmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17L4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                    <span class="cb-label">Transparent background</span>
+                </label>
+            </div>
+            <div class="text-override-row" id="vod-bg-row" style="display:none;margin-top:4px;">
+                <span class="option-label">Background colour</span>
+                <input type="color" id="vod-bg-color" value="#000000">
+                <span style="color:rgba(255,255,255,0.4);font-size:11px;margin-left:6px;">Use green (#00ff00) for chroma key</span>
+            </div>
+            <div style="margin-top:12px;">
+                <button id="vod-export-btn" class="btn-generate" onclick="vodExport()">Export WebM</button>
+            </div>
+        </div>
+
+        <div class="tab-section" id="vod-progress-section" style="display:none;">
+            <div class="tab-section-title">Progress</div>
+            <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px;">
+                <div id="vod-progress-fill" style="height:100%;width:0%;background:#9146FF;border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+            <div id="vod-progress-label" style="font-size:12px;color:rgba(255,255,255,0.55);"></div>
+        </div>
+
+    </div> <!-- /.tab-panel#tab-vod -->
+
     </div><!-- /.config-col -->
 
     <!-- ── Live chat preview panel ──────────────────────────────────────── -->
@@ -653,10 +717,12 @@
 
 </div><!-- /.container -->
 
+<script src="https://cdn.jsdelivr.net/npm/webm-muxer@latest/build/webm-muxer.js"></script>
 <script src="config/auth.js"></script>
 <script src="config/ui.js"></script>
 <script src="config/generate.js"></script>
 <script src="config/tooltips.js"></script>
 <script src="config/preview.js"></script>
+<script src="config/vod.js"></script>
 </body>
 </html>
