@@ -148,8 +148,11 @@ let _pvThirdPartyLoaded = false;
 
 function _pvBadgeImg(url, title) {
     if (!url) return '';
-    return `<img src="${url}" width="18" height="18" alt="" title="${title}"
-        style="vertical-align:middle;margin-right:2px;border-radius:2px;flex-shrink:0;height:0.8em;width:0.8em;object-fit:contain;"
+    // Size in px derived from name font size so badges track the name slider, not message slider
+    const ns = _pnum('nameFontSize', 15);
+    const sz = Math.round(ns * 0.8);
+    return `<img src="${url}" width="${sz}" height="${sz}" alt="" title="${title}"
+        style="vertical-align:middle;margin-right:2px;border-radius:2px;flex-shrink:0;width:${sz}px;height:${sz}px;object-fit:contain;"
         onerror="this.style.display='none'">`;
 }
 
@@ -159,16 +162,17 @@ async function _pvFetchTwitchBadges() {
     const headers = { 'Authorization': `Bearer ${token}`, 'Client-Id': _PV_CLIENT_ID };
 
     try {
-        // Global badges — gives us moderator, vip, bits tiers etc.
         const res = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
         if (!res.ok) return;
         const data = await res.json();
         for (const set of data.data || []) {
             const url = set.versions?.[0]?.image_url_4x;
             if (!url) continue;
-            if (set.set_id === 'moderator')  _pvBadgeUrl.moderator  = url;
-            if (set.set_id === 'vip')        _pvBadgeUrl.vip        = url;
-            if (set.set_id === 'bits')       _pvBadgeUrl.bits       = url;
+            if (set.set_id === 'broadcaster') _pvBadgeUrl.broadcaster = url;
+            if (set.set_id === 'moderator')   _pvBadgeUrl.moderator   = url;
+            if (set.set_id === 'vip')         _pvBadgeUrl.vip         = url;
+            if (set.set_id === 'bits')        _pvBadgeUrl.bits        = url;
+            if (set.set_id === 'subscriber')  _pvBadgeUrl.subscriber  = url;
         }
     } catch(e) { console.warn('[Preview] Global badge fetch failed', e); }
 }
@@ -180,7 +184,6 @@ async function _pvFetchChannelBadges(channelName) {
     const headers = { 'Authorization': `Bearer ${token}`, 'Client-Id': _PV_CLIENT_ID };
 
     try {
-        // Resolve channel name → user ID
         const userRes = await fetch(
             `https://api.twitch.tv/helix/users?login=${encodeURIComponent(channelName)}`, { headers });
         if (!userRes.ok) return;
@@ -188,7 +191,6 @@ async function _pvFetchChannelBadges(channelName) {
         const userId = userData.data?.[0]?.id;
         if (!userId) return;
 
-        // Channel badges — gives us broadcaster + custom subscriber/bits tiers
         const badgeRes = await fetch(
             `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${userId}`, { headers });
         if (!badgeRes.ok) return;
@@ -196,6 +198,7 @@ async function _pvFetchChannelBadges(channelName) {
         for (const set of badgeData.data || []) {
             const url = set.versions?.[0]?.image_url_4x;
             if (!url) continue;
+            // Channel badges override global ones (custom sub tiers, broadcaster icon)
             if (set.set_id === 'broadcaster') _pvBadgeUrl.broadcaster = url;
             if (set.set_id === 'subscriber')  _pvBadgeUrl.subscriber  = url;
         }
@@ -206,7 +209,7 @@ async function _pvFetchChannelBadges(channelName) {
 
 async function _pvFetchThirdPartyBadges() {
     if (_pvThirdPartyLoaded) return;
-    _pvThirdPartyLoaded = true; // set early to prevent duplicate fetches
+    _pvThirdPartyLoaded = true;
 
     // FFZ — pick the first badge from the global list
     try {
@@ -214,43 +217,35 @@ async function _pvFetchThirdPartyBadges() {
         if (res.ok) {
             const data = await res.json();
             const first = Object.values(data.badges || {})[0];
-            if (first?.urls?.['4'] || first?.urls?.['2'] || first?.urls?.['1']) {
-                _pvBadgeUrl.ffz = first.urls['4'] || first.urls['2'] || first.urls['1'];
-            }
+            if (first) _pvBadgeUrl.ffz = first.urls?.['4'] || first.urls?.['2'] || first.urls?.['1'] || '';
         }
     } catch(e) {}
 
-    // Chatterino — pick the first badge
+    // Chatterino — field is `image3` (highest res) per the actual API response
     try {
         const res = await fetch('https://api.chatterino.com/badges');
         if (res.ok) {
             const data = await res.json();
-            const first = data.badges?.[0];
-            if (first) {
-                _pvBadgeUrl.chatterino = first.image4x || first.image2x || first.image1x || '';
+            const first = (data.badges || [])[0];
+            if (first) _pvBadgeUrl.chatterino = first.image3 || first.image2 || first.image1 || '';
+        }
+    } catch(e) {}
+
+    // 7TV — fetch the global cosmetics list and pick the first badge
+    try {
+        const res = await fetch('https://7tv.io/v3/cosmetics?user_identifier=twitch_id');
+        if (res.ok) {
+            const data = await res.json();
+            const badge = (data.badges || [])[0];
+            if (badge?.id) {
+                _pvBadgeUrl.seventv = `https://cdn.7tv.app/badge/${badge.id}/4x.webp`;
             }
         }
     } catch(e) {}
 
-    // 7TV — fetch the global emote set to find a real badge from their API
-    try {
-        const res = await fetch('https://7tv.io/v3/gql', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: `{ namedCosmetic(name:"badge",list:[]) { ... on CosmeticBadge { id name tag host { files { name format } } } } }` })
-        });
-        // GQL approach may not work — fall back to known stable subscriber badge
-        // The 7TV subscriber badge is a permanent cosmetic that doesn't rotate
-        if (!res.ok) throw new Error('gql failed');
-        const data = await res.json();
-        const badge = data?.data?.namedCosmetic;
-        if (badge?.host?.files?.[0]) {
-            const file = badge.host.files.find(f => f.name === '4x') || badge.host.files[0];
-            _pvBadgeUrl.seventv = `https://cdn.7tv.app/badge/${badge.id}/${file.name}.${file.format.toLowerCase()}`;
-        } else throw new Error('no badge data');
-    } catch {
-        // Stable fallback: 7TV staff badge which has existed since launch
-        _pvBadgeUrl.seventv = 'https://cdn.7tv.app/badge/6102002eaad3a00f8b146f16/4x.webp';
+    // Fallback: if still empty, use a long-standing stable badge ID
+    if (!_pvBadgeUrl.seventv) {
+        _pvBadgeUrl.seventv = 'https://cdn.7tv.app/badge/01GAF8RWW8000E8VNG1S1RMTBA/4x.webp';
     }
 
     renderChatPreview();
@@ -262,15 +257,15 @@ async function _pvInitBadges() {
         await _pvFetchTwitchBadges();
         renderChatPreview();
     }
-    // Channel field may not be populated yet on first load (auth.js fills it
-    // asynchronously). Poll once immediately and again after a short delay to
-    // catch the value once auth init has finished writing it.
+    // Channel field may not be populated on first load — auth.js fills it async.
+    // Try immediately and again after a delay to catch whichever fires first.
     const tryChannel = () => {
         const channel = document.getElementById('channel')?.value?.trim();
         if (channel) _pvFetchChannelBadges(channel);
     };
     tryChannel();
     setTimeout(tryChannel, 1500);
+    setTimeout(tryChannel, 4000); // extra retry in case auth is slow
     _pvFetchThirdPartyBadges();
 }
 
