@@ -246,88 +246,130 @@ async function vodFetch() {
 }
 
 // ── Badge preloading ──────────────────────────────────────────────────────────
+// ── Asset loading helpers ────────────────────────────────────────────────────
+function _loadImg(url) {
+    return new Promise(resolve => {
+        if (!url) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload  = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
 async function _preloadVodBadges() {
-    if (typeof _pvBadgeUrl === 'undefined') return;
-    await Promise.all(Object.entries(_pvBadgeUrl).map(([key, url]) => {
-        if (!url || _vodBadgeImgs[key]) return Promise.resolve();
-        return new Promise(resolve => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload  = () => { _vodBadgeImgs[key] = img; resolve(); };
-            img.onerror = () => resolve();
-            img.src = url;
-        });
+    const token   = localStorage.getItem('twitch_access_token') || '';
+    const headers = { 'Authorization': `Bearer ${token}`, 'Client-Id': 'ti9ahr6lkym6anpij3d4f2cyjhij18' };
+    const badgeUrls = {};
+
+    try {
+        const res = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
+        if (res.ok) {
+            for (const set of (await res.json()).data || [])
+                for (const ver of set.versions || [])
+                    badgeUrls[`${set.set_id}/${ver.id}`] = ver.image_url_4x;
+        }
+    } catch(e) {}
+
+    if (_vodBroadcasterId) {
+        try {
+            const res = await fetch(
+                `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${_vodBroadcasterId}`, { headers });
+            if (res.ok)
+                for (const set of (await res.json()).data || [])
+                    for (const ver of set.versions || [])
+                        badgeUrls[`${set.set_id}/${ver.id}`] = ver.image_url_4x;
+        } catch(e) {}
+    }
+
+    await Promise.all(Object.entries(badgeUrls).map(async ([key, url]) => {
+        const img = await _loadImg(url);
+        if (img) _vodBadgeMap[key] = img;
     }));
 }
 
-function _badgeImgForSet(setID) {
-    if (setID === 'broadcaster') return _vodBadgeImgs.broadcaster;
-    if (['moderator','lead_moderator','staff','admin','global_mod'].includes(setID))
-        return _vodBadgeImgs.moderator;
-    if (setID === 'vip')         return _vodBadgeImgs.vip;
-    if (setID === 'subscriber')  return _vodBadgeImgs.subscriber;
-    return _vodBadgeImgs.bits;
+async function _preloadVodEmotes() {
+    const ids = new Set();
+    for (const msg of _vodMsgs)
+        for (const frag of (msg.fragments || []))
+            if (frag.emote?.emoteID) ids.add(frag.emote.emoteID);
+
+    await Promise.all([...ids].map(async id => {
+        const img = await _loadImg(
+            `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`);
+        if (img) _vodEmoteMap[id] = img;
+    }));
 }
 
-// ── Config reader ─────────────────────────────────────────────────────────────
-function _vodCfg() {
-    const pv = (id, fb) => { const el = document.getElementById(id); return el ? (el.value || fb) : fb; };
-    const pn = (id, fb) => { const v = parseInt(pv(id, '')); return isNaN(v) ? fb : v; };
-    const po = (id, fb) => { const el = document.getElementById(id); return el ? parseInt(el.value ?? fb) : fb; };
-
-    const lifetime = pn('messageLifetime', 0);
-    const shHex = (pv('shadowColor', '#000000') || '#000000').replace('#', '');
-    const shA   = po('shadowOpacity', 0) / 100;
-    const shadowColor = shA > 0
-        ? `rgba(${parseInt(shHex.slice(0,2)||'00',16)},${parseInt(shHex.slice(2,4)||'00',16)},${parseInt(shHex.slice(4,6)||'00',16)},${shA})`
-        : null;
-
-    return {
-        nameFontSize:    pn('nameFontSize',    15),
-        messageFontSize: pn('messageFontSize', 15),
-        lineHeight:      parseFloat(pv('lineHeight', '')) || 1.4,
-        messageGap:      pn('messageGap',       8),
-        lifetimeSec:     lifetime > 0 ? lifetime / 1000 : 30,
-        fadeSec:         pn('fadeDuration', 1000) / 1000,
-        fontFamily:      (typeof _previewFontFamily !== 'undefined' && _previewFontFamily)
-                            ? `'${_previewFontFamily}', sans-serif` : 'sans-serif',
-        shadowColor,
-        transparent: _vodEl('vod-transparent')?.checked ?? true,
-        bgColor:     pv('vod-bg-color', '#000000'),
-    };
+function _badgeImgForSet(setID, version) {
+    return _vodBadgeMap[`${setID}/${version}`] || _vodBadgeMap[`${setID}/0`] || null;
 }
 
 // ── Canvas renderer ───────────────────────────────────────────────────────────
 function _measure(ctx, text, font) {
     const key = `${font}|${text}`;
     if (_vodMeasureCache[key] === undefined) {
-        const prev = ctx.font;
-        ctx.font = font;
+        const prev = ctx.font; ctx.font = font;
         _vodMeasureCache[key] = ctx.measureText(text).width;
         ctx.font = prev;
     }
     return _vodMeasureCache[key];
 }
 
+// Build flat token list from fragments: {type:'text'|'emote', text?, img?, w, h?}
+function _tokenise(ctx, msg, cfg) {
+    const msgFont = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
+    const emoteH  = Math.round(cfg.messageFontSize * 1.5);
+    const tokens  = [];
+    const frags   = msg.fragments?.length ? msg.fragments : [{ text: msg.text }];
+
+    for (const frag of frags) {
+        const eImg = frag.emote?.emoteID ? _vodEmoteMap[frag.emote.emoteID] : null;
+        if (eImg) {
+            const w = eImg.naturalWidth > 0
+                ? Math.round(eImg.naturalWidth * emoteH / eImg.naturalHeight) : emoteH;
+            tokens.push({ type: 'emote', img: eImg, w, h: emoteH });
+        } else {
+            for (const part of (frag.text || '').split(/(\s+)/)) {
+                if (!part) continue;
+                tokens.push({ type: 'text', text: part, w: _measure(ctx, part, msgFont) });
+            }
+        }
+    }
+    return tokens;
+}
+
+// Wrap tokens into lines. startX = pixels already used on the first line.
+function _wrapTokens(tokens, startX, canvasW, cfg) {
+    const pad = 10;
+    const maxW = canvasW - pad * 2;
+    const lines = [];
+    let cur = [], lineW = startX;
+
+    for (const tok of tokens) {
+        const isSpace = tok.type === 'text' && /^\s+$/.test(tok.text);
+        if (isSpace && cur.length === 0) continue;
+        if (lineW + tok.w > maxW && cur.length > 0 && !isSpace) {
+            while (cur.length && cur[cur.length-1].type === 'text' && /^\s+$/.test(cur[cur.length-1].text)) cur.pop();
+            lines.push(cur); cur = [tok]; lineW = pad + tok.w;
+        } else {
+            cur.push(tok); lineW += tok.w;
+        }
+    }
+    if (cur.length) lines.push(cur);
+    return lines.length ? lines : [[]];
+}
+
 function _msgHeight(ctx, msg, canvasW, cfg) {
     const badgeSize  = Math.round(cfg.nameFontSize * 0.85);
-    const badgeCount = (msg.badges || []).filter(b => _badgeImgForSet(b.setID)).length;
+    const badgeCount = (msg.badges || []).filter(b => _badgeImgForSet(b.setID, b.version)).length;
     const badgeW     = badgeCount * (badgeSize + 2);
     const pad        = 10;
-    const nameFont   = `bold ${cfg.nameFontSize}px ${cfg.fontFamily}`;
-    const msgFont    = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
-    const nameW      = _measure(ctx, msg.username + ': ', nameFont);
-    const words      = msg.text.split(' ');
-    let lines = 1, line = '', firstLine = true;
-
-    for (const word of words) {
-        const test  = line ? line + ' ' + word : word;
-        const avail = firstLine ? canvasW - pad - badgeW - nameW - pad : canvasW - pad * 2;
-        if (_measure(ctx, test, msgFont) > avail && line) {
-            lines++; line = word; firstLine = false;
-        } else { line = test; }
-    }
-    return Math.ceil(lines * cfg.messageFontSize * cfg.lineHeight + cfg.messageGap);
+    const nameW      = _measure(ctx, msg.username + ': ', `bold ${cfg.nameFontSize}px ${cfg.fontFamily}`);
+    ctx.font = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
+    const lines = _wrapTokens(_tokenise(ctx, msg, cfg), pad + badgeW + nameW, canvasW, cfg);
+    return Math.ceil(lines.length * cfg.messageFontSize * cfg.lineHeight + cfg.messageGap);
 }
 
 function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
@@ -338,12 +380,12 @@ function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
     const badgeSize = Math.round(cfg.nameFontSize * 0.85);
     const lineH     = cfg.messageFontSize * cfg.lineHeight;
     const nameFont  = `bold ${cfg.nameFontSize}px ${cfg.fontFamily}`;
-    const msgFont   = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
+    const emoteH    = Math.round(cfg.messageFontSize * 1.5);
     const baseline  = y + cfg.nameFontSize;
     let x = pad;
 
     for (const badge of (msg.badges || [])) {
-        const img = _badgeImgForSet(badge.setID);
+        const img = _badgeImgForSet(badge.setID, badge.version);
         if (!img) continue;
         ctx.drawImage(img, x, baseline - badgeSize + 1, badgeSize, badgeSize);
         x += badgeSize + 2;
@@ -356,19 +398,24 @@ function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
     ctx.fillText(msg.username + ':', x, baseline);
     const nameW = _measure(ctx, msg.username + ': ', nameFont);
 
-    ctx.font = msgFont;
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    const words = msg.text.split(' ');
-    let line = '', cx = x + nameW, cy = baseline, firstLine = true;
+    ctx.font = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
+    const tokens = _tokenise(ctx, msg, cfg);
+    const lines  = _wrapTokens(tokens, x + nameW - pad, canvasW, cfg);
 
-    for (const word of words) {
-        const test  = line ? line + ' ' + word : word;
-        const avail = firstLine ? canvasW - cx - pad : canvasW - pad * 2;
-        if (_measure(ctx, test, msgFont) > avail && line) {
-            ctx.fillText(line, cx, cy); cy += lineH; cx = pad; line = word; firstLine = false;
-        } else { line = test; }
+    let cx = x + nameW, cy = baseline;
+    for (let li = 0; li < lines.length; li++) {
+        if (li > 0) { cy += lineH; cx = pad; }
+        for (const tok of lines[li]) {
+            if (tok.type === 'emote') {
+                ctx.drawImage(tok.img, cx, cy - emoteH + 2, tok.w, tok.h);
+                cx += tok.w;
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.88)';
+                ctx.fillText(tok.text, cx, cy);
+                cx += tok.w;
+            }
+        }
     }
-    if (line) ctx.fillText(line, cx, cy);
 
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
     ctx.restore();
