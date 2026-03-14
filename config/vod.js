@@ -439,8 +439,9 @@ async function vodExport() {
 
         const { Output, WebMOutputFormat, BufferTarget, StreamTarget, CanvasSource } = Mediabunny;
 
-        _vodProgress(2, 'Preloading badge images\u2026');
+        _vodProgress(2, 'Preloading badges and emotes\u2026');
         await _preloadVodBadges();
+        await _preloadVodEmotes();
 
         // Prefer streaming to disk so memory stays flat on long VODs.
         // Falls back to in-memory buffer when File System Access API is unavailable.
@@ -475,6 +476,8 @@ async function vodExport() {
 
         const exportStart = performance.now();
         for (const k in _vodMeasureCache) delete _vodMeasureCache[k];
+        _vodEntryDisp  = 0;
+        _vodPrevMsgIds = new Set();
 
         for (let f = 0; f < totalFrames; f++) {
             const timestamp = f * frameDuration;
