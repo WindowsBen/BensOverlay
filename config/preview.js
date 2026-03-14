@@ -590,7 +590,8 @@ function renderChatPreview() {
     const giftLabel   = _pv('giftLabel',   'gifted')        || 'gifted';
     const bitsLabel   = _pv('bitsLabel',   'cheered')       || 'cheered';
     const streakLabel = _pv('streakLabel', 'is on a')       || 'is on a';
-    const raidLabel   = _pv('raidIncomingLabel','is raiding with') || 'is raiding with';
+    const raidLabel        = _pv('raidIncomingLabel','is raiding with') || 'is raiding with';
+    const raidOutgoingLabel = _pv('raidOutgoingLabel','is raiding') || 'is raiding';
     const redeemLabel = _pv('redeemLabel', 'redeemed')      || 'redeemed';
 
     try {
@@ -608,7 +609,8 @@ function renderChatPreview() {
             _on('showBits')          && _msgEvent('💎','BitsBoss',   `${bitsLabel} 500 bits!`,                    'bitsAccent','bitsAccentOpacity','bitsBg','bitsBgOpacity','"GG streamers!"'),
             _on('showRedeems')       && _msgEvent('⚡','PointSpender',`${redeemLabel} Hydrate!`,                  'redeemAccent','redeemAccentOpacity','redeemBg','redeemBgOpacity'),
             _on('showStreaks')        && _msgEvent('🔥','MarathonFan',`${streakLabel} 30-stream watch streak!`,   'streakAccent','streakAccentOpacity','streakBg','streakBgOpacity'),
-            _on('showRaidIncoming')  && _msgEvent('🚀','BigRaider',  `${raidLabel} 250 viewers!`,                 'raidIncomingAccent','raidIncomingAccentOpacity','raidIncomingBg','raidIncomingBgOpacity'),
+            _on('showRaidIncoming')  && _msgEvent('🚀','BigRaider',   `${raidLabel} 250 viewers!`,                  'raidIncomingAccent','raidIncomingAccentOpacity','raidIncomingBg','raidIncomingBgOpacity'),
+            _on('showRaidOutgoing')  && _msgEvent('🚀','StreamerDude',`${raidOutgoingLabel} SmallStreamer with 50 viewers!`, 'raidOutgoingAccent','raidOutgoingAccentOpacity','raidOutgoingBg','raidOutgoingBgOpacity'),
             _on('showBans')          && _animBan(),
             _on('showTimeouts')      && _animTimeout(),
             _on('showPolls')         && _widgetPoll(),
