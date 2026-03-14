@@ -79,55 +79,61 @@ function _extractVodId(input) {
     return null;
 }
 
-async function _gql(query, variables = {}) {
+
+async function _fetchVodInfo(videoId) {
     const res = await fetch(_VOD_GQL_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'Client-Id': _VOD_GQL_CLIENT },
-        body:    JSON.stringify({ query, variables }),
+        body: JSON.stringify([{
+            operationName: 'VideoMetadata',
+            variables: { channelLogin: '', videoID: videoId },
+            extensions: {
+                persistedQuery: {
+                    version: 1,
+                    sha256Hash: '45111672eea2e507f8ba1feda3d5f3d9d7bdbc1a4a8f8f8b7cd38f80a26d98c9',
+                },
+            },
+        }]),
     });
     if (!res.ok) throw new Error(`GQL ${res.status}`);
-    return res.json();
-}
-
-async function _fetchVodInfo(videoId) {
-    const data = await _gql(`query {
-        video(id: "${videoId}") {
-            title lengthSeconds
-            owner { displayName }
-            createdAt
-        }
-    }`);
-    return data.data?.video || null;
+    const json = await res.json();
+    const data = Array.isArray(json) ? json[0] : json;
+    return data?.data?.video || null;
 }
 
 async function _fetchVodChat(videoId, onProgress) {
-    const QUERY = `
-    query VodChat($videoID: ID!, $cursor: String) {
-        video(id: $videoID) {
-            comments(after: $cursor, first: 100) {
-                edges {
-                    cursor
-                    node {
-                        contentOffsetSeconds
-                        message {
-                            fragments { text emote { emoteID } }
-                            userColor
-                        }
-                        commenter { displayName login }
-                        userBadges { setID version }
-                    }
-                }
-                pageInfo { hasNextPage }
-            }
-        }
-    }`;
-
     const messages = [];
     let cursor = null;
+    let isFirstRequest = true;
 
     while (true) {
-        const data = await _gql(QUERY, { videoID: videoId, cursor });
-        const comments = data.data?.video?.comments;
+        // First request uses contentOffsetSeconds: 0, subsequent ones use cursor
+        const variables = isFirstRequest
+            ? { videoID: videoId, contentOffsetSeconds: 0 }
+            : { videoID: videoId, cursor };
+
+        const body = JSON.stringify([{
+            operationName: 'VideoCommentsByOffsetOrCursor',
+            variables,
+            extensions: {
+                persistedQuery: {
+                    version: 1,
+                    sha256Hash: 'b70a3591ff0f4e0313d126c6a1502d79a1c02baebb288227c582044aa76adf6a',
+                },
+            },
+        }]);
+
+        const res = await fetch(_VOD_GQL_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Client-Id': _VOD_GQL_CLIENT },
+            body,
+        });
+        if (!res.ok) throw new Error(`GQL ${res.status}`);
+
+        const json = await res.json();
+        // GQL batch responses come back as an array
+        const data = Array.isArray(json) ? json[0] : json;
+        const comments = data?.data?.video?.comments;
         if (!comments) throw new Error('No comment data returned');
 
         for (const edge of comments.edges || []) {
@@ -138,12 +144,13 @@ async function _fetchVodChat(videoId, onProgress) {
                 offset:   n.contentOffsetSeconds,
                 username: n.commenter?.displayName || n.commenter?.login || 'unknown',
                 color:    n.message?.userColor || '#9146FF',
-                badges:   n.userBadges || [],
+                badges:   n.message?.userBadges || [],
                 text,
             });
             cursor = edge.cursor;
         }
 
+        isFirstRequest = false;
         onProgress(messages.length);
         if (!comments.pageInfo?.hasNextPage) break;
         await new Promise(r => setTimeout(r, 60));
