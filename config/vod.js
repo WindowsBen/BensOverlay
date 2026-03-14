@@ -80,6 +80,49 @@ function _extractVodId(input) {
 }
 
 
+// ── Integrity token ───────────────────────────────────────────────────────────
+// Twitch requires an integrity token for cursor-based VOD comment pagination.
+// Fetched once per session from their integrity endpoint.
+let _vodIntegrityToken  = null;
+let _vodIntegrityExpiry = 0;
+let _vodDeviceId        = null;
+
+function _getDeviceId() {
+    if (_vodDeviceId) return _vodDeviceId;
+    // Generate a stable random device ID for this session
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    _vodDeviceId = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+    return _vodDeviceId;
+}
+
+async function _fetchIntegrityToken() {
+    if (_vodIntegrityToken && Date.now() < _vodIntegrityExpiry) return _vodIntegrityToken;
+
+    const token    = localStorage.getItem('twitch_access_token') || '';
+    const deviceId = _getDeviceId();
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Client-Id':    _VOD_GQL_CLIENT,
+        'X-Device-ID':  deviceId,
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+        const res = await fetch('https://gql.twitch.tv/integrity', { method: 'POST', headers });
+        if (!res.ok) throw new Error(`Integrity ${res.status}`);
+        const data = await res.json();
+        _vodIntegrityToken  = data.token;
+        // Expire 30s before the actual expiry to avoid edge cases
+        _vodIntegrityExpiry = Date.now() + (data.expiration * 1000) - 30_000;
+        return _vodIntegrityToken;
+    } catch(e) {
+        console.warn('[VOD] Could not fetch integrity token:', e.message);
+        return null;
+    }
+}
+
 async function _fetchVodInfo(videoId) {
     const res = await fetch(_VOD_GQL_URL, {
         method:  'POST',
@@ -98,11 +141,11 @@ async function _fetchVodInfo(videoId) {
 }
 
 async function _fetchVodChat(videoId, onProgress) {
-    // The cursor-based pagination endpoint requires either an integrity token
-    // or a valid OAuth token to pass Twitch's integrity check.
-    // We use the user's token from localStorage — it's already present if
-    // they logged in through YACOFO's normal auth flow.
-    const token = localStorage.getItem('twitch_access_token') || '';
+    const token    = localStorage.getItem('twitch_access_token') || '';
+    const deviceId = _getDeviceId();
+
+    // Fetch integrity token once — refreshed automatically when expired
+    const integrityToken = await _fetchIntegrityToken();
 
     const messages = [];
     let cursor = null;
@@ -127,14 +170,15 @@ async function _fetchVodChat(videoId, onProgress) {
         const headers = {
             'Content-Type': 'application/json',
             'Client-Id':    _VOD_GQL_CLIENT,
+            'X-Device-ID':  deviceId,
         };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (token)          headers['Authorization']     = `Bearer ${token}`;
+        if (integrityToken) headers['Client-Integrity']  = integrityToken;
 
         const res = await fetch(_VOD_GQL_URL, { method: 'POST', headers, body });
         if (!res.ok) throw new Error(`GQL ${res.status}`);
 
         const json = await res.json();
-        console.log('[VOD] raw:', JSON.stringify(json).slice(0, 800));
         const data = Array.isArray(json) ? json[0] : json;
         const comments = data?.data?.video?.comments;
         if (!comments) throw new Error('No comment data returned');
