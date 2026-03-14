@@ -449,14 +449,50 @@ function _renderFrame(ctx, timestamp, canvasW, canvasH, cfg) {
         if (i === 0) startIdx = 0;
     }
 
-    let y = canvasH;
+    // Smooth entry — accumulate height of newly appeared messages and decay it
+    const currentIds = new Set(visible.slice(startIdx).map(
+        v => v.msg.id || (v.msg.offset + ':' + v.msg.username)));
+    let newH = 0;
+    for (let i = startIdx; i < visible.length; i++) {
+        const id = visible[i].msg.id || (visible[i].msg.offset + ':' + visible[i].msg.username);
+        if (!_vodPrevMsgIds.has(id)) newH += heights[i];
+    }
+    if (newH > 0) _vodEntryDisp += newH;
+    _vodEntryDisp *= 0.82;
+    _vodPrevMsgIds = currentIds;
+
+    let y = canvasH + Math.round(_vodEntryDisp);
     for (let i = visible.length - 1; i >= startIdx; i--) {
         y -= heights[i];
         _drawMsg(ctx, visible[i].msg, y, visible[i].opacity, canvasW, cfg);
     }
 }
 
-// ── Export pipeline ───────────────────────────────────────────────────────────
+// ── Config reader ─────────────────────────────────────────────────────────────
+function _vodCfg() {
+    const pv = (id, fb) => { const el = document.getElementById(id); return el ? (el.value || fb) : fb; };
+    const pn = (id, fb) => { const v = parseInt(pv(id, '')); return isNaN(v) ? fb : v; };
+    const po = (id, fb) => { const el = document.getElementById(id); return el ? parseInt(el.value ?? fb) : fb; };
+    const lifetime = pn('messageLifetime', 0);
+    const shHex = (pv('shadowColor', '#000000') || '#000000').replace('#', '');
+    const shA   = po('shadowOpacity', 0) / 100;
+    const shadowColor = shA > 0
+        ? `rgba(${parseInt(shHex.slice(0,2)||'00',16)},${parseInt(shHex.slice(2,4)||'00',16)},${parseInt(shHex.slice(4,6)||'00',16)},${shA})`
+        : null;
+    return {
+        nameFontSize:    pn('nameFontSize',    15),
+        messageFontSize: pn('messageFontSize', 15),
+        lineHeight:      parseFloat(pv('lineHeight', '')) || 1.4,
+        messageGap:      pn('messageGap',       8),
+        lifetimeSec:     lifetime > 0 ? lifetime / 1000 : 30,
+        fadeSec:         pn('fadeDuration', 1000) / 1000,
+        fontFamily:      (typeof _previewFontFamily !== 'undefined' && _previewFontFamily)
+                            ? `'${_previewFontFamily}', sans-serif` : 'sans-serif',
+        shadowColor,
+        transparent: _vodEl('vod-transparent')?.checked ?? true,
+        bgColor:     pv('vod-bg-color', '#000000'),
+    };
+}
 async function vodExport() {
     if (_vodExporting) return;
 
