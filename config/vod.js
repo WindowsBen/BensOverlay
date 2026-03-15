@@ -14,7 +14,7 @@
 const _VOD_GQL_CLIENT = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
 const _VOD_GQL_URL    = 'https://gql.twitch.tv/gql';
 const _VOD_FPS        = 30;
-const _VOD_BITRATE    = 500_000;
+const _VOD_BITRATE    = 4_000_000; // 4 Mbps — sufficient for crisp text rendering
 
 // escapeHTML is defined in src/utils.js which is only loaded by overlay.html.
 // Redeclare it here for the config page context.
@@ -50,7 +50,8 @@ let _vodExporting     = false;
 let _vodBroadcasterId = null;
 
 const _vodBadgeMap     = {};  // "setID/version" -> HTMLImageElement
-const _vodEmoteMap     = {};  // emoteID -> HTMLImageElement
+const _vodEmoteMap     = {};  // Twitch emoteID -> HTMLImageElement
+const _vodThirdEmoteMap = {}; // emote text code -> HTMLImageElement (BTTV/FFZ/7TV)
 const _vodMeasureCache = {};
 
 let _vodEntryDisp  = 0;       // smooth scroll: accumulated entry displacement in px
@@ -275,17 +276,29 @@ async function _preloadVodBadges() {
 
     try {
         const res = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
-        if (res.ok) {
+        if (res.ok)
             for (const set of (await res.json()).data || [])
                 for (const ver of set.versions || [])
                     badgeUrls[`${set.set_id}/${ver.id}`] = ver.image_url_4x;
-        }
     } catch(e) {}
 
-    if (_vodBroadcasterId) {
+    // Prefer _vodBroadcasterId; fall back to resolving from channel name in VOD info text
+    let broadcasterId = _vodBroadcasterId;
+    if (!broadcasterId) {
+        try {
+            const login = (document.getElementById('vod-info-text')?.textContent
+                ?.match(/Channel:\s*(\S+)/)?.[1] || '').toLowerCase();
+            if (login) {
+                const r = await fetch(`https://api.twitch.tv/helix/users?login=${login}`, { headers });
+                if (r.ok) broadcasterId = (await r.json()).data?.[0]?.id || null;
+            }
+        } catch(e) {}
+    }
+
+    if (broadcasterId) {
         try {
             const res = await fetch(
-                `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${_vodBroadcasterId}`, { headers });
+                `https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`, { headers });
             if (res.ok)
                 for (const set of (await res.json()).data || [])
                     for (const ver of set.versions || [])
@@ -309,6 +322,79 @@ async function _preloadVodEmotes() {
         const img = await _loadImg(
             `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`);
         if (img) _vodEmoteMap[id] = img;
+    }));
+}
+
+async function _preloadThirdPartyEmotes() {
+    // Resolve channel login from VOD info panel
+    const login = (document.getElementById('vod-info-text')?.textContent
+        ?.match(/Channel:\s*(\S+)/)?.[1] || '').toLowerCase();
+    if (!login) return;
+
+    let userId = _vodBroadcasterId;
+    if (!userId) {
+        try {
+            const token   = localStorage.getItem('twitch_access_token') || '';
+            const headers = { 'Authorization': `Bearer ${token}`, 'Client-Id': 'ti9ahr6lkym6anpij3d4f2cyjhij18' };
+            const r = await fetch(`https://api.twitch.tv/helix/users?login=${login}`, { headers });
+            if (r.ok) userId = (await r.json()).data?.[0]?.id || null;
+        } catch(e) {}
+    }
+    if (!userId) return;
+
+    // BTTV global + channel
+    try {
+        const [gr, cr] = await Promise.all([
+            fetch('https://api.betterttv.net/3/cached/emotes/global'),
+            fetch(`https://api.betterttv.net/3/cached/users/twitch/${userId}`),
+        ]);
+        if (gr.ok)
+            for (const e of await gr.json())
+                _vodThirdEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/2x`;
+        if (cr.ok) {
+            const d = await cr.json();
+            for (const e of [...(d.channelEmotes||[]), ...(d.sharedEmotes||[])])
+                _vodThirdEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/2x`;
+        }
+    } catch(e) {}
+
+    // FFZ global + channel
+    try {
+        const [gr, cr] = await Promise.all([
+            fetch('https://api.frankerfacez.com/v1/set/global'),
+            fetch(`https://api.frankerfacez.com/v1/room/id/${userId}`),
+        ]);
+        const ffzUrl = e => e.urls?.['4'] || e.urls?.['2'] || e.urls?.['1'];
+        if (gr.ok)
+            for (const set of Object.values((await gr.json()).sets || {}))
+                for (const e of set.emoticons || [])
+                    if (ffzUrl(e)) _vodThirdEmoteMap[e.name] = ffzUrl(e);
+        if (cr.ok)
+            for (const set of Object.values((await cr.json()).sets || {}))
+                for (const e of set.emoticons || [])
+                    if (ffzUrl(e)) _vodThirdEmoteMap[e.name] = ffzUrl(e);
+    } catch(e) {}
+
+    // 7TV global + channel
+    try {
+        const [gr, cr] = await Promise.all([
+            fetch('https://7tv.io/v3/emote-sets/global'),
+            fetch(`https://7tv.io/v3/users/twitch/${userId}`),
+        ]);
+        if (gr.ok)
+            for (const e of (await gr.json()).emotes || [])
+                _vodThirdEmoteMap[e.name] = `https://cdn.7tv.app/emote/${e.id}/2x.webp`;
+        if (cr.ok)
+            for (const e of (await cr.json()).emote_set?.emotes || [])
+                _vodThirdEmoteMap[e.name] = `https://cdn.7tv.app/emote/${e.id}/2x.webp`;
+    } catch(e) {}
+
+    // Pre-load all images in parallel, replacing URL strings with HTMLImageElement
+    await Promise.all(Object.entries(_vodThirdEmoteMap).map(async ([code, url]) => {
+        if (typeof url !== 'string') return; // already loaded
+        const img = await _loadImg(url);
+        if (img) _vodThirdEmoteMap[code] = img;
+        else delete _vodThirdEmoteMap[code];
     }));
 }
 
@@ -348,7 +434,15 @@ function _tokenise(ctx, msg, cfg) {
         } else {
             for (const part of (frag.text || '').split(/(\s+)/)) {
                 if (!part) continue;
-                tokens.push({ type: 'text', text: part, w: _measure(ctx, part, msgFont) });
+                // Check if this word is a third-party emote
+                const thirdImg = !/^\s+$/.test(part) ? _vodThirdEmoteMap[part] : null;
+                if (thirdImg && thirdImg instanceof HTMLImageElement) {
+                    const w = thirdImg.naturalWidth > 0
+                        ? Math.round(thirdImg.naturalWidth * emoteH / thirdImg.naturalHeight) : emoteH;
+                    tokens.push({ type: 'emote', img: thirdImg, w, h: emoteH });
+                } else {
+                    tokens.push({ type: 'text', text: part, w: _measure(ctx, part, msgFont) });
+                }
             }
         }
     }
@@ -540,6 +634,7 @@ async function vodExport() {
         _vodProgress(2, 'Preloading badges and emotes\u2026');
         await _preloadVodBadges();
         await _preloadVodEmotes();
+        await _preloadThirdPartyEmotes();
 
         // Prefer streaming to disk so memory stays flat on long VODs.
         // Falls back to in-memory buffer when File System Access API is unavailable.
