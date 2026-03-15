@@ -175,6 +175,11 @@ async function _fetchVodChat(videoId, onProgress) {
             if (seen.has(id)) continue;
             seen.add(id);
 
+            // Log first message structure so we can verify field names
+            if (messages.length === 0) {
+                console.log('[VOD] first node:', JSON.stringify(n).slice(0, 600));
+            }
+
             const text = (n.message?.fragments || []).map(f => f.text).join('');
             if (!text.trim()) continue;
 
