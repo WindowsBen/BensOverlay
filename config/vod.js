@@ -288,28 +288,72 @@ async function _loadImg(url) {
     }
 }
 
-// Load an animated emote as a live <img> element in the DOM.
-// drawImage on a live <img> captures the current animation frame.
-// Uses a blob URL so the canvas isn't tainted.
+// Animated image decoded into frames using the ImageDecoder API (Chrome 94+).
+// Falls back to a static image if ImageDecoder is unavailable or the image
+// has only one frame.
+// { frames: [{bitmap, duration}], totalDuration, type } | null
 async function _loadAnimatedImg(url) {
     if (!url) return null;
     try {
         const res = await fetch(url);
         if (!res.ok) return null;
         const blob = await res.blob();
+
+        // Use ImageDecoder if available (Chrome 94+ / same requirement as WebCodecs)
+        if (typeof ImageDecoder !== 'undefined') {
+            try {
+                const decoder = new ImageDecoder({ data: blob.stream(), type: blob.type });
+                await decoder.tracks.ready;
+                const frameCount = decoder.tracks.selectedTrack.frameCount;
+
+                const frames = [];
+                let totalDuration = 0;
+                for (let i = 0; i < frameCount; i++) {
+                    const result = await decoder.decode({ frameIndex: i });
+                    const duration = result.image.duration / 1000; // µs -> ms
+                    frames.push({ bitmap: result.image, duration: duration || 100 });
+                    totalDuration += duration || 100;
+                }
+                decoder.close();
+
+                if (frames.length === 1) {
+                    // Static image — return as simple bitmap
+                    return { frames, totalDuration: frames[0].duration, type: 'static' };
+                }
+                return { frames, totalDuration, type: 'animated' };
+            } catch(e) {
+                // ImageDecoder failed (unsupported format etc) — fall through to static
+            }
+        }
+
+        // Fallback: load as static image via blob URL
         const objectUrl = URL.createObjectURL(blob);
         return await new Promise(resolve => {
             const img = new Image();
-            img.onload  = () => {
-                _getAnimContainer().appendChild(img); // keep in DOM for animation
-                resolve(img);
-            };
+            img.onload  = () => resolve({ frames: [{ bitmap: img, duration: 100 }], totalDuration: 100, type: 'static' });
             img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
             img.src = objectUrl;
         });
     } catch {
         return null;
     }
+}
+
+// Draw an animated image at its correct frame for the given VOD timestamp (ms)
+function _drawAnimImg(ctx, anim, x, y, w, h, timestampMs) {
+    if (!anim) return;
+    if (anim.type === 'static' || anim.frames.length === 1) {
+        ctx.drawImage(anim.frames[0].bitmap, x, y, w, h);
+        return;
+    }
+    // Find frame for current timestamp, looping
+    const t = timestampMs % anim.totalDuration;
+    let elapsed = 0;
+    for (const frame of anim.frames) {
+        elapsed += frame.duration;
+        if (t < elapsed) { ctx.drawImage(frame.bitmap, x, y, w, h); return; }
+    }
+    ctx.drawImage(anim.frames[anim.frames.length - 1].bitmap, x, y, w, h);
 }
 
 async function _preloadVodBadges() {
@@ -510,11 +554,25 @@ function _paintToFillStyle(ctx, paint, x, y, w) {
     }
 }
 
+// Cached subscriber fallback image — the channel's base subscriber badge
+let _subBadgeFallback = null;
+function _getSubBadgeFallback() {
+    if (_subBadgeFallback) return _subBadgeFallback;
+    // Channel subscriber badges have version IDs like "0", "3", "6" etc.
+    // The base tier (version "0") is the channel's custom subscriber icon.
+    // Try version 0 first, then any other subscriber version in the map.
+    const sub0 = _vodBadgeMap['subscriber/0'];
+    if (sub0) { _subBadgeFallback = sub0; return sub0; }
+    const anySubKey = Object.keys(_vodBadgeMap).find(k => k.startsWith('subscriber/'));
+    if (anySubKey) { _subBadgeFallback = _vodBadgeMap[anySubKey]; return _subBadgeFallback; }
+    return null;
+}
+
 function _badgeImgForSet(setID, version) {
     if (!setID) {
         // Twitch redacts subscriber badge setID without broadcaster auth.
-        // Fall back to generic subscriber badge.
-        return _vodBadgeMap['subscriber/1'] || _vodBadgeMap['subscriber/0'] || null;
+        // Use the channel's own subscriber badge (version 0 = base tier).
+        return _getSubBadgeFallback();
     }
     return _vodBadgeMap[`${setID}/${version}`] || _vodBadgeMap[`${setID}/0`] || null;
 }
@@ -538,20 +596,23 @@ function _tokenise(ctx, msg, cfg) {
     const frags   = msg.fragments?.length ? msg.fragments : [{ text: msg.text }];
 
     for (const frag of frags) {
-        const eImg = frag.emote?.emoteID ? _vodEmoteMap[frag.emote.emoteID] : null;
-        if (eImg) {
-            const w = eImg.naturalWidth > 0
-                ? Math.round(eImg.naturalWidth * emoteH / eImg.naturalHeight) : emoteH;
-            tokens.push({ type: 'emote', img: eImg, w, h: emoteH });
+        const eAnim = frag.emote?.emoteID ? _vodEmoteMap[frag.emote.emoteID] : null;
+        if (eAnim) {
+            const ref = eAnim.frames[0].bitmap;
+            const natW = ref.displayWidth || ref.codedWidth || (ref instanceof HTMLImageElement ? ref.naturalWidth : 0);
+            const natH = ref.displayHeight || ref.codedHeight || (ref instanceof HTMLImageElement ? ref.naturalHeight : 0);
+            const w = natW > 0 ? Math.round(natW * emoteH / natH) : emoteH;
+            tokens.push({ type: 'emote', anim: eAnim, w, h: emoteH });
         } else {
             for (const part of (frag.text || '').split(/(\s+)/)) {
                 if (!part) continue;
-                // Check if this word is a third-party emote
-                const thirdImg = !/^\s+$/.test(part) ? _vodThirdEmoteMap[part] : null;
-                if (thirdImg && thirdImg instanceof HTMLImageElement) {
-                    const w = thirdImg.naturalWidth > 0
-                        ? Math.round(thirdImg.naturalWidth * emoteH / thirdImg.naturalHeight) : emoteH;
-                    tokens.push({ type: 'emote', img: thirdImg, w, h: emoteH });
+                const thirdAnim = !/^\s+$/.test(part) ? _vodThirdEmoteMap[part] : null;
+                if (thirdAnim && thirdAnim.frames) {
+                    const ref = thirdAnim.frames[0].bitmap;
+                    const natW = ref.displayWidth || ref.codedWidth || (ref instanceof HTMLImageElement ? ref.naturalWidth : 0);
+                    const natH = ref.displayHeight || ref.codedHeight || (ref instanceof HTMLImageElement ? ref.naturalHeight : 0);
+                    const w = natW > 0 ? Math.round(natW * emoteH / natH) : emoteH;
+                    tokens.push({ type: 'emote', anim: thirdAnim, w, h: emoteH });
                 } else {
                     tokens.push({ type: 'text', text: part, w: _measure(ctx, part, msgFont) });
                 }
@@ -593,7 +654,7 @@ function _msgHeight(ctx, msg, canvasW, cfg) {
     return Math.ceil(lines.length * cfg.messageFontSize * cfg.lineHeight + cfg.messageGap);
 }
 
-function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
+function _drawMsg(ctx, msg, y, opacity, canvasW, cfg, timestampMs = 0) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
 
@@ -657,7 +718,7 @@ function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
         if (li > 0) { cy += lineH; cx = pad; }
         for (const tok of lines[li]) {
             if (tok.type === 'emote') {
-                ctx.drawImage(tok.img, cx, cy - emoteH + 2, tok.w, tok.h);
+                _drawAnimImg(ctx, tok.anim, cx, cy - emoteH + 2, tok.w, tok.h, timestampMs);
                 cx += tok.w;
             } else {
                 ctx.fillStyle = 'rgba(255,255,255,0.88)';
@@ -714,7 +775,7 @@ function _renderFrame(ctx, timestamp, canvasW, canvasH, cfg) {
     let y = canvasH + Math.round(_vodEntryDisp);
     for (let i = visible.length - 1; i >= startIdx; i--) {
         y -= heights[i];
-        _drawMsg(ctx, visible[i].msg, y, visible[i].opacity, canvasW, cfg);
+        _drawMsg(ctx, visible[i].msg, y, visible[i].opacity, canvasW, cfg, timestamp * 1000);
     }
 }
 
@@ -811,8 +872,9 @@ async function vodExport() {
 
         const exportStart = performance.now();
         for (const k in _vodMeasureCache) delete _vodMeasureCache[k];
-        _vodEntryDisp  = 0;
-        _vodPrevMsgIds = new Set();
+        _vodEntryDisp    = 0;
+        _vodPrevMsgIds   = new Set();
+        _subBadgeFallback = null; // re-resolve for this VOD's channel
 
         for (let f = 0; f < totalFrames; f++) {
             const timestamp = f * frameDuration;
