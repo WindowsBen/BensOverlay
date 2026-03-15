@@ -537,6 +537,8 @@ async function vodExport() {
         _vodProgress(2, 'Preloading badges and emotes\u2026');
         await _preloadVodBadges();
         await _preloadVodEmotes();
+        console.log('[VOD] badges loaded:', Object.keys(_vodBadgeMap).length, Object.keys(_vodBadgeMap).slice(0,5));
+        console.log('[VOD] emotes loaded:', Object.keys(_vodEmoteMap).length, Object.keys(_vodEmoteMap).slice(0,5));
 
         // Prefer streaming to disk so memory stays flat on long VODs.
         // Falls back to in-memory buffer when File System Access API is unavailable.
