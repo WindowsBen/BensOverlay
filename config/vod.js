@@ -175,21 +175,19 @@ async function _fetchVodChat(videoId, onProgress) {
             if (seen.has(id)) continue;
             seen.add(id);
 
-            // Log first message structure so we can verify field names
-            if (messages.length === 0) {
-                console.log('[VOD] first node:', JSON.stringify(n).slice(0, 600));
-            }
-
-            const text = (n.message?.fragments || []).map(f => f.text).join('');
+            const frags = n.message?.fragments || [];
+            const text  = frags.map(f => f.text).join('');
             if (!text.trim()) continue;
 
             lastOffset = n.contentOffsetSeconds;
             newOnThisPage++;
             messages.push({
-                offset:   n.contentOffsetSeconds,
-                username: n.commenter?.displayName || n.commenter?.login || 'unknown',
-                color:    n.message?.userColor || '#9146FF',
-                badges:   n.message?.userBadges || [],
+                id:        n.id,
+                offset:    n.contentOffsetSeconds,
+                username:  n.commenter?.displayName || n.commenter?.login || 'unknown',
+                color:     n.message?.userColor || '#9146FF',
+                badges:    n.message?.userBadges || [],
+                fragments: frags,
                 text,
             });
         }
@@ -315,6 +313,11 @@ async function _preloadVodEmotes() {
 }
 
 function _badgeImgForSet(setID, version) {
+    if (!setID) {
+        // Twitch redacts subscriber badge setID without broadcaster auth.
+        // Fall back to generic subscriber badge.
+        return _vodBadgeMap['subscriber/1'] || _vodBadgeMap['subscriber/0'] || null;
+    }
     return _vodBadgeMap[`${setID}/${version}`] || _vodBadgeMap[`${setID}/0`] || null;
 }
 
@@ -537,8 +540,6 @@ async function vodExport() {
         _vodProgress(2, 'Preloading badges and emotes\u2026');
         await _preloadVodBadges();
         await _preloadVodEmotes();
-        console.log('[VOD] badges loaded:', Object.keys(_vodBadgeMap).length, Object.keys(_vodBadgeMap).slice(0,5));
-        console.log('[VOD] emotes loaded:', Object.keys(_vodEmoteMap).length, Object.keys(_vodEmoteMap).slice(0,5));
 
         // Prefer streaming to disk so memory stays flat on long VODs.
         // Falls back to in-memory buffer when File System Access API is unavailable.
