@@ -258,15 +258,26 @@ async function vodFetch() {
 
 // ── Badge preloading ──────────────────────────────────────────────────────────
 // ── Asset loading helpers ────────────────────────────────────────────────────
-function _loadImg(url) {
-    return new Promise(resolve => {
-        if (!url) { resolve(null); return; }
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload  = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = url;
-    });
+// Load an image via fetch+blob so it's always canvas-safe.
+// crossOrigin='anonymous' on <img> only works if the server sends CORS headers.
+// fetch() will silently fail for non-CORS CDNs (BTTV, FFZ) — those emotes/badges
+// won't appear in exports, but they also won't taint the canvas or spam errors.
+async function _loadImg(url) {
+    if (!url) return null;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        return await new Promise(resolve => {
+            const img = new Image();
+            img.onload  = () => resolve(img);
+            img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+            img.src = objectUrl;
+        });
+    } catch {
+        return null; // CORS blocked or network error — skip silently
+    }
 }
 
 async function _preloadVodBadges() {
@@ -396,6 +407,98 @@ async function _preloadThirdPartyEmotes() {
         if (img) _vodThirdEmoteMap[code] = img;
         else delete _vodThirdEmoteMap[code];
     }));
+
+
+// ── 7TV per-user cosmetics ────────────────────────────────────────────────────
+// Maps Twitch login (lowercase) → { paint, badgeUrl }
+const _vodUserCosmetics = {};
+
+async function _preload7TVUserCosmetics() {
+    // Collect unique Twitch user IDs from all messages
+    const userIds = [...new Set(_vodMsgs.map(m => m.userId).filter(Boolean))];
+    if (!userIds.length) return;
+
+    // 7TV supports querying multiple users via GQL
+    const BATCH = 100;
+    for (let i = 0; i < userIds.length; i += BATCH) {
+        const batch = userIds.slice(i, i + BATCH);
+        try {
+            const res = await fetch('https://7tv.io/v3/gql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: `{
+                    users(ids: ${JSON.stringify(batch.map(id => 'twitch:' + id))}) {
+                        id style { badge_id paint_id }
+                        connections { platform id }
+                    }
+                }` }),
+            });
+            if (!res.ok) continue;
+            const data = await res.json();
+            for (const user of data.data?.users || []) {
+                const twitchConn = (user.connections || []).find(c => c.platform === 'TWITCH');
+                if (!twitchConn) continue;
+                const cosmetics = { paint: null, badgeUrl: null };
+                if (user.style?.badge_id) {
+                    cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${user.style.badge_id}/2x.webp`;
+                }
+                if (user.style?.paint_id) {
+                    // Fetch paint definition
+                    try {
+                        const pr = await fetch('https://7tv.io/v3/gql', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: `{
+                                cosmetics(list: ["${user.style.paint_id}"]) {
+                                    paints { function color stops { at color } angle repeat image_url shadows { x_offset y_offset radius color } }
+                                }
+                            }` }),
+                        });
+                        if (pr.ok) {
+                            const pd = await pr.json();
+                            cosmetics.paint = pd?.data?.cosmetics?.paints?.[0] || null;
+                        }
+                    } catch(e) {}
+                }
+                _vodUserCosmetics[twitchConn.id] = cosmetics;
+            }
+        } catch(e) {}
+        await new Promise(r => setTimeout(r, 50));
+    }
+
+    // Preload 7TV badge images for users that have them
+    await Promise.all(Object.values(_vodUserCosmetics).map(async c => {
+        if (c.badgeUrl) c.badgeImg = await _loadImg(c.badgeUrl);
+    }));
+}
+
+// Convert 7TV paint to canvas fillStyle (gradient or solid color)
+function _paintToFillStyle(ctx, paint, x, y, w) {
+    if (!paint) return null;
+    const intToRGBA = n => {
+        const u = n >>> 0;
+        return `rgba(${(u>>24)&255},${(u>>16)&255},${(u>>8)&255},${((u&255)/255).toFixed(3)})`;
+    };
+    const stops = (paint.stops || []).map(s => ({ at: s.at, color: intToRGBA(s.color) }));
+    if (!stops.length) return null;
+
+    switch (paint.function) {
+        case 'LINEAR_GRADIENT': {
+            const angle = ((paint.angle ?? 90) * Math.PI) / 180;
+            const dx = Math.cos(angle) * w, dy = Math.sin(angle) * w;
+            const g = ctx.createLinearGradient(x, y, x + dx, y + dy);
+            stops.forEach(s => g.addColorStop(Math.max(0, Math.min(1, s.at)), s.color));
+            return g;
+        }
+        case 'RADIAL_GRADIENT': {
+            const g = ctx.createRadialGradient(x + w/2, y, 0, x + w/2, y, w/2);
+            stops.forEach(s => g.addColorStop(Math.max(0, Math.min(1, s.at)), s.color));
+            return g;
+        }
+        default:
+            return stops[0]?.color || null;
+    }
+}
 }
 
 function _badgeImgForSet(setID, version) {
@@ -493,19 +596,48 @@ function _drawMsg(ctx, msg, y, opacity, canvasW, cfg) {
     const baseline  = y + cfg.nameFontSize;
     let x = pad;
 
+    // Twitch badges
     for (const badge of (msg.badges || [])) {
         const img = _badgeImgForSet(badge.setID, badge.version);
         if (!img) continue;
         ctx.drawImage(img, x, baseline - badgeSize + 1, badgeSize, badgeSize);
         x += badgeSize + 2;
     }
+    // 7TV cosmetic badge
+    const _7tvCosmetics = msg.userId ? _vodUserCosmetics[msg.userId] : null;
+    if (_7tvCosmetics?.badgeImg) {
+        ctx.drawImage(_7tvCosmetics.badgeImg, x, baseline - badgeSize + 1, badgeSize, badgeSize);
+        x += badgeSize + 2;
+    }
 
     if (cfg.shadowColor) { ctx.shadowColor = cfg.shadowColor; ctx.shadowBlur = 4; }
 
     ctx.font = nameFont;
-    ctx.fillStyle = msg.color || '#9146FF';
-    ctx.fillText(msg.username + ':', x, baseline);
     const nameW = _measure(ctx, msg.username + ': ', nameFont);
+
+    // Username — apply 7TV paint gradient if available
+    const _paint = _7tvCosmetics?.paint || null;
+    if (_paint) {
+        const fill = _paintToFillStyle(ctx, _paint, x, baseline - cfg.nameFontSize, nameW);
+        if (fill) {
+            // Draw painted name via temp OffscreenCanvas for correct gradient clipping
+            const pw = Math.ceil(nameW) + 4;
+            const ph = Math.ceil(cfg.nameFontSize * 1.5);
+            const tc = new OffscreenCanvas(pw, ph);
+            const tctx = tc.getContext('2d');
+            tctx.font = nameFont;
+            const tFill = _paintToFillStyle(tctx, _paint, 0, ph - cfg.nameFontSize, pw);
+            tctx.fillStyle = tFill || msg.color || '#9146FF';
+            tctx.fillText(msg.username + ':', 0, ph - 4);
+            ctx.drawImage(tc, x, baseline - ph + 4);
+        } else {
+            ctx.fillStyle = msg.color || '#9146FF';
+            ctx.fillText(msg.username + ':', x, baseline);
+        }
+    } else {
+        ctx.fillStyle = msg.color || '#9146FF';
+        ctx.fillText(msg.username + ':', x, baseline);
+    }
 
     ctx.font = `${cfg.messageFontSize}px ${cfg.fontFamily}`;
     const tokens = _tokenise(ctx, msg, cfg);
