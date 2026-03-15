@@ -353,21 +353,8 @@ async function _preloadThirdPartyEmotes() {
     }
     if (!userId) return;
 
-    // BTTV global + channel
-    try {
-        const [gr, cr] = await Promise.all([
-            fetch('https://api.betterttv.net/3/cached/emotes/global'),
-            fetch(`https://api.betterttv.net/3/cached/users/twitch/${userId}`),
-        ]);
-        if (gr.ok)
-            for (const e of await gr.json())
-                _vodThirdEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/2x`;
-        if (cr.ok) {
-            const d = await cr.json();
-            for (const e of [...(d.channelEmotes||[]), ...(d.sharedEmotes||[])])
-                _vodThirdEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/2x`;
-        }
-    } catch(e) {}
+    // BTTV skipped — cdn.betterttv.net does not send CORS headers so images
+    // cannot be drawn to OffscreenCanvas from a browser origin.
 
     // FFZ global + channel
     try {
@@ -414,42 +401,34 @@ async function _preloadThirdPartyEmotes() {
 const _vodUserCosmetics = {};
 
 async function _preload7TVUserCosmetics() {
-    // Collect unique Twitch user IDs from all messages
+    // Uses the same REST endpoint as the live overlay: /v3/users/twitch/{id}
+    // Fetches cosmetics for each unique user who sent a message in this VOD.
+    // Throttled to avoid hammering the API.
     const userIds = [...new Set(_vodMsgs.map(m => m.userId).filter(Boolean))];
     if (!userIds.length) return;
 
-    // 7TV supports querying multiple users via GQL
-    const BATCH = 100;
-    for (let i = 0; i < userIds.length; i += BATCH) {
-        const batch = userIds.slice(i, i + BATCH);
-        try {
-            const res = await fetch('https://7tv.io/v3/gql', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: `{
-                    users(ids: ${JSON.stringify(batch.map(id => 'twitch:' + id))}) {
-                        id style { badge_id paint_id }
-                        connections { platform id }
-                    }
-                }` }),
-            });
-            if (!res.ok) continue;
-            const data = await res.json();
-            for (const user of data.data?.users || []) {
-                const twitchConn = (user.connections || []).find(c => c.platform === 'TWITCH');
-                if (!twitchConn) continue;
-                const cosmetics = { paint: null, badgeUrl: null };
-                if (user.style?.badge_id) {
-                    cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${user.style.badge_id}/2x.webp`;
+    const CONCURRENCY = 10;
+    for (let i = 0; i < userIds.length; i += CONCURRENCY) {
+        await Promise.all(userIds.slice(i, i + CONCURRENCY).map(async uid => {
+            try {
+                const res = await fetch(`https://7tv.io/v3/users/twitch/${uid}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const style = data.style || {};
+                const cosmetics = { paint: null, badgeUrl: null, badgeImg: null };
+
+                if (style.badge_id) {
+                    cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/2x.webp`;
+                    cosmetics.badgeImg = await _loadImg(cosmetics.badgeUrl);
                 }
-                if (user.style?.paint_id) {
-                    // Fetch paint definition
+
+                if (style.paint_id) {
                     try {
                         const pr = await fetch('https://7tv.io/v3/gql', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ query: `{
-                                cosmetics(list: ["${user.style.paint_id}"]) {
+                                cosmetics(list: ["${style.paint_id}"]) {
                                     paints { function color stops { at color } angle repeat image_url shadows { x_offset y_offset radius color } }
                                 }
                             }` }),
@@ -460,16 +439,15 @@ async function _preload7TVUserCosmetics() {
                         }
                     } catch(e) {}
                 }
-                _vodUserCosmetics[twitchConn.id] = cosmetics;
-            }
-        } catch(e) {}
-        await new Promise(r => setTimeout(r, 50));
-    }
 
-    // Preload 7TV badge images for users that have them
-    await Promise.all(Object.values(_vodUserCosmetics).map(async c => {
-        if (c.badgeUrl) c.badgeImg = await _loadImg(c.badgeUrl);
-    }));
+                if (cosmetics.badgeImg || cosmetics.paint) {
+                    _vodUserCosmetics[uid] = cosmetics;
+                }
+            } catch(e) {}
+        }));
+        // Brief pause between batches
+        if (i + CONCURRENCY < userIds.length) await new Promise(r => setTimeout(r, 100));
+    }
 }
 
 // Convert 7TV paint to canvas fillStyle (gradient or solid color)
@@ -767,10 +745,6 @@ async function vodExport() {
         await _preloadVodEmotes();
         await _preloadThirdPartyEmotes();
         await _preload7TVUserCosmetics();
-        console.log('[VOD] Twitch badges:', Object.keys(_vodBadgeMap).length);
-        console.log('[VOD] Twitch emotes:', Object.keys(_vodEmoteMap).length);
-        console.log('[VOD] 3rd-party emotes:', Object.keys(_vodThirdEmoteMap).length, Object.keys(_vodThirdEmoteMap).slice(0,5));
-        console.log('[VOD] 7TV user cosmetics:', Object.keys(_vodUserCosmetics).length);
 
         // Prefer streaming to disk so memory stays flat on long VODs.
         // Falls back to in-memory buffer when File System Access API is unavailable.
