@@ -875,10 +875,13 @@ async function vodExport() {
 
         // CanvasSource reads the OffscreenCanvas state on each source.add() call.
         // alpha: 'keep' preserves the transparent channel in the VP9 stream.
+        // keyFrameInterval: every frame is a keyframe — essential for NLE scrubbing.
+        // Without this, DaVinci Resolve (and other editors) cannot seek mid-file.
         const source = new CanvasSource(canvas, {
-            codec:   'vp9',
-            bitrate: _VOD_BITRATE,
-            alpha:   'keep',
+            codec:            'vp9',
+            bitrate:          _VOD_BITRATE,
+            alpha:            'keep',
+            keyFrameInterval: 1 / _VOD_FPS,
         });
         output.addVideoTrack(source);
         await output.start();
