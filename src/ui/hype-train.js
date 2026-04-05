@@ -17,23 +17,21 @@ let _htCountdownId = null;   // setInterval for expiry countdown
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 function handlePubSubHypeTrain(data) {
-    console.log('[HypeTrain] raw:', data?.message?.slice(0, 300));
-    if (!CONFIG.showHypeTrain) { console.log('[HypeTrain] disabled'); return; }
+    if (!CONFIG.showHypeTrain) return;
 
     let inner;
     try { inner = JSON.parse(data.message); } catch { return; }
 
-    console.log('[HypeTrain] type:', inner.type, '| data keys:', Object.keys(inner.data || {}));
     const type  = inner.type;
     const train = inner.data;
-    if (!train) { console.log('[HypeTrain] no data object'); return; }
+    if (!train) return;
 
     if (type === 'hype-train-start') {
         _showHypeTrain(train);
 
     } else if (type === 'hype-train-progression') {
         if (_htEl) {
-            _updateHypeTrain(train, false);
+            _updateHypeTrain(train);
         } else {
             _showHypeTrain(train);
         }
@@ -57,6 +55,35 @@ function handlePubSubHypeTrain(data) {
     }
 }
 
+// ── Data extraction helpers ──────────────────────────────────────────────────
+// Normalises the inconsistent PubSub payload across event types into a single
+// consistent shape: { level, value, goal, expiresAt }
+//
+// hype-train-start:      data.progress.{level,value,goal}  data.expires_at (ms)
+// hype-train-progression:data.progress.{level,value,goal}  data.expires_at (ms)
+// hype-train-level-up:   data.progress.{level,value,goal}  data.time_to_expire (ms)
+// hype-train-end:        same as level-up or progression
+function _htExtract(train) {
+    const progress = train.progress ?? train;
+
+    // level: object {value,goal,...} on level-up, plain number on start/progression
+    const levelRaw = progress.level ?? train.level ?? 1;
+    const level    = typeof levelRaw === 'object' ? (levelRaw?.value ?? 1) : levelRaw;
+
+    const value = progress.value ?? 0;
+    // goal: may be a top-level field, or nested inside the level object
+    const goal  = progress.goal ?? (typeof levelRaw === 'object' ? levelRaw.goal : null) ?? 1;
+
+    // expiresAt: ms timestamp, field name varies by event type
+    const rawExpiry = train.time_to_expire   // level-up
+                   ?? progress.expires_at    // start/progression nested
+                   ?? train.expires_at       // start/progression top-level
+                   ?? null;
+    const expiresAt = rawExpiry ? Number(rawExpiry) : Date.now() + 300_000;
+
+    return { level, value, goal, expiresAt };
+}
+
 // ── Widget creation ───────────────────────────────────────────────────────────
 function _showHypeTrain(train) {
     _clearHypeTrain();
@@ -72,29 +99,24 @@ function _showHypeTrain(train) {
 }
 
 // ── Progress update ───────────────────────────────────────────────────────────
-function _updateHypeTrain(train, levelUp) {
+function _updateHypeTrain(train) {
     if (!_htEl) return;
+    const { level, value, goal } = _htExtract(train);
+    const pct = Math.min(100, Math.round((value / goal) * 100));
 
-    const progress  = train.progress ?? train;
-    const value     = progress.value     ?? 0;
-    const goal      = progress.goal      ?? 1;
-    const total     = progress.total     ?? value;
-    const level     = progress.level     ?? train.level ?? 1;
-    const pct       = Math.min(100, Math.round((value / goal) * 100));
+    const bar   = _htEl.querySelector('.ht-bar-fill');
+    const lvlEl = _htEl.querySelector('.ht-level-num');
+    const ptsEl = _htEl.querySelector('.ht-pts');
 
-    const bar    = _htEl.querySelector('.ht-bar-fill');
-    const lvlEl  = _htEl.querySelector('.ht-level-num');
-    const ptsEl  = _htEl.querySelector('.ht-pts');
-
-    if (bar)   bar.style.width       = `${pct}%`;
-    if (lvlEl) lvlEl.textContent     = level;
-    if (ptsEl) ptsEl.textContent     = `${_fmtPts(value)} / ${_fmtPts(goal)}`;
+    if (bar)   bar.style.width   = `${pct}%`;
+    if (lvlEl) lvlEl.textContent = level;
+    if (ptsEl) ptsEl.textContent = `${_fmtPts(value)} / ${_fmtPts(goal)}`;
 }
 
 // ── Level up ──────────────────────────────────────────────────────────────────
 function _levelUpHypeTrain(train) {
     if (!_htEl) return;
-    _updateHypeTrain(train, true);
+    _updateHypeTrain(train);
 
     // Flash the whole widget and bounce the level badge
     _htEl.classList.remove('ht-levelup');
@@ -108,13 +130,7 @@ function _levelUpHypeTrain(train) {
 // ── End ───────────────────────────────────────────────────────────────────────
 function _endHypeTrain(train) {
     if (!_htEl) return;
-    _updateHypeTrain(train, false);
-
-    const progress = train.progress ?? train;
-    const level    = progress.level ?? train.level ?? 1;
-    const lvlEl    = _htEl.querySelector('.ht-level-num');
-    if (lvlEl) lvlEl.textContent = level;
-
+    _updateHypeTrain(train);
     _htEl.classList.add('ht-ended');
 
     const timer = _htEl.querySelector('.ht-timer');
@@ -124,14 +140,7 @@ function _endHypeTrain(train) {
 // ── Countdown ─────────────────────────────────────────────────────────────────
 function _startHypeTrainCountdown(train) {
     if (_htCountdownId) clearInterval(_htCountdownId);
-
-    // expires_at is an ISO timestamp in the event data
-    const progress  = train.progress ?? train;
-    const expiresAt = progress.expires_at
-        ? new Date(progress.expires_at).getTime()
-        : train.expires_at
-        ? new Date(train.expires_at).getTime()
-        : Date.now() + 300_000; // 5min fallback
+    const { expiresAt } = _htExtract(train);
 
     function tick() {
         if (!_htEl) return;
@@ -164,11 +173,8 @@ function _clearHypeTrain() {
 
 // ── HTML builder ──────────────────────────────────────────────────────────────
 function _buildHypeTrainHTML(train) {
-    const progress = train.progress ?? train;
-    const value    = progress.value ?? 0;
-    const goal     = progress.goal  ?? 1;
-    const level    = progress.level ?? train.level ?? 1;
-    const pct      = Math.min(100, Math.round((value / goal) * 100));
+    const { level, value, goal } = _htExtract(train);
+    const pct = Math.min(100, Math.round((value / goal) * 100));
 
     return `
         <div class="ht-left">
