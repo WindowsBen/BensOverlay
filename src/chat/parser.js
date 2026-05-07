@@ -76,12 +76,8 @@ function buildTokens(message, twitchEmotes) {
                 continue;
             }
 
-            // Decode HTML entities that may have been introduced earlier
-            const raw = word
-                .replace(/&amp;/g,  '&')
-                .replace(/&lt;/g,   '<')
-                .replace(/&gt;/g,   '>')
-                .replace(/&quot;/g, '"');
+            // Match emotes by the raw word — IRC text is never HTML-escaped at this stage
+            const raw = word;
 
             if (emoteMap[raw]) {
                 const isZeroWidth = zeroWidthEmotes.has(raw);
@@ -114,9 +110,11 @@ function buildTokens(message, twitchEmotes) {
                 } else {
                     tokens.push({ html: img, isEmote: true, stacked: false });
                 }
-            } else if (twitchEmoteByName[raw]) {
-                // Twitch emote matched by name from passive cache (used in reply snippets
-                // where position data isn't available)
+            } else if (!twitchEmotes && twitchEmoteByName[raw]) {
+                // Twitch emote matched by name — ONLY used when parsing reply snippet
+                // text where no position data is available (twitchEmotes === null).
+                // Never used for the main message body where position data exists,
+                // because false cache hits can turn plain words into wrong emotes.
                 tokens.push({
                     html:    `<img class="chat-emote" src="${twitchEmoteByName[raw]}" alt="${escapeHTML(word)}" title="${escapeHTML(word)}">`,
                     isEmote: true,

@@ -11,7 +11,7 @@ function displayMessage(tags, message, isAction = false) {
     // Drop messages that start with an excluded prefix (e.g. "!" for bot commands)
     if (CONFIG.excludedPrefixes.length && CONFIG.excludedPrefixes.some(p => message.startsWith(p))) return;
 
-    const chatContainer  = document.getElementById('chat-container');
+    const chatContainer  = document.getElementById('chat-container'); // always present
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
 
@@ -87,17 +87,12 @@ function displayMessage(tags, message, isAction = false) {
         const parentEmotes = recentMessageEmotes[parentMsgId] || {};
         for (const [id, positions] of Object.entries(parentEmotes)) {
             const [s, e] = positions[0].split('-').map(Number);
-            const name = parentRaw.slice(s, e + 1);
+            // Use parentBody (IRC-unescaped) so positions correctly align with characters
+            const name = parentBody.slice(s, e + 1);
             if (name) twitchEmoteByName[name] = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`;
         }
-        // Also seed from the current reply's own emotes
-        if (tags.emotes) {
-            for (const [id, positions] of Object.entries(tags.emotes)) {
-                const [s, e] = positions[0].split('-').map(Number);
-                const name = message.slice(s, e + 1);
-                if (name) twitchEmoteByName[name] = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`;
-            }
-        }
+        // Note: the current message's own emotes are seeded correctly by buildTokens
+        // when it processes cleanMessage+adjustedEmotes below — no manual seeding needed.
         const snippet       = parentBody.length > 60 ? parentBody.slice(0, 60).trimEnd() + '…' : parentBody;
         const parsedSnippet = parseMessage(snippet, null);
 
@@ -123,7 +118,7 @@ function displayMessage(tags, message, isAction = false) {
     // Tag the element for moderation targeting — login name (not display-name)
     // because ban/timeout events fire with the login name
     if (tags['id'])    messageElement.dataset.msgId   = tags['id'];
-    if (tags['id'])    cacheMessageEmotes(tags['id'], tags.emotes);
+    cacheMessageEmotes(tags['id'], tags.emotes);
     if (tags.username) messageElement.dataset.username = tags.username.toLowerCase();
 
     chatContainer.appendChild(messageElement);

@@ -85,9 +85,11 @@ const CONFIG = {
     showBadge7TV:         params.get('showBadge7TV')         !== '0',
     show7TVPaints:        params.get('show7TVPaints')        !== '0',
 
-    // Twitch API credentials — token comes from URL or localStorage (set by configurator)
+    // Twitch API credentials — token always comes from localStorage (set by the configurator
+    // OAuth flow). Never read from URL params: the hash can appear in browser history,
+    // bookmarks, and analytics logs, making it a token-leak vector.
     clientId: 'ti9ahr6lkym6anpij3d4f2cyjhij18',
-    token:    params.get('token') || localStorage.getItem('twitch_access_token'),
+    token:    localStorage.getItem('twitch_access_token'),
 };
 
 // ── Apply CSS variables ────────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ const cssVars = {
     '--ht-bar-color':         hex8ToCss(params.get('htBar'),     '#FF6B35FF'),
     '--pred-bg':              hex8ToCss(params.get('predBg'),     '#0d0d1aEE'),
     '--pred-winner-glow':     hex8ToCss(params.get('predWinnerGlow'), '#FFD700AA'),
-    '--poll-accent':          hex8ToCss(params.get('pollAccent'),  '#A970FF FF'),
+    '--poll-accent':          hex8ToCss(params.get('pollAccent'),  '#A970FFFF'),
     '--poll-bg':              hex8ToCss(params.get('pollBg'),     '#0e0e1eEE'),
     '--poll-bar-color':       hex8ToCss(params.get('pollBar'),    '#A970FFFF'),
     '--poll-winner-color':    hex8ToCss(params.get('pollWinner'), '#FFD700FF'),

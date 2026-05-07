@@ -70,16 +70,6 @@ client.on('action', (channel, tags, message, self) => {
 // Non-text redeems are EventSub/PubSub-only and cannot be caught here.
 
 client.on('raw_message', (messageCloned, message) => {
-    // ── Shared chat end detection ──────────────────────────────────────────────
-    // Log ROOMSTATE and NOTICE while shared chat is active so we can identify
-    // the exact tag Twitch uses to signal the session ending.
-    // _endSharedChat() is also wired here once that tag is confirmed.
-    if (_sharedChatActive && message.command === 'ROOMSTATE') {
-        console.log('[SharedChat] ROOMSTATE received — tags:', JSON.stringify(message.tags));
-        // TODO: replace the condition below with the confirmed tag name once known.
-        // e.g. if (!message.tags?.['shared-chat-channel-id']) _endSharedChat();
-    }
-
     if (message.command !== 'USERNOTICE') return;
     const tags  = message.tags || {};
     const msgId = tags['msg-id'];

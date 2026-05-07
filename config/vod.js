@@ -86,33 +86,6 @@ function _extractVodId(input) {
 }
 
 
-async function _fetchIntegrityToken() {
-    if (_vodIntegrityToken && Date.now() < _vodIntegrityExpiry) return _vodIntegrityToken;
-
-    const token    = localStorage.getItem('twitch_access_token') || '';
-    const deviceId = _getDeviceId();
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'Client-Id':    _VOD_GQL_CLIENT,
-        'X-Device-ID':  deviceId,
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    try {
-        const res = await fetch('https://gql.twitch.tv/integrity', { method: 'POST', headers });
-        if (!res.ok) throw new Error(`Integrity ${res.status}`);
-        const data = await res.json();
-        _vodIntegrityToken  = data.token;
-        // Expire 30s before the actual expiry to avoid edge cases
-        _vodIntegrityExpiry = Date.now() + (data.expiration * 1000) - 30_000;
-        return _vodIntegrityToken;
-    } catch(e) {
-        console.warn('[VOD] Could not fetch integrity token:', e.message);
-        return null;
-    }
-}
-
 async function _fetchVodInfo(videoId) {
     const res = await fetch(_VOD_GQL_URL, {
         method:  'POST',
@@ -122,7 +95,6 @@ async function _fetchVodInfo(videoId) {
                 title lengthSeconds createdAt
                 owner { displayName }
                 creator { id }
-                createdAt
             }
         }` }),
     });
@@ -257,17 +229,7 @@ async function vodFetch() {
     }
 }
 
-// ── Badge preloading ──────────────────────────────────────────────────────────
 // ── Asset loading helpers ────────────────────────────────────────────────────
-// Animated emote container — hidden div in the DOM so imgs play their animation
-let _animContainer = null;
-function _getAnimContainer() {
-    if (_animContainer) return _animContainer;
-    _animContainer = document.createElement('div');
-    _animContainer.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:-9999px;left:-9999px;';
-    document.body.appendChild(_animContainer);
-    return _animContainer;
-}
 
 // Load a static image via fetch+blob (canvas-safe, no CORS taint).
 async function _loadImg(url) {
