@@ -722,3 +722,42 @@ select option { background: #18181b; }
         max-height: 400px;
     }
 }
+
+/* ── Token-expired banner ─────────────────────────────────────────────────── */
+.dot-amber { background: #f0a020; box-shadow: 0 0 6px #f0a02088; }
+.dot-red   { background: #ff4444; box-shadow: 0 0 6px #ff444488; }
+
+.token-expired-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #2a1800;
+    border: 1px solid #f0a020;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 10px 0 4px;
+    font-size: 13px;
+    color: #f0c060;
+    line-height: 1.5;
+}
+.token-expired-banner svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: #f0a020;
+}
+.token-expired-banner strong { color: #ffd080; }
+.token-expired-banner .btn-reauth {
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: #f0a020;
+    color: #1a0e00;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-block;
+}
+.token-expired-banner .btn-reauth:hover { background: #ffb830; }

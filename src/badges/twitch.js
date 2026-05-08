@@ -20,7 +20,7 @@ async function fetchTwitchBadges(channelId) {
 
     try {
         // Global badges — available in every channel (admin, staff, turbo, Prime, bits tiers, etc.)
-        const globalRes = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
+        const globalRes = await guardedFetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
         if (globalRes.ok) {
             const globalData = await globalRes.json();
             for (const set of globalData.data || []) {
@@ -32,6 +32,7 @@ async function fetchTwitchBadges(channelId) {
             console.log('[Badges] Loaded global Twitch badges');
         } else if (globalRes.status === 401) {
             console.warn('[Badges] Token expired — re-authenticate in the configurator');
+            showTokenError();
             return;
         }
 

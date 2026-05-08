@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>YACOFO</title>
+    <title>YaCoFo</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/svg+xml" href="https://files.catbox.moe/y4xo7t.svg">
 </head>
 <body>
     <div id="chat-container"></div>
@@ -12,6 +11,10 @@
     <div id="poll-overlay"></div>
     <div id="prediction-overlay"></div>
     <div id="hype-train-overlay"></div>
+    <!-- Shown when the Twitch token is expired, so the streamer can see it in OBS -->
+    <div id="token-error-strip" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;font-family:sans-serif;font-size:13px;font-weight:600;padding:8px 12px;z-index:9999;text-align:center;">
+        ⚠ YACOFO: Twitch token expired — go to yacofo.chat and re-authenticate, then refresh this browser source.
+    </div>
 
     <!-- Vendor -->
     <script src="tmi.min.js"></script>

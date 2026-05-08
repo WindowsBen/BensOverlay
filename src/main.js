@@ -7,6 +7,22 @@ if (!CONFIG.channelName) {
     throw new Error('No channel specified');
 }
 
+// Shows a persistent error strip visible in OBS when the token is expired.
+// Called when any Twitch API call returns 401.
+function showTokenError() {
+    const strip = document.getElementById('token-error-strip');
+    if (strip) strip.style.display = 'block';
+}
+
+// Wraps a fetch call and triggers showTokenError() on a 401 response.
+// All Twitch API fetches in the init chain go through this so expiry is
+// caught and surfaced even if the streamer doesn't have the console open.
+async function guardedFetch(url, options) {
+    const res = await fetch(url, options);
+    if (res.status === 401) { showTokenError(); }
+    return res;
+}
+
 
 const client = new tmi.Client({
     connection: { secure: true, reconnect: true },
