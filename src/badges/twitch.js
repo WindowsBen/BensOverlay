@@ -38,7 +38,7 @@ async function fetchTwitchBadges(channelId) {
 
         // Channel badges — subscriber tiers, custom bits badges, channel-specific icons.
         // Written after globals so channel overrides win any key conflicts.
-        const channelRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${channelId}`, { headers });
+        const channelRes = await guardedFetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${channelId}`, { headers });
         if (channelRes.ok) {
             const channelData = await channelRes.json();
             for (const set of channelData.data || []) {
@@ -64,7 +64,7 @@ async function fetchTwitchEmotes(channelId) {
     };
     try {
         // Global emotes
-        const globalRes = await fetch('https://api.twitch.tv/helix/chat/emotes/global', { headers });
+        const globalRes = await guardedFetch('https://api.twitch.tv/helix/chat/emotes/global', { headers });
         if (globalRes.ok) {
             const data = await globalRes.json();
             for (const emote of (data.data || [])) {
@@ -73,7 +73,7 @@ async function fetchTwitchEmotes(channelId) {
             }
         }
         // Channel emotes (subscriber emotes, Bits emotes, etc.)
-        const channelRes = await fetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${channelId}`, { headers });
+        const channelRes = await guardedFetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${channelId}`, { headers });
         if (channelRes.ok) {
             const data = await channelRes.json();
             for (const emote of (data.data || [])) {

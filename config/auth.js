@@ -3,16 +3,14 @@
 const CLIENT_ID = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
 
 function loginWithTwitch() {
-    // Hardcoded rather than window.location.origin + pathname because GitHub Pages
-    // sometimes serves index.html under both / and /index.html, causing the dynamic
-    // URI to alternate between the two and produce a redirect_mismatch error from
-    // Twitch when the value at click time differs from the value Twitch expects.
+    console.log('[Auth] loginWithTwitch called');
     const redirectUri = 'https://yacofo.chat/';
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id',     CLIENT_ID);
     authUrl.searchParams.set('redirect_uri',  redirectUri);
     authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('scope',         'user:read:chat channel:read:redemptions channel:read:hype_train channel:read:polls channel:read:predictions');
+    console.log('[Auth] redirecting to:', authUrl.toString());
     window.location.href = authUrl.toString();
 }
 
@@ -95,6 +93,7 @@ async function fetchAndStoreUsername(token) {
 
 function handleOAuthRedirect() {
     const hash = window.location.hash;
+    console.log('[Auth] handleOAuthRedirect — hash:', hash ? hash.slice(0, 80) + '...' : '(empty)');
     if (!hash) return false;
 
     const p     = new URLSearchParams(hash.slice(1));
@@ -114,8 +113,12 @@ function handleOAuthRedirect() {
         return false;
     }
 
-    if (!token) return false;
+    if (!token) {
+        console.warn('[Auth] Hash present but no access_token found. Parsed keys:', [...p.keys()].join(', '));
+        return false;
+    }
 
+    console.log('[Auth] Token received and stored.');
     localStorage.setItem('twitch_access_token', token);
     localStorage.removeItem('twitch_username');
     return true;

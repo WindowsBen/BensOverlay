@@ -26,10 +26,28 @@ async function guardedFetch(url, options) {
 
 const client = new tmi.Client({
     connection: { secure: true, reconnect: true },
-    channels: [CONFIG.channelName],
+    channels:   [CONFIG.channelName],
+    // Pass identity when a token is present so tmi.js authenticates rather than
+    // connecting anonymously. This enables auth failure events when the token expires.
+    ...(CONFIG.token ? {
+        identity: {
+            username: CONFIG.channelName,
+            password: `oauth:${CONFIG.token}`,
+        },
+    } : {}),
 });
 
 client.connect();
+
+// Proactively validate the token at startup so the error strip appears
+// immediately on load rather than waiting for an API call to fail.
+if (CONFIG.token) {
+    fetch('https://id.twitch.tv/oauth2/validate', {
+        headers: { 'Authorization': `OAuth ${CONFIG.token}` },
+    }).then(res => {
+        if (res.status === 401) showTokenError();
+    }).catch(() => {}); // network errors are non-fatal
+}
 
 // Broadcaster's Twitch user ID — populated on roomstate, used for API calls
 let broadcasterId = null;
