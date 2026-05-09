@@ -56,23 +56,23 @@ function setExpired() {
     }
 }
 
-// Validates the stored token against Helix. Returns true if valid, false if expired/invalid.
-// Called on page load so users immediately see if their token has lapsed.
+// Validates the stored token against Helix. Called in the background after
+// setLoggedIn() so it never blocks the UI. Shows the expired banner on 401.
 async function validateToken(token) {
     try {
         const res = await fetch('https://api.twitch.tv/helix/users', {
             headers: { 'Authorization': `Bearer ${token}`, 'Client-Id': CLIENT_ID }
         });
         if (res.status === 401) {
-            // Token definitely expired or revoked
-            localStorage.removeItem('twitch_access_token');
-            localStorage.removeItem('twitch_username');
+            // Token is expired or revoked — show the expired banner.
+            // We don't remove it from localStorage here so the user can still
+            // see they were previously connected; setLoggedIn() has already run.
             setExpired();
             return false;
         }
         return res.ok;
     } catch {
-        // Network error — don't mark as expired, just leave as-is
+        // Network error — can't validate, leave the logged-in UI as-is
         return true;
     }
 }
@@ -96,43 +96,61 @@ async function fetchAndStoreUsername(token) {
 function handleOAuthRedirect() {
     const hash = window.location.hash;
     if (!hash) return false;
+
     const p     = new URLSearchParams(hash.slice(1));
+    const error = p.get('error');
     const token = p.get('access_token');
+
+    // Always clean the hash immediately so sensitive data isn't left in the URL
+    history.replaceState(null, '', window.location.pathname);
+
+    if (error) {
+        // Twitch rejected the auth request (e.g. user denied, or redirect_uri mismatch)
+        console.error('[Auth] OAuth error:', error, p.get('error_description'));
+        const st = document.getElementById('status-text');
+        if (st) st.textContent = `Login failed: ${p.get('error_description') || error}`;
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.className = 'dot dot-red';
+        return false;
+    }
+
     if (!token) return false;
+
     localStorage.setItem('twitch_access_token', token);
     localStorage.removeItem('twitch_username');
-    history.replaceState(null, '', window.location.pathname);
     return true;
 }
 
 // Single init entry point — no competing load listeners
 window.addEventListener('load', async () => {
-    // 1. Lock everything first, synchronously
-    lockTabs();
-    initSliders();
+    try {
+        // 1. Lock everything first, synchronously
+        lockTabs();
+        initSliders();
 
-    // 2. Then check auth and unlock if valid
-    const freshLogin = handleOAuthRedirect();
-    const token      = localStorage.getItem('twitch_access_token');
+        // 2. Check for fresh OAuth redirect (also handles Twitch error responses)
+        const freshLogin = handleOAuthRedirect();
+        const token      = localStorage.getItem('twitch_access_token');
 
-    if (token) {
-        // Validate the stored token before marking as logged in.
-        // For fresh logins the token was just issued so we skip the roundtrip.
-        if (freshLogin) {
+        if (token) {
+            // Unlock immediately — never block the UI on a network request
             setLoggedIn();
-            await fetchAndStoreUsername(token);
-        } else {
-            const valid = await validateToken(token);
-            if (valid) {
-                setLoggedIn();
+
+            if (freshLogin) {
+                await fetchAndStoreUsername(token);
+            } else {
                 const username = localStorage.getItem('twitch_username');
                 if (username) {
                     document.getElementById('channel').value           = username;
                     document.getElementById('login-badge').textContent = username;
                     document.getElementById('status-text').textContent = `Connected as ${username} ✓`;
                 }
+                // Validate in the background — shows expired banner on 401 without blocking
+                validateToken(token); // intentionally not awaited
             }
-            // If invalid, setExpired() was already called inside validateToken()
         }
+    } catch (err) {
+        // Surface any initialisation errors so they're visible in the console
+        console.error('[YACOFO] Init error:', err);
     }
 });

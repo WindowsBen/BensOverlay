@@ -85,11 +85,13 @@ const CONFIG = {
     showBadge7TV:         params.get('showBadge7TV')         !== '0',
     show7TVPaints:        params.get('show7TVPaints')        !== '0',
 
-    // Twitch API credentials — token always comes from localStorage (set by the configurator
-    // OAuth flow). Never read from URL params: the hash can appear in browser history,
-    // bookmarks, and analytics logs, making it a token-leak vector.
+    // Twitch API credentials.
+    // The overlay URL (pasted into OBS) carries the token in the URL hash so the
+    // browser source is self-contained — OBS's CEF browser has isolated localStorage
+    // that is never populated by the config page. Falls back to localStorage for
+    // users who open the overlay URL directly in their own browser.
     clientId: 'ti9ahr6lkym6anpij3d4f2cyjhij18',
-    token:    localStorage.getItem('twitch_access_token'),
+    token:    params.get('token') || localStorage.getItem('twitch_access_token'),
 };
 
 // ── Apply CSS variables ────────────────────────────────────────────────────────

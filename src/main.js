@@ -101,6 +101,19 @@ client.on('raw_message', (messageCloned, message) => {
 // Incoming raid — tmi.js exposes this as a named event
 client.on('raided', handleRaidIncoming);
 
+// Show the error strip if tmi.js fails to authenticate (expired/invalid token)
+client.on('notice', (channel, msgid) => {
+    if (msgid === 'msg_banned' || msgid === 'msg_channel_suspended') return; // unrelated
+    if (msgid === 'authentication_failed' || msgid === 'login_unsuccessful') {
+        showTokenError();
+    }
+});
+client.on('disconnected', (reason) => {
+    if (reason && (reason.includes('Login authentication') || reason.includes('AUTHENTICATION'))) {
+        showTokenError();
+    }
+});
+
 // Subscription events — tmi.js parses these from USERNOTICE into named events
 client.on('subscription',    handleSubscription);
 client.on('resub',           handleResub);
