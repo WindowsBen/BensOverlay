@@ -4,7 +4,7 @@ const CLIENT_ID = 'ti9ahr6lkym6anpij3d4f2cyjhij18';
 
 function loginWithTwitch() {
     console.log('[Auth] loginWithTwitch called');
-    const redirectUri = 'https://yacofo.chat/';
+    const redirectUri = 'https://yacofo.chat/index.html';
     const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
     authUrl.searchParams.set('client_id',     CLIENT_ID);
     authUrl.searchParams.set('redirect_uri',  redirectUri);
@@ -92,13 +92,39 @@ async function fetchAndStoreUsername(token) {
 }
 
 function handleOAuthRedirect() {
-    const hash = window.location.hash;
-    console.log('[Auth] handleOAuthRedirect — hash:', hash ? hash.slice(0, 80) + '...' : '(empty)');
+    const hash   = window.location.hash;
+    const search = window.location.search;
+    console.log('[Auth] handleOAuthRedirect — hash:', hash ? hash.slice(0, 80) : '(empty)', '| search:', search || '(empty)');
+
+    // Twitch returns errors in the query string (?error=...) but tokens in the hash (#access_token=...)
+    const qp    = new URLSearchParams(search);
+    const error = qp.get('error');
+    if (error) {
+        // Clean the URL immediately
+        history.replaceState(null, '', window.location.pathname);
+        console.error('[Auth] OAuth error from query string:', error, qp.get('error_description'));
+        const desc = qp.get('error_description') || error;
+        const st  = document.getElementById('status-text');
+        if (st) st.textContent = `Login failed: ${desc}`;
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.className = 'dot dot-red';
+        return false;
+    }
+
     if (!hash) return false;
 
     const p     = new URLSearchParams(hash.slice(1));
-    const error = p.get('error');
     const token = p.get('access_token');
+    const hashError = p.get('error');
+    if (hashError) {
+        history.replaceState(null, '', window.location.pathname);
+        console.error('[Auth] OAuth error from hash:', hashError, p.get('error_description'));
+        const st  = document.getElementById('status-text');
+        if (st) st.textContent = `Login failed: ${p.get('error_description') || hashError}`;
+        const dot = document.getElementById('status-dot');
+        if (dot) dot.className = 'dot dot-red';
+        return false;
+    }
 
     // Always clean the hash immediately so sensitive data isn't left in the URL
     history.replaceState(null, '', window.location.pathname);
