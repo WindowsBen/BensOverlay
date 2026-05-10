@@ -8,9 +8,9 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 
 **Chat**
 - Full Twitch chat with badges, emotes, and username paints
-- Third-party emotes from 7TV, BetterTTV (BTTV), and FrankerFaceZ (FFZ)
-- Third-party badges from FFZ and Chatterino
-- 7TV username paints and cosmetic badges with live mid-stream updates
+- Third-party emotes from 7TV, BetterTwitchTV (BTTV) FrankerFaceZ (FFZ)
+- Third-party badges from FFZ, BTTV, Chatterino and 7TV
+- 7TV username paints and cosmetic badges with live mid-stream updates via EventSub WebSocket
 - Cheermote rendering (animated bit emotes with tier images)
 - Zero-width / overlay emote stacking (7TV)
 - Reply context (quoted parent message above reply messages)
@@ -18,13 +18,13 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 - `/me` action message styling (coloured, italic, or plain)
 - Announcement messages (`/announce`)
 - Message filtering by username or message prefix
-- Shared chat support — guest channel messages show the channel's profile picture as a badge
+- Shared chat support — guest channel messages show the source channel's profile picture as a badge
 
 **Events**
 - Subscriptions and resubscriptions (with Twitch emote rendering in resub messages)
-- Gift subscriptions
+- Gift subscriptions (single and mystery)
 - Bit cheers
-- Channel point redemptions (text-input redeems via both IRC and PubSub, deduplicated)
+- Channel point redemptions
 - Watch streak milestones
 - Incoming and outgoing raids
 - Ban and timeout animations (hammer and clock)
@@ -32,7 +32,7 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 **Widgets** *(require broadcaster token)*
 - Live poll widget with animated vote bars
 - Prediction widget with outcome percentages
-- Hype train progress bar
+- Hype train progress bar with level tracking and live countdown
 
 **Appearance**
 - Custom font support (any CSS font URL, e.g. Google Fonts or cdnfonts.com)
@@ -41,22 +41,35 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 - Text shadow on usernames and message bodies
 - Slide-in animation with configurable distance and duration
 - Fade-out animation with configurable duration
-- Badge control: disable all, role-only (Broadcaster/Mod/VIP), or all third-party cosmetics
+- Nine granular badge toggles: Broadcaster, Moderator, VIP, Subscriber, Custom (channel-specific), FFZ, Chatterino, 7TV badges, and 7TV paints
 
-**VOD Export** *(Chrome 94+ required)*
-- Fetch the full chat log from any public Twitch VOD
+**VOD Export** *(Chrome 94+ required, Twitch login required)*
+- Fetch the full chat log from any Twitch VOD you have access to
 - Export as a transparent WebM video matching your exact YACOFO style settings
 - Drop the file on a track above footage in DaVinci Resolve, Premiere, or Final Cut — no chroma key needed
 - Solid background colour option (including green for chroma key) for editors who prefer it
+- 7TV and FFZ emotes rendered in the exported video (BetterTTV emotes are excluded due to CDN CORS restrictions)
+- 7TV username paints and cosmetic badges rendered per-user
+- Twitch subscriber badges fetched from the VOD channel's own badge set
+- Animated emotes rendered frame-accurately using the ImageDecoder API
 - Real-time progress display with speed indicator (typically 5–20× faster than real-time)
 - Streams output directly to disk via the File System Access API on supported browsers to keep memory usage flat on long VODs
-- Visual config page with live preview window that updates as you change settings
+- 1-second keyframe interval for reliable scrubbing in DaVinci Resolve and other NLEs
+
+**Configurator**
+- Visual config page with live preview window that updates in real time as you change settings
 - Light/dark preview background toggle to test against any stream layout
 - All event types shown or hidden in the preview based on your toggle settings
 - Animated preview for mod actions, polls, and predictions
+- Real badge images in the preview, fetched from Twitch, FFZ, Chatterino, and 7TV
 - Tooltip descriptions on every setting
 - Export and import config as a portable string
 - One-click URL generation for OBS
+
+**Token management**
+- Automatic token expiry detection on page load — prompts re-authentication if expired
+- After re-auth, your previous overlay settings are automatically restored and a new ready-to-use URL is shown
+- Expired token warning displayed directly in OBS via a visible in-overlay strip
 
 ---
 
@@ -68,7 +81,7 @@ Visit **[yacofo.chat](https://yacofo.chat)** — you'll land on the configuratio
 
 ### 2. Log in with Twitch
 
-Click **Login with Twitch**. This opens Twitch's OAuth flow and grants the overlay read-only access to your channel data. The token is stored only in your browser's URL — it is never sent to any server other than Twitch's own API.
+Click **Login with Twitch**. This opens Twitch's OAuth flow and grants the overlay read-only access to your channel data. Your token is stored in your browser's local storage and embedded in your generated overlay URL — it is never sent to any server other than Twitch's own API.
 
 **Scopes requested:**
 
@@ -108,14 +121,26 @@ Switch to the **Generate** tab and click **Generate Link**. Copy the resulting U
 
 ---
 
+## Token Expiry
+
+Twitch OAuth tokens expire periodically. When this happens:
+
+- **In the configurator** — an amber banner appears automatically on page load, with a one-click Re-authenticate button
+- **In OBS** — a red strip appears at the bottom of the overlay with instructions
+
+After re-authenticating on yacofo.chat, your previous settings are automatically detected and a new overlay URL is shown on the page. Copy the new URL and replace it in your OBS browser source properties.
+
+---
+
 ## Self-Hosting
 
 The overlay is entirely static files with no build step, so you can host it anywhere.
 
 1. Fork or clone this repository
 2. Enable GitHub Pages on the `main` branch (root) in your repo settings
-3. Update the Twitch OAuth redirect URI in `config/auth.js` to point to your own URL
-4. Everything else works as-is
+3. Update the Twitch OAuth redirect URI in `config/auth.js` to point to your own domain
+4. Register the same URI in your [Twitch developer console](https://dev.twitch.tv/console/apps) under OAuth Redirect URLs
+5. Everything else works as-is
 
 ---
 
@@ -126,15 +151,17 @@ The overlay is entirely static files with no build step, so you can host it anyw
 ├── index.html          # Configurator page
 ├── overlay.html        # The actual overlay loaded by OBS
 ├── style.css           # Overlay styles
+├── mediabunny.cjs      # Mediabunny media toolkit (MPL-2.0, see THIRD-PARTY-NOTICES.md)
 ├── tmi.min.js          # tmi.js IRC client (bundled, MIT licence)
 │
 ├── config/
-│   ├── auth.js         # Twitch OAuth login flow
+│   ├── auth.js         # Twitch OAuth login flow and token expiry handling
 │   ├── config.css      # Configurator styles
 │   ├── generate.js     # URL generation and config export/import
 │   ├── preview.js      # Live preview panel renderer
 │   ├── tooltips.js     # Setting description tooltips
-│   └── ui.js           # Tab switching, sliders, and UI helpers
+│   ├── ui.js           # Tab switching, sliders, and UI helpers
+│   └── vod.js          # VOD chat export (fetch + WebM render pipeline)
 │
 └── src/
     ├── config.js        # Parses URL parameters into CONFIG object
@@ -151,14 +178,14 @@ The overlay is entirely static files with no build step, so you can host it anyw
     │   └── cheermotes.js # Twitch cheermote rendering
     │
     ├── badges/
-    │   ├── badgeMap.js   # Shared badge lookup map
-    │   ├── twitch.js     # Twitch native badge fetching
+    │   ├── badgeMap.js   # Shared badge lookup map and rendering
+    │   ├── twitch.js     # Twitch native badge and emote fetching
     │   ├── ffz.js        # FFZ badge fetching
     │   ├── chatterino.js # Chatterino badge fetching
     │   └── seventv.js    # 7TV cosmetic badge and paint fetching (LRU cached)
     │
     ├── chat/
-    │   ├── parser.js     # Message parsing (emotes, mentions, links)
+    │   ├── parser.js     # Message tokenisation (emotes, mentions, links)
     │   ├── renderer.js   # Chat message DOM rendering
     │   ├── events.js     # Sub/gift/bits/streak/raid event messages
     │   ├── redemptions.js# Channel point redemption rendering and deduplication
@@ -177,10 +204,10 @@ The overlay is entirely static files with no build step, so you can host it anyw
 
 ## Privacy
 
-- Your Twitch OAuth token lives **only in the OBS browser source URL** and your local browser session. It is never transmitted to any server other than `api.twitch.tv`.
+- Your Twitch OAuth token is stored in your browser's local storage and embedded in your generated overlay URL. It is never transmitted to any server other than `api.twitch.tv` and `id.twitch.tv`.
 - No analytics, telemetry, or tracking of any kind.
 - No backend — the overlay is 100% static files.
-- Third-party emote and badge data is fetched directly from 7TV, BTTV, FFZ, and Chatterino's own public APIs at load time.
+- Third-party emote and badge data is fetched directly from 7TV, FFZ, and Chatterino's public APIs at load time.
 
 ---
 
@@ -190,13 +217,13 @@ This overlay fetches data from the following public APIs at runtime. No data is 
 
 | Service | What it provides | API used |
 |---|---|---|
-| [Twitch](https://dev.twitch.tv) | Chat, badges, cheermotes, channel points, events | Helix REST API + PubSub WebSocket |
+| [Twitch](https://dev.twitch.tv) | Chat, badges, cheermotes, channel points, events | Helix REST API + IRC (tmi.js) + PubSub WebSocket |
 | [7TV](https://7tv.app) | Emotes, user paints, cosmetic badges | REST API + EventSub WebSocket |
-| [BetterTTV](https://betterttv.com) | Emotes | REST API |
+| [BetterTTV](https://betterttv.com) | Emotes (live overlay only) | REST API |
 | [FrankerFaceZ](https://www.frankerfacez.com) | Emotes, badges | REST API |
 | [Chatterino](https://chatterino.com) | Community badges | REST API |
 
-Use of each service is subject to their respective Terms of Service. See `LICENSE` for details.
+Use of each service is subject to their respective Terms of Service. See `THIRD-PARTY-NOTICES.md` for full attribution details.
 
 ---
 

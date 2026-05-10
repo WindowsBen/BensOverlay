@@ -167,6 +167,7 @@ window.addEventListener('load', async () => {
 
             if (freshLogin) {
                 await fetchAndStoreUsername(token);
+                showNewUrlPanel(token);
             } else {
                 const username = localStorage.getItem('twitch_username');
                 if (username) {

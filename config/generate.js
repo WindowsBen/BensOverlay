@@ -124,6 +124,12 @@ function generateLink() {
 
     document.getElementById('resultLink').textContent = url;
 
+    // Save the settings portion (everything before &token=) to localStorage.
+    // On re-auth after token expiry, we reconstruct the full URL from this
+    // so the user never has to re-enter their settings.
+    const settingsOnly = url.replace(/&token=[^&]*$/, '');
+    localStorage.setItem('yacofo_last_settings', settingsOnly);
+
     const copyBtn = document.getElementById('copyBtn');
     copyBtn.style.display = 'flex';
     copyBtn.classList.remove('copied');
