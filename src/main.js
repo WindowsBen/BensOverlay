@@ -27,14 +27,6 @@ async function guardedFetch(url, options) {
 const client = new tmi.Client({
     connection: { secure: true, reconnect: true },
     channels:   [CONFIG.channelName],
-    // Pass identity when a token is present so tmi.js authenticates rather than
-    // connecting anonymously. This enables auth failure events when the token expires.
-    ...(CONFIG.token ? {
-        identity: {
-            username: CONFIG.channelName,
-            password: `oauth:${CONFIG.token}`,
-        },
-    } : {}),
 });
 
 client.connect();
