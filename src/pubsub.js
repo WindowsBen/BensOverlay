@@ -156,30 +156,41 @@ function handlePubSubMessage(data) {
 
     handlePubSubRedemption(rewardId, rewardName, username, userInput, redemptionId);
 }
-// raid id → true, prevents duplicate messages if Twitch fires the event
-// multiple times during the countdown.
-const _shownRaids = {};
+
+// Tracks the active raid ID so we can distinguish a new raid from an update
+// to an already-displayed one.
+let _currentRaidId = null;
 
 // Handles outgoing raid events from PubSub topic raid.<channelId>.
 // Fires when the broadcaster initiates a raid to another channel.
+//
+// Twitch sends raid_update_v2 repeatedly during the 10-second countdown as
+// viewers join the raid queue, starting at 1. raid_go_v2 fires once when the
+// raid actually sends with the final count.
+//
+// Strategy: show the notification immediately on the first raid_update_v2 so
+// it appears during the countdown, then update the viewer count in-place on
+// every subsequent event rather than re-rendering.
 function handlePubSubRaid(data) {
     if (!CONFIG.showRaidOutgoing) return;
 
     let inner;
     try { inner = JSON.parse(data.message); } catch { return; }
 
-    // Twitch fires raid_update_v2 during the countdown and raid_go_v2 when
-    // it actually sends — accept either but deduplicate by raid ID so we
-    // only show the message once per raid.
     if (inner.type !== 'raid_update_v2' && inner.type !== 'raid_go_v2') return;
 
     const raid = inner.raid;
     if (!raid) return;
 
-    if (_shownRaids[raid.id]) return;
-    _shownRaids[raid.id] = true;
-
     const targetName = raid.target_display_name || raid.target_login || '';
     const viewers    = Number(raid.viewer_count) || 0;
-    handleRaidOutgoing(targetName, viewers);
+
+    if (_currentRaidId !== raid.id) {
+        // New raid — render the notification for the first time
+        _currentRaidId = raid.id;
+        handleRaidOutgoing(targetName, viewers);
+    } else {
+        // Same raid — update the count on the existing element
+        updateRaidOutgoing(viewers);
+    }
 }

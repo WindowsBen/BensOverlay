@@ -227,14 +227,57 @@ function handleRaidIncoming(channel, username, viewers, tags) {
 }
 
 // Outgoing raid — we are raiding someone else.
-// Fired via PubSub raid.<channelId> topic (raid_go_v2 event).
+// Fired via PubSub raid.<channelId> topic.
 // IRC never fires for outgoing raids so PubSub is the only way to catch this.
+//
+// The notification is shown immediately on the first raid_update_v2 (start of
+// the 10-second countdown) and the viewer count is updated in-place as more
+// viewers join. updateRaidOutgoing() handles subsequent count changes.
 const ICON_RAID_OUT = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2l8 5v2h-2v9h-4v-5H8v5H4V9H2V7l8-5zm4 13v-7.764l-4-2.5-4 2.5V15h2v-5h4v5h2z"/></svg>`;
 
 function handleRaidOutgoing(targetName, viewers) {
     if (!CONFIG.showRaidOutgoing) return;
     const count  = Number(viewers) || 0;
     const verb   = CONFIG.raidOutgoingLabel || 'raiding';
-    const detail = `${verb} ${escapeHTML(targetName)} with ${count} viewer${count === 1 ? '' : 's'}!`;
-    displayEventMessage(ICON_RAID_OUT, 'Outgoing Raid', detail, '', false, 'raid-outgoing-message');
+
+    const container = document.getElementById('chat-container');
+    const el = document.createElement('div');
+    el.className = 'chat-message event-message raid-outgoing-message';
+    el.id = 'raid-outgoing-live';
+
+    el.innerHTML = `
+        <span class="event-icon raid-outgoing-message-icon">${ICON_RAID_OUT}</span>
+        <span class="event-body">
+            <span class="event-label">Outgoing Raid</span>
+            <span class="event-detail">${escapeHTML(verb)} ${escapeHTML(targetName)} with <span class="raid-viewer-count">${count}</span> viewer${count === 1 ? '' : 's'}!</span>
+        </span>`;
+
+    container.appendChild(el);
+    if (container.childNodes.length > 50) container.removeChild(container.firstChild);
+
+    if (CONFIG.messageLifetime > 0) {
+        setTimeout(() => {
+            el.classList.add('fading-out');
+            const fadeDuration = parseInt(CONFIG.fadeDuration) || 1000;
+            setTimeout(() => el.remove(), fadeDuration);
+        }, CONFIG.messageLifetime);
+    }
+}
+
+// Updates the viewer count on an already-rendered outgoing raid notification.
+// Called by handlePubSubRaid on every raid_update_v2/raid_go_v2 after the first.
+function updateRaidOutgoing(viewers) {
+    const el = document.getElementById('raid-outgoing-live');
+    if (!el) return;
+    const count = Number(viewers) || 0;
+    const countSpan = el.querySelector('.raid-viewer-count');
+    if (countSpan) countSpan.textContent = count;
+    // Also fix the plural suffix on the surrounding text node
+    const detail = el.querySelector('.event-detail');
+    if (detail) {
+        const suffix = detail.lastChild;
+        if (suffix && suffix.nodeType === Node.TEXT_NODE) {
+            suffix.textContent = count === 1 ? '!' : 's!';
+        }
+    }
 }
