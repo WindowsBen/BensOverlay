@@ -1,7 +1,7 @@
 // ─── chat/events.js ───────────────────────────────────────────────────────────
 // Handles Twitch subscription, gift, cheer, and watch streak events.
-// Each handler checks its CONFIG toggle before doing anything, so disabling
-// an event type in the configurator produces zero DOM output.
+// CONFIG toggles control whether the styled event alert is shown; disabling one
+// falls back to a plain chat message rather than dropping it entirely.
 
 // Maps Twitch's internal sub plan codes to human-readable tier names
 const SUB_PLAN_NAMES = {
@@ -105,7 +105,10 @@ function handleSubmysterygift(channel, username, numbOfSubs, methods, userstate)
 // ── Bits / Cheers ──────────────────────────────────────────────────────────────
 
 function handleCheer(channel, userstate, message) {
-    if (!CONFIG.showBits) return;
+    if (!CONFIG.showBits) {
+        displayMessage(userstate, message);
+        return;
+    }
     const name     = userstate['display-name'] || userstate.username;
     const bits     = userstate.bits;
     const detail   = `${CONFIG.bitsLabel || 'cheered'} ${bits} bit${bits === '1' ? '' : 's'}!`;
