@@ -106,7 +106,7 @@ function handleSubmysterygift(channel, username, numbOfSubs, methods, userstate)
 
 function handleCheer(channel, userstate, message) {
     if (!CONFIG.showBits) {
-        displayMessage(userstate, message);
+        displayMessage(userstate, message, false, renderCheerMessage(message));
         return;
     }
     const name     = userstate['display-name'] || userstate.username;

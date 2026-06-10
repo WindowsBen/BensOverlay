@@ -4,7 +4,7 @@
 // Each message element is tagged with data-msg-id and data-username so
 // moderation.js can target and remove them without keeping a separate index.
 
-function displayMessage(tags, message, isAction = false) {
+function displayMessage(tags, message, isAction = false, renderedMessageHTML = null) {
     // Drop messages from users on the exclude list (bots, etc.)
     if (CONFIG.excludedUsers.size && CONFIG.excludedUsers.has((tags.username || '').toLowerCase())) return;
 
@@ -107,12 +107,12 @@ function displayMessage(tags, message, isAction = false) {
             ${replyHTML}
             <div class="reply-message-row">
                 <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-                <span class="message-text" ${messageStyle}>${parseMessage(cleanMessage, adjustedEmotes)}</span>
+                <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? parseMessage(cleanMessage, adjustedEmotes)}</span>
             </div>`;
     } else {
         messageElement.innerHTML = `
             <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-            <span class="message-text" ${messageStyle}>${parseMessage(message, tags.emotes)}</span>`;
+            <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? parseMessage(message, tags.emotes)}</span>`;
     }
 
     // Tag the element for moderation targeting — login name (not display-name)
