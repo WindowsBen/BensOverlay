@@ -43,19 +43,6 @@ A fully configurable Twitch chat overlay for OBS and other broadcast software. R
 - Fade-out animation with configurable duration
 - Nine granular badge toggles: Broadcaster, Moderator, VIP, Subscriber, Custom (channel-specific), FFZ, Chatterino, 7TV badges, and 7TV paints
 
-**VOD Export** *(Chrome 94+ required, Twitch login required)*
-- Fetch the full chat log from any Twitch VOD you have access to
-- Export as a transparent WebM video matching your exact YACOFO style settings
-- Drop the file on a track above footage in DaVinci Resolve, Premiere, or Final Cut — no chroma key needed
-- Solid background colour option (including green for chroma key) for editors who prefer it
-- 7TV and FFZ emotes rendered in the exported video (BetterTTV emotes are excluded due to CDN CORS restrictions)
-- 7TV username paints and cosmetic badges rendered per-user
-- Twitch subscriber badges fetched from the VOD channel's own badge set
-- Animated emotes rendered frame-accurately using the ImageDecoder API
-- Real-time progress display with speed indicator (typically 5–20× faster than real-time)
-- Streams output directly to disk via the File System Access API on supported browsers to keep memory usage flat on long VODs
-- 1-second keyframe interval for reliable scrubbing in DaVinci Resolve and other NLEs
-
 **Configurator**
 - Visual config page with live preview window that updates in real time as you change settings
 - Light/dark preview background toggle to test against any stream layout
@@ -160,8 +147,7 @@ The overlay is entirely static files with no build step, so you can host it anyw
 │   ├── generate.js     # URL generation and config export/import
 │   ├── preview.js      # Live preview panel renderer
 │   ├── tooltips.js     # Setting description tooltips
-│   ├── ui.js           # Tab switching, sliders, and UI helpers
-│   └── vod.js          # VOD chat export (fetch + WebM render pipeline)
+│   └── ui.js           # Tab switching, sliders, and UI helpers
 │
 └── src/
     ├── config.js        # Parses URL parameters into CONFIG object

@@ -1,7 +1,12 @@
 // ─── config/ui.js ─────────────────────────────────────────────────────────────
 
-const TABS        = ['general', 'events', 'polls', 'predictions', 'hypetrain', 'appearance', 'generate', 'vod'];
-const LOCKED_TABS = ['general', 'events', 'polls', 'predictions', 'hypetrain', 'appearance', 'generate', 'vod'];
+// VOD Export tab is temporarily hidden (not public-ready yet) — its button
+// carries display:none in index.html and it's intentionally left out of
+// these arrays so it's never switched to, locked, or unlocked. The markup
+// and config/vod.js are untouched; just re-add 'vod' here (and remove the
+// display:none on tab-btn-vod) to bring it back.
+const TABS        = ['general', 'events', 'polls', 'predictions', 'hypetrain', 'appearance', 'generate'];
+const LOCKED_TABS = ['general', 'events', 'polls', 'predictions', 'hypetrain', 'appearance', 'generate'];
 
 function switchTab(id) {
     TABS.forEach(t => {
