@@ -761,3 +761,33 @@ select option { background: #18181b; }
     display: inline-block;
 }
 .token-expired-banner .btn-reauth:hover { background: #ffb830; }
+
+/* ── New-URL panel (shown after re-auth) ──────────────────────────────────── */
+.new-url-panel {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #0e2a16;
+    border: 1px solid #2fa84f;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 10px 0 4px;
+    font-size: 13px;
+    color: #8fe0a4;
+    line-height: 1.5;
+}
+.new-url-panel svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: #2fa84f;
+}
+.new-url-panel strong { color: #c8f5d4; }
+.new-url-panel .output-box {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.new-url-panel .btn-copy {
+    margin-top: 0;
+}

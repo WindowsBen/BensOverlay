@@ -44,14 +44,80 @@ function setExpired() {
             <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
             <div>
                 <strong>Your Twitch token has expired.</strong><br>
-                Click Re-authenticate below to get a new one — your overlay URL stays the same,
-                just refresh the browser source in OBS after logging in.
+                Click Re-authenticate below to get a new one — your saved settings will
+                automatically be rebuilt into a fresh overlay URL for you to copy into OBS.
                 <br><button class="btn-reauth" onclick="loginWithTwitch()">Re-authenticate</button>
             </div>`;
-        // Insert after the auth accordion section
-        const authAccordion = document.querySelector('.auth-accordion') || document.querySelector('.accordion');
-        if (authAccordion) authAccordion.after(banner);
+        // Insert directly after the login card — the previous selector here
+        // (.auth-accordion / .accordion) never matched anything in the actual
+        // markup, so this banner was silently never appearing.
+        const loginCard = document.querySelector('.login-card');
+        if (loginCard) loginCard.after(banner);
     }
+}
+
+// Re-checks token validity every 15 minutes while the configurator tab
+// stays open, so an expired token is caught even if the user never
+// reloads the page.
+function startPeriodicTokenCheck() {
+    setInterval(() => {
+        const token = localStorage.getItem('twitch_access_token');
+        if (!token) return;
+        validateToken(token);
+    }, 15 * 60 * 1000);
+}
+
+// Rebuilds the full overlay URL from the last-generated settings (saved by
+// generate.js on every "Generate Link" click) plus the freshly issued token,
+// and shows it in a prominent copyable panel — so re-authenticating after
+// expiry never means re-entering every setting from scratch.
+function showNewUrlPanel(token) {
+    const settingsBase = localStorage.getItem('yacofo_last_settings');
+    if (!settingsBase) return; // first-ever login — nothing to rebuild yet
+
+    const url = `${settingsBase}&token=${encodeURIComponent(token)}`;
+
+    let panel = document.getElementById('new-url-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id        = 'new-url-panel';
+        panel.className = 'new-url-panel';
+        const loginCard = document.querySelector('.login-card');
+        if (loginCard) loginCard.after(panel);
+    }
+    panel.innerHTML = `
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+        <div>
+            <strong>Reconnected — your overlay URL has been rebuilt with the new token.</strong><br>
+            All your previous settings were kept. Copy the URL below and replace it in
+            your OBS browser source.
+            <div class="output-box" id="newUrlBox">${url}</div>
+            <button class="btn btn-copy" id="newUrlCopyBtn" onclick="copyNewUrl()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="newUrlCopyBtnLabel">Copy Link</span>
+            </button>
+        </div>`;
+
+    // Keep the Generate tab's own output in sync too, in case the user
+    // navigates there directly instead of using the panel's copy button.
+    const resultLink = document.getElementById('resultLink');
+    if (resultLink) resultLink.textContent = url;
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) copyBtn.style.display = 'flex';
+}
+
+function copyNewUrl() {
+    const box = document.getElementById('newUrlBox');
+    if (!box) return;
+    navigator.clipboard.writeText(box.textContent).then(() => {
+        const btn = document.getElementById('newUrlCopyBtn');
+        btn.classList.add('copied');
+        document.getElementById('newUrlCopyBtnLabel').textContent = 'Copied!';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            document.getElementById('newUrlCopyBtnLabel').textContent = 'Copy Link';
+        }, 2000);
+    });
 }
 
 // Validates the stored token against Helix. Called in the background after
@@ -147,6 +213,8 @@ function handleOAuthRedirect() {
     console.log('[Auth] Token received and stored.');
     localStorage.setItem('twitch_access_token', token);
     localStorage.removeItem('twitch_username');
+    // Clear any leftover expired banner from a previous, now-superseded session
+    document.getElementById('token-expired-banner')?.remove();
     return true;
 }
 
@@ -178,6 +246,8 @@ window.addEventListener('load', async () => {
                 // Validate in the background — shows expired banner on 401 without blocking
                 validateToken(token); // intentionally not awaited
             }
+
+            startPeriodicTokenCheck();
         }
     } catch (err) {
         // Surface any initialisation errors so they're visible in the console
