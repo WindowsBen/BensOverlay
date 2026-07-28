@@ -64,6 +64,7 @@ function startPeriodicTokenCheck() {
         const token = localStorage.getItem('twitch_access_token');
         if (!token) return;
         validateToken(token);
+        fetchAndStoreUsername(token);
     }, 15 * 60 * 1000);
 }
 
@@ -150,11 +151,50 @@ async function fetchAndStoreUsername(token) {
         const data = await res.json();
         const user = data.data?.[0];
         if (!user) return;
+
+        const previouslyAutofilled = localStorage.getItem('twitch_username');
+        const channelInput         = document.getElementById('channel');
+        const usernameChanged      = previouslyAutofilled && previouslyAutofilled !== user.login;
+
         localStorage.setItem('twitch_username', user.login);
-        document.getElementById('channel').value           = user.login;
         document.getElementById('login-badge').textContent = user.display_name;
         document.getElementById('status-text').textContent = `Connected as ${user.display_name} ✓`;
+
+        // Only auto-fill the channel field if it's empty or still holds whatever
+        // we last auto-filled it with. If the user has typed something else in
+        // there on purpose (e.g. configuring the overlay for a channel they
+        // moderate rather than their own), leave it alone — but let them know
+        // their own Twitch name has changed in case that WAS the intent.
+        const fieldIsUntouched = !channelInput.value || channelInput.value === previouslyAutofilled;
+        if (fieldIsUntouched) {
+            channelInput.value = user.login;
+            hideUsernameChangeNotice();
+        } else if (usernameChanged) {
+            showUsernameChangeNotice(user.login);
+        }
     } catch { /* silent */ }
+}
+
+// Shown when Twitch reports a different login than last time, but the
+// channel field currently holds something else the user typed manually —
+// so we don't clobber it, we just make the change easy to pick up.
+function showUsernameChangeNotice(newLogin) {
+    let notice = document.getElementById('username-change-notice');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id        = 'username-change-notice';
+        notice.className = 'username-change-notice';
+        const channelInput = document.getElementById('channel');
+        channelInput.insertAdjacentElement('afterend', notice);
+    }
+    notice.innerHTML = `Your Twitch username is now <strong>${newLogin}</strong>, but the
+        channel field above doesn't match it.
+        <button type="button" class="btn-inline-link" onclick="document.getElementById('channel').value='${newLogin}'; hideUsernameChangeNotice();">Use ${newLogin}</button>
+        or ignore this if the channel field is set intentionally.`;
+}
+
+function hideUsernameChangeNotice() {
+    document.getElementById('username-change-notice')?.remove();
 }
 
 function handleOAuthRedirect() {
@@ -243,6 +283,11 @@ window.addEventListener('load', async () => {
                     document.getElementById('login-badge').textContent = username;
                     document.getElementById('status-text').textContent = `Connected as ${username} ✓`;
                 }
+                // Re-fetch the current login in the background — catches Twitch
+                // username changes since the last full login. Not awaited so
+                // it never blocks the UI; fetchAndStoreUsername() reconciles
+                // the channel field itself once it resolves.
+                fetchAndStoreUsername(token);
                 // Validate in the background — shows expired banner on 401 without blocking
                 validateToken(token); // intentionally not awaited
             }
