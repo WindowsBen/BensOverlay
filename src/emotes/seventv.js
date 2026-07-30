@@ -2,46 +2,56 @@
 // Fetches 7TV global and channel emotes into the shared emoteMap.
 // Subscribes to live emote set updates via seventv-ws.js so emotes added or
 // removed mid-stream are reflected immediately without a page reload.
+//
+// NOTE (2026-07): 7TV announced that /v3/users/:platform/:platform_id will
+// stop returning the full `emote_set` inline (it becomes null) to cut down
+// on response time. `emote_set_id` on that same response keeps working, so
+// we fetch the emote set separately via /v3/emote-sets/:id instead. This
+// also matches how the global emote-sets fetch already works, since both
+// endpoints return the same EmoteSetModel shape.
 
 // Bit flag in 7TV's emote.flags indicating a zero-width (overlay) emote
 const SEVENTV_ZERO_WIDTH_FLAG = 1;
+
+// Parses an EmoteSetModel's `emotes` array into the shared emoteMap.
+// Used for both the global emote set and a channel's active emote set,
+// since /v3/emote-sets/global and /v3/emote-sets/:id return the same shape.
+function loadEmoteSetEmotes(emoteSetData, label) {
+    const emotes = emoteSetData?.emotes;
+    if (!emotes) return 0;
+
+    for (const emote of emotes) {
+        emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/4x.webp`;
+        if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(emote.name);
+    }
+    console.log(`[7TV] Loaded ${emotes.length} ${label} emotes`);
+    return emotes.length;
+}
 
 async function fetch7TVEmotes(twitchUserId) {
     try {
         // Global emotes — available in every channel
         const globalRes = await fetch('https://7tv.io/v3/emote-sets/global');
         if (globalRes.ok) {
-            const globalData = await globalRes.json();
-            let globalCount = 0;
-            for (const emote of globalData.emotes || []) {
-                emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/4x.webp`;
-                if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) zeroWidthEmotes.add(emote.name);
-                globalCount++;
-            }
-            console.log(`[7TV] Loaded ${globalCount} global emotes`);
+            loadEmoteSetEmotes(await globalRes.json(), 'global');
         }
 
-        // Channel-specific emotes
+        // Channel connection — gives us the active emote_set_id, but (per
+        // 7TV's announcement) no longer the full emote_set data inline
         const res = await fetch(`https://7tv.io/v3/users/twitch/${twitchUserId}`);
         if (!res.ok) { console.warn('[7TV] Channel not found on 7TV'); return; }
 
-        const data   = await res.json();
-        const emotes = data?.emote_set?.emotes;
-        if (!emotes) return;
+        const data        = await res.json();
+        const emoteSetId  = data?.emote_set_id || data?.emote_set?.id; // fall back to the old shape until the change actually ships
+        if (!emoteSetId) return;
 
-        for (const emote of emotes) {
-            emoteMap[emote.name] = `https://cdn.7tv.app/emote/${emote.id}/4x.webp`;
-            if (emote.flags & SEVENTV_ZERO_WIDTH_FLAG) {
-                zeroWidthEmotes.add(emote.name);
-            }
-        }
-        console.log(`[7TV] Loaded ${emotes.length} emotes`);
+        // Fetch the channel's active emote set as its own request
+        const setRes = await fetch(`https://7tv.io/v3/emote-sets/${emoteSetId}`);
+        if (!setRes.ok) { console.warn('[7TV] Failed to fetch channel emote set'); return; }
+        loadEmoteSetEmotes(await setRes.json(), 'channel');
 
         // Subscribe to live updates for this channel's emote set
-        const emoteSetId = data?.emote_set?.id;
-        if (emoteSetId) {
-            subscribe7TV('emote_set.update', emoteSetId, handle7TVEmoteSetUpdate);
-        }
+        subscribe7TV('emote_set.update', emoteSetId, handle7TVEmoteSetUpdate);
     } catch (err) {
         console.error('[7TV] Failed to fetch emotes:', err);
     }

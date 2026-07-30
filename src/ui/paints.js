@@ -32,28 +32,26 @@ function applyPaint(element, paint) {
 
 // Builds the full CSS rule for a given paint and selector
 function buildPaintCSS(selector, paint) {
-    const gradientCSS = buildPaintGradient(paint);
-    const shadowCSS   = buildPaintShadows(paint);
+    const layers    = buildPaintLayers(paint);
+    const shadowCSS = buildPaintShadows(paint);
 
-    if (!gradientCSS && !shadowCSS) return null;
+    if (!layers && !shadowCSS) return null;
 
     let rules = '';
 
-    if (gradientCSS) {
-        // Clip the gradient to the text shape so it colours only the glyphs
+    if (layers) {
+        // Clip the gradient(s) to the text shape so they colour only the glyphs.
+        // background-size/background-repeat must stay comma-aligned with
+        // background-image index-for-index — browsers pair these lists
+        // positionally, not by matching layer type.
         rules += `
-    background-image: ${gradientCSS};
+    background-image: ${layers.map(l => l.image).join(', ')};
+    background-size: ${layers.map(l => l.size).join(', ')};
+    background-repeat: ${layers.map(l => l.repeat).join(', ')};
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;`;
-
-        // Image-based paints need explicit sizing so the image covers the text
-        if (paint.function === 'URL') {
-            rules += `
-    background-size: auto 100%;
-    background-repeat: repeat-x;`;
-        }
     }
 
     if (shadowCSS) {
@@ -66,35 +64,61 @@ function buildPaintCSS(selector, paint) {
     return `${selector} {${rules}\n}`;
 }
 
-// Converts a 7TV paint's gradient definition to a CSS gradient string
-function buildPaintGradient(paint) {
-    const stops = (paint.stops || []).map(s =>
+// Builds the ordered list of CSS background layers for a paint. 7TV paints
+// can stack multiple gradient/image layers (paint.gradients) since the v4
+// cosmetics model; the older single-layer function/color/stops/angle/repeat/
+// image_url fields directly on the paint are deprecated (7TV computes them
+// server-side from just the first layer), so we only fall back to those if
+// `gradients` is ever missing from the response.
+function buildPaintLayers(paint) {
+    let layers;
+
+    if (paint.gradients?.length) {
+        layers = paint.gradients.map(buildGradientLayer).filter(Boolean);
+    } else if (paint.function) {
+        // Deprecated flat shape — same field names as one gradient layer
+        const layer = buildGradientLayer(paint);
+        layers = layer ? [layer] : [];
+    } else if (paint.color != null) {
+        // Solid-color paint with no gradient layers at all
+        const c = intToRGBA(paint.color);
+        layers = [{ image: `linear-gradient(${c}, ${c})`, size: 'auto', repeat: 'no-repeat' }];
+    } else {
+        layers = [];
+    }
+
+    return layers.length ? layers : null;
+}
+
+// Converts a single 7TV gradient layer into a CSS background-image value,
+// paired with the background-size/background-repeat it needs.
+function buildGradientLayer(layer) {
+    const stops = (layer.stops || []).map(s =>
         `${intToRGBA(s.color)} ${(s.at * 100).toFixed(1)}%`
     );
 
-    switch (paint.function) {
+    switch (layer.function) {
         case 'LINEAR_GRADIENT': {
-            const angle  = paint.angle ?? 90;
-            const repeat = paint.repeat ? 'repeating-linear-gradient' : 'linear-gradient';
-            return `${repeat}(${angle}deg, ${stops.join(', ')})`;
+            if (!stops.length) return null;
+            const angle  = layer.angle ?? 90;
+            const repeat = layer.repeat ? 'repeating-linear-gradient' : 'linear-gradient';
+            return { image: `${repeat}(${angle}deg, ${stops.join(', ')})`, size: 'auto', repeat: 'no-repeat' };
         }
         case 'RADIAL_GRADIENT': {
-            const repeat = paint.repeat ? 'repeating-radial-gradient' : 'radial-gradient';
-            return `${repeat}(circle, ${stops.join(', ')})`;
-        }
-        case 'CONIC_GRADIENT': {
-            const angle = paint.angle ?? 0;
-            return `conic-gradient(from ${angle}deg, ${stops.join(', ')})`;
-        }
-        case 'URL': {
-            // Animated/image paint — use the raw image as a background
-            return paint.image_url ? `url('${paint.image_url}')` : null;
-        }
-        default: {
-            // Unknown type — fall back to a flat color from the first stop
             if (!stops.length) return null;
-            const c = intToRGBA(paint.stops[0].color);
-            return `linear-gradient(${c}, ${c})`;
+            const shape  = layer.shape === 'ELLIPSE' ? 'ellipse' : 'circle';
+            const repeat = layer.repeat ? 'repeating-radial-gradient' : 'radial-gradient';
+            return { image: `${repeat}(${shape}, ${stops.join(', ')})`, size: 'auto', repeat: 'no-repeat' };
+        }
+        case 'URL':
+            if (!layer.image_url) return null;
+            // Image layers need explicit sizing so the image covers the text
+            return { image: `url('${layer.image_url}')`, size: 'auto 100%', repeat: 'repeat-x' };
+        default: {
+            // Unknown layer type — fall back to a flat color from the first stop
+            if (!stops.length) return null;
+            const c = intToRGBA(layer.stops[0].color);
+            return { image: `linear-gradient(${c}, ${c})`, size: 'auto', repeat: 'no-repeat' };
         }
     }
 }
