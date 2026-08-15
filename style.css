@@ -3,8 +3,6 @@
     --name-font-size:    16px;
     --message-font-size: 16px;
     --chat-shadow-color: #000000;
-    --chat-shadow-x: 1.41px;
-    --chat-shadow-y: 1.41px;
     --chat-shadow-layers: 0.71px 0.71px 1px #000000FF, 1.41px 1.41px 1px #000000FF;
 }
 
@@ -84,7 +82,6 @@ body {
     width: auto;
     vertical-align: middle;
     margin: 0 1px;
-    filter: drop-shadow(var(--chat-shadow-x) var(--chat-shadow-y) 1px var(--chat-shadow-color));
 }
 
 .emote-stack {

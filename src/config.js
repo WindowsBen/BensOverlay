@@ -114,13 +114,6 @@ if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shado
     const color = hex8ToCss(CONFIG.shadowColor, '#000000FF');
     const rad   = angle * Math.PI / 180;
 
-    // Endpoint offset — kept as its own var for the emote drop-shadow filter,
-    // which uses a single layer rather than the full stack (filter effects
-    // are pricier to render repeatedly than text-shadow, and there can be
-    // many emotes on screen at once).
-    document.documentElement.style.setProperty('--chat-shadow-x', `${(size * Math.sin(rad)).toFixed(2)}px`);
-    document.documentElement.style.setProperty('--chat-shadow-y', `${(-size * Math.cos(rad)).toFixed(2)}px`);
-
     let layers = 'none';
     if (size > 0) {
         const steps = Math.min(Math.max(Math.round(size), 1), 16);
