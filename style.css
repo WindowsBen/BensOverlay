@@ -5,7 +5,7 @@
     --chat-shadow-color: #000000;
     --chat-shadow-x: 1.41px;
     --chat-shadow-y: 1.41px;
-    --chat-shadow-blur: 2px;
+    --chat-shadow-layers: 0.71px 0.71px 1px #000000FF, 1.41px 1.41px 1px #000000FF;
 }
 
 body {
@@ -27,7 +27,7 @@ body {
 
 
 .chat-message {
-    text-shadow: var(--chat-shadow-x) var(--chat-shadow-y) var(--chat-shadow-blur) var(--chat-shadow-color);
+    text-shadow: var(--chat-shadow-layers);
     margin-bottom: var(--message-gap, 8px);
     word-wrap: break-word;
     line-height: var(--message-line-height, 1.8);

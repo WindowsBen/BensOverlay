@@ -102,12 +102,38 @@ if (CONFIG.messageFontSize) document.documentElement.style.setProperty('--messag
 if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shadow-color',   hex8ToCss(CONFIG.shadowColor, '#000000FF'));
 {
     // Shadow size (length) + angle (0°=up, clockwise — same convention as the
-    // configurator's direction dial) converted into a CSS offset pair.
+    // configurator's direction dial). A single offset copy of the text would
+    // just look like a second, legible duplicate floating away at large
+    // sizes — not a "shadow". Instead we stack several shadow layers along
+    // the direction vector, from near the text out to the full distance, so
+    // it reads as one continuous trail (the classic "long shadow" look).
+    // Capped at 16 layers regardless of size so this stays cheap even with
+    // many messages (and their badges) on screen at once.
     const size  = parseFloat(CONFIG.shadowSize)  || 0;
     const angle = parseFloat(CONFIG.shadowAngle) || 0;
+    const color = hex8ToCss(CONFIG.shadowColor, '#000000FF');
     const rad   = angle * Math.PI / 180;
+
+    // Endpoint offset — kept as its own var for the emote drop-shadow filter,
+    // which uses a single layer rather than the full stack (filter effects
+    // are pricier to render repeatedly than text-shadow, and there can be
+    // many emotes on screen at once).
     document.documentElement.style.setProperty('--chat-shadow-x', `${(size * Math.sin(rad)).toFixed(2)}px`);
     document.documentElement.style.setProperty('--chat-shadow-y', `${(-size * Math.cos(rad)).toFixed(2)}px`);
+
+    let layers = 'none';
+    if (size > 0) {
+        const steps = Math.min(Math.max(Math.round(size), 1), 16);
+        const parts = [];
+        for (let i = 1; i <= steps; i++) {
+            const d = (size * i) / steps;
+            const x = (d * Math.sin(rad)).toFixed(2);
+            const y = (-d * Math.cos(rad)).toFixed(2);
+            parts.push(`${x}px ${y}px 1px ${color}`);
+        }
+        layers = parts.join(', ');
+    }
+    document.documentElement.style.setProperty('--chat-shadow-layers', layers);
 }
 if (CONFIG.messageGap)    document.documentElement.style.setProperty('--message-gap',         CONFIG.messageGap + 'px');
 if (CONFIG.lineHeight)    document.documentElement.style.setProperty('--message-line-height', CONFIG.lineHeight);

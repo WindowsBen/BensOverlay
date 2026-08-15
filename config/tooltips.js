@@ -18,7 +18,7 @@ const SETTING_TIPS = {
     nameFontSize:      { desc: 'Size of the username text in chat messages.' },
     messageFontSize:   { desc: 'Size of the message body text in chat messages.' },
     shadowColor:       { desc: 'Drop-shadow color and opacity applied behind usernames.' },
-    shadowSize:        { desc: 'Length of the text shadow in pixels — how far it extends from the text.' },
+    shadowSize:        { desc: 'How far the shadow stretches from the text, like a cast shadow at different times of day.' },
     shadowAngle:       { desc: 'Direction the shadow points. Drag the dial or click a spot on it — 12 o\u2019clock is up, and it moves clockwise from there.' },
     fontUrl:           { desc: 'URL of a custom web font (e.g. a Google Fonts CSS link). Leave blank for the default font.' },
     messageGap:        { desc: 'Vertical space between chat messages (px). Leave blank for default.' },

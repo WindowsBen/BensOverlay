@@ -293,15 +293,26 @@ function _shadow() {
     // Skip if effectively transparent
     if (sc === 'rgba(0,0,0,0)' || sc === 'rgba(0,0,0,0.00)' || sc.endsWith(',0)')) return '';
 
-    // Same size+angle → offset conversion as the real overlay (src/config.js),
-    // 0°=up, clockwise, so the preview always matches what OBS will show.
+    // Same size+angle → stacked-layer conversion as the real overlay
+    // (src/config.js) — a single offset copy would look like a duplicate of
+    // the text at large sizes rather than a shadow, so we stack several
+    // layers along the direction vector into one continuous trail. Kept
+    // identical to config.js's algorithm (including the 16-layer cap) so
+    // the preview always matches what OBS will actually show.
     const size  = _pnum('shadowSize', 2);
     const angle = _pnum('shadowAngle', 135);
-    const rad   = angle * Math.PI / 180;
-    const x = (size * Math.sin(rad)).toFixed(2);
-    const y = (-size * Math.cos(rad)).toFixed(2);
+    if (size <= 0) return '';
 
-    return `text-shadow:${x}px ${y}px 3px ${sc},0 0 6px ${sc};`;
+    const rad   = angle * Math.PI / 180;
+    const steps = Math.min(Math.max(Math.round(size), 1), 16);
+    const parts = [];
+    for (let i = 1; i <= steps; i++) {
+        const d = (size * i) / steps;
+        const x = (d * Math.sin(rad)).toFixed(2);
+        const y = (-d * Math.cos(rad)).toFixed(2);
+        parts.push(`${x}px ${y}px 1px ${sc}`);
+    }
+    return `text-shadow:${parts.join(', ')};`;
 }
 
 // ── Shared message styles ─────────────────────────────────────────────────────
