@@ -292,7 +292,16 @@ function _shadow() {
     const sc = _prgba('shadowColor','shadowOpacity','#00000000');
     // Skip if effectively transparent
     if (sc === 'rgba(0,0,0,0)' || sc === 'rgba(0,0,0,0.00)' || sc.endsWith(',0)')) return '';
-    return `text-shadow:1px 1px 3px ${sc},0 0 6px ${sc};`;
+
+    // Same size+angle → offset conversion as the real overlay (src/config.js),
+    // 0°=up, clockwise, so the preview always matches what OBS will show.
+    const size  = _pnum('shadowSize', 2);
+    const angle = _pnum('shadowAngle', 135);
+    const rad   = angle * Math.PI / 180;
+    const x = (size * Math.sin(rad)).toFixed(2);
+    const y = (-size * Math.cos(rad)).toFixed(2);
+
+    return `text-shadow:${x}px ${y}px 3px ${sc},0 0 6px ${sc};`;
 }
 
 // ── Shared message styles ─────────────────────────────────────────────────────

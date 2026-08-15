@@ -20,6 +20,8 @@ const CONFIG = {
     nameFontSize:    params.get('nameFontSize'),
     messageFontSize: params.get('messageFontSize'),
     shadowColor:     params.get('shadow'),
+    shadowSize:      params.get('shadowSize')  || '2',   // px — length of the shadow
+    shadowAngle:     params.get('shadowAngle') || '135', // degrees, 0° = up, clockwise
     showToastEmotes: params.get('toastEmotes') !== '0', // default on
 
     // Spacing — only set if the user changed from defaults
@@ -98,6 +100,15 @@ const CONFIG = {
 if (CONFIG.nameFontSize)    document.documentElement.style.setProperty('--name-font-size',    CONFIG.nameFontSize);
 if (CONFIG.messageFontSize) document.documentElement.style.setProperty('--message-font-size', CONFIG.messageFontSize);
 if (CONFIG.shadowColor) document.documentElement.style.setProperty('--chat-shadow-color',   hex8ToCss(CONFIG.shadowColor, '#000000FF'));
+{
+    // Shadow size (length) + angle (0°=up, clockwise — same convention as the
+    // configurator's direction dial) converted into a CSS offset pair.
+    const size  = parseFloat(CONFIG.shadowSize)  || 0;
+    const angle = parseFloat(CONFIG.shadowAngle) || 0;
+    const rad   = angle * Math.PI / 180;
+    document.documentElement.style.setProperty('--chat-shadow-x', `${(size * Math.sin(rad)).toFixed(2)}px`);
+    document.documentElement.style.setProperty('--chat-shadow-y', `${(-size * Math.cos(rad)).toFixed(2)}px`);
+}
 if (CONFIG.messageGap)    document.documentElement.style.setProperty('--message-gap',         CONFIG.messageGap + 'px');
 if (CONFIG.lineHeight)    document.documentElement.style.setProperty('--message-line-height', CONFIG.lineHeight);
 if (CONFIG.slideDistance) document.documentElement.style.setProperty('--slide-distance',      CONFIG.slideDistance + 'px');

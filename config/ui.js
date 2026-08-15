@@ -70,3 +70,72 @@ function initSliders() {
     document.addEventListener('input',  _blinkGenerate);
     document.addEventListener('change', _blinkGenerate);
 }
+
+// ── Shadow direction dial ────────────────────────────────────────────────────
+// A small draggable/clickable compass control for the text-shadow angle.
+// Convention: 0° = up (12 o'clock), increasing clockwise — matches how a
+// compass or clock face reads, which is the most intuitive mapping for a
+// circular direction picker. The actual value lives in the hidden #shadowAngle
+// input; this function only keeps the visible handle in sync with it and
+// dispatches a real 'input' event so everything else (live preview, the
+// "needs regen" blink, generate.js) reacts exactly like any other field.
+function initShadowAngleDial() {
+    const dial   = document.getElementById('shadowAngleDial');
+    const handle = document.getElementById('shadowAngleHandle');
+    const input  = document.getElementById('shadowAngle');
+    if (!dial || !handle || !input) return;
+
+    const HANDLE_RADIUS = 20; // px from dial center to handle track
+
+    function paint(angle) {
+        const rad = angle * Math.PI / 180;
+        const cx  = dial.clientWidth  / 2;
+        const cy  = dial.clientHeight / 2;
+        handle.style.left = `${cx + HANDLE_RADIUS * Math.sin(rad)}px`;
+        handle.style.top  = `${cy - HANDLE_RADIUS * Math.cos(rad)}px`;
+        dial.setAttribute('aria-valuenow', Math.round(angle));
+    }
+
+    function setAngle(angle) {
+        angle = Math.round(((angle % 360) + 360) % 360);
+        input.value = angle;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        paint(angle);
+    }
+
+    function angleFromPointer(clientX, clientY) {
+        const rect = dial.getBoundingClientRect();
+        const dx = clientX - (rect.left + rect.width  / 2);
+        const dy = clientY - (rect.top  + rect.height / 2);
+        // atan2(x, -y) measures clockwise from "up" — exactly our angle convention
+        return Math.atan2(dx, -dy) * 180 / Math.PI;
+    }
+
+    let dragging = false;
+    dial.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        dial.setPointerCapture(e.pointerId);
+        setAngle(angleFromPointer(e.clientX, e.clientY));
+    });
+    dial.addEventListener('pointermove', (e) => {
+        if (dragging) setAngle(angleFromPointer(e.clientX, e.clientY));
+    });
+    dial.addEventListener('pointerup',     () => { dragging = false; });
+    dial.addEventListener('pointercancel', () => { dragging = false; });
+
+    // Keyboard accessibility — arrow keys nudge the angle in 5° steps
+    dial.addEventListener('keydown', (e) => {
+        const step = { ArrowRight: 5, ArrowUp: 5, ArrowLeft: -5, ArrowDown: -5 }[e.key];
+        if (step === undefined) return;
+        e.preventDefault();
+        setAngle((parseInt(input.value) || 0) + step);
+    });
+
+    // Keep the visible handle in sync with the underlying value regardless of
+    // what changed it — dragging the dial, arrow keys, or importConfig()
+    // restoring a saved setting all end up setting input.value + firing 'input'.
+    input.addEventListener('input', () => paint(parseInt(input.value) || 0));
+
+    paint(parseInt(input.value) || 0);
+}
+document.addEventListener('DOMContentLoaded', initShadowAngleDial);

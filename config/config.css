@@ -330,6 +330,54 @@ input[type="color"] {
 .opacity-label  { font-size: 12px; color: #666; min-width: 34px; }
 .opacity-tag    { font-size: 12px; color: #555; white-space: nowrap; }
 
+/* ── Text Shadow: size + direction dial ───────────────────────────────────── */
+.shadow-extra-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-top: 14px;
+}
+.shadow-size-group,
+.shadow-angle-group { display: flex; flex-direction: column; }
+.shadow-size-group .field-label,
+.shadow-angle-group .field-label { margin-top: 0; margin-bottom: 8px; }
+
+.angle-dial {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background:
+        linear-gradient(#0e0e10, #0e0e10) padding-box,
+        repeating-conic-gradient(#232328 0deg 30deg, #1a1a1e 30deg 60deg) border-box;
+    border: 1px solid #2f2f35;
+    cursor: pointer;
+    touch-action: none;
+    flex-shrink: 0;
+}
+.angle-dial::before {
+    /* center dot */
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 4px;
+    margin: -2px 0 0 -2px;
+    background: #555;
+    border-radius: 50%;
+}
+.angle-dial:hover  { border-color: #9146FF; }
+.angle-dial:focus  { outline: 2px solid #9146FF; outline-offset: 2px; }
+.angle-dial-handle {
+    position: absolute;
+    top: 50%; left: 50%; /* overwritten inline via JS per current angle */
+    width: 9px; height: 9px;
+    margin: -4.5px 0 0 -4.5px;
+    background: #9146FF;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(145, 70, 255, 0.8);
+    pointer-events: none;
+}
+
 .text-override-row {
     display: flex;
     align-items: center;

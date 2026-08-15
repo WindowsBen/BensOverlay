@@ -117,6 +117,24 @@
                 <input type="range" id="shadowOpacity" min="0" max="100" value="100" class="opacity-slider">
                 <span class="opacity-label" id="shadowOpacityLabel">100%</span>
             </div>
+            <div class="shadow-extra-row">
+                <div class="shadow-size-group">
+                    <span class="field-label">Size (px)</span>
+                    <input type="number" id="shadowSize" value="2" min="0" max="30" style="width:70px;">
+                </div>
+                <div class="shadow-angle-group">
+                    <span class="field-label">Direction</span>
+                    <!-- Draggable/clickable compass dial. 0° = up, increases clockwise.
+                         The visible handle position is purely presentational — the real
+                         value lives in the hidden #shadowAngle input below, which is what
+                         generate.js, preview.js, and the tooltip system all read/target. -->
+                    <div class="angle-dial" id="shadowAngleDial" tabindex="0" role="slider"
+                         aria-label="Shadow direction" aria-valuemin="0" aria-valuemax="359" aria-valuenow="135">
+                        <div class="angle-dial-handle" id="shadowAngleHandle"></div>
+                    </div>
+                    <input type="hidden" id="shadowAngle" value="135">
+                </div>
+            </div>
         </div>
 
         <div class="tab-section">
