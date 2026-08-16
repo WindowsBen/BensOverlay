@@ -246,6 +246,122 @@ const CONFIG_FIELDS = [
     { id: 'toastEmotes',          type: 'check' },
 ];
 
+// ── Import from overlay URL ─────────────────────────────────────────────────
+// Lets people restore their settings from the overlay link itself (the one
+// pasted into OBS), not just an exported config string — useful if they lost
+// the config string but still have the link. Mirrors generateLink()'s output
+// format field-for-field, in reverse. The Twitch token in the link is never
+// read — importing here always uses whoever's currently logged in.
+
+// URL param name → [colorFieldId, opacityFieldId] for every color+opacity
+// pair generateLink() packs into a single 8-hex value via c8(). 'shadow' is
+// the only pair whose URL name differs from its form field id.
+const URL_COLOR_PAIRS = {
+    shadow:             ['shadowColor', 'shadowOpacity'],
+    banAccent:          ['banAccent', 'banAccentOpacity'],
+    banBg:              ['banBg', 'banBgOpacity'],
+    timeoutAccent:      ['timeoutAccent', 'timeoutAccentOpacity'],
+    timeoutBg:          ['timeoutBg', 'timeoutBgOpacity'],
+    resubAccent:        ['resubAccent', 'resubAccentOpacity'],
+    resubBg:            ['resubBg', 'resubBgOpacity'],
+    giftAccent:         ['giftAccent', 'giftAccentOpacity'],
+    giftBg:             ['giftBg', 'giftBgOpacity'],
+    bitsAccent:         ['bitsAccent', 'bitsAccentOpacity'],
+    bitsBg:             ['bitsBg', 'bitsBgOpacity'],
+    redeemAccent:       ['redeemAccent', 'redeemAccentOpacity'],
+    redeemBg:           ['redeemBg', 'redeemBgOpacity'],
+    highlightAccent:    ['highlightAccent', 'highlightAccentOpacity'],
+    highlightBg:        ['highlightBg', 'highlightBgOpacity'],
+    streakAccent:       ['streakAccent', 'streakAccentOpacity'],
+    streakBg:           ['streakBg', 'streakBgOpacity'],
+    raidIncomingAccent: ['raidIncomingAccent', 'raidIncomingAccentOpacity'],
+    raidIncomingBg:     ['raidIncomingBg', 'raidIncomingBgOpacity'],
+    raidOutgoingAccent: ['raidOutgoingAccent', 'raidOutgoingAccentOpacity'],
+    raidOutgoingBg:     ['raidOutgoingBg', 'raidOutgoingBgOpacity'],
+    pollAccent:         ['pollAccent', 'pollAccentOpacity'],
+    pollBg:             ['pollBg', 'pollBgOpacity'],
+    pollBar:            ['pollBar', 'pollBarOpacity'],
+    pollWinner:         ['pollWinner', 'pollWinnerOpacity'],
+    predBg:             ['predBg', 'predBgOpacity'],
+    predWinnerGlow:     ['predWinnerGlow', 'predWinnerGlowOpacity'],
+    htAccent:           ['htAccent', 'htAccentOpacity'],
+    htBg:               ['htBg', 'htBgOpacity'],
+    htBar:              ['htBar', 'htBarOpacity'],
+};
+
+// Checkboxes encoded as '1'/'0' in the URL, same id in both places
+const URL_CHECKBOX_FIELDS = [
+    'showResubs', 'showGifts', 'showBits', 'showRedeems', 'showBans', 'showTimeouts',
+    'showHighlights', 'showStreaks', 'showRaidIncoming', 'showRaidOutgoing',
+    'showPolls', 'showPredictions', 'showHypeTrain',
+    'showBadgeBroadcaster', 'showBadgeModerator', 'showBadgeVIP', 'showBadgeSubscriber',
+    'showBadgeCustom', 'showBadgeFFZ', 'showBadgeChatterino', 'showBadge7TV',
+    'show7TVPaints', 'toastEmotes',
+];
+
+// Plain text/number fields, same id in both places
+const URL_TEXT_FIELDS = [
+    'shadowSize', 'shadowAngle', 'messageGap', 'lineHeight', 'slideDistance',
+    'slideDuration', 'messageLifetime', 'fadeDuration', 'fontUrl',
+    'resubLabel', 'giftLabel', 'bitsLabel', 'redeemLabel', 'streakLabel',
+    'raidIncomingLabel', 'raidOutgoingLabel',
+    'pollLingerMs', 'predictionLingerMs', 'hypeTrainLingerMs',
+];
+
+// Parses a full overlay URL (or just its #hash) and restores every setting
+// it carries. Returns false (without changing anything) if the text doesn't
+// look like one of our links, so the caller can fall back to config-string
+// parsing.
+function importFromOverlayUrl(text) {
+    const hashIndex = text.indexOf('#');
+    if (hashIndex === -1) return false;
+
+    const params = new URLSearchParams(text.slice(hashIndex + 1));
+    if (!params.has('channel')) return false; // doesn't look like a YACOFO link
+
+    const setVal = (id, value) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input')); // updates opacity labels, live preview, etc.
+    };
+    const setCheck = (id, checked) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.checked = checked;
+        el.dispatchEvent(new Event('change'));
+    };
+
+    setVal('channel', decodeURIComponent(params.get('channel')));
+    if (params.has('nameFontSize'))    setVal('nameFontSize',    params.get('nameFontSize').replace('px', ''));
+    if (params.has('messageFontSize')) setVal('messageFontSize', params.get('messageFontSize').replace('px', ''));
+
+    // Color + opacity pairs — split the single 8-hex value back into a
+    // #RRGGBB color and a 0-100 opacity, the inverse of colorToHex8().
+    for (const [urlParam, [colorId, opId]] of Object.entries(URL_COLOR_PAIRS)) {
+        if (!params.has(urlParam)) continue;
+        const hex8 = params.get(urlParam);
+        if (!hex8 || hex8.length !== 8) continue;
+        setVal(colorId, `#${hex8.slice(0, 6)}`);
+        setVal(opId, Math.round(parseInt(hex8.slice(6, 8), 16) / 255 * 100));
+    }
+
+    URL_TEXT_FIELDS.forEach(id => { if (params.has(id)) setVal(id, params.get(id)); });
+    URL_CHECKBOX_FIELDS.forEach(id => { if (params.has(id)) setCheck(id, params.get(id) === '1'); });
+
+    // Renamed params
+    if (params.has('exclude'))       setVal('excludedUsers',    decodeURIComponent(params.get('exclude')));
+    if (params.has('excludePrefix')) setVal('excludedPrefixes', decodeURIComponent(params.get('excludePrefix')));
+    if (params.has('meStyle'))       setVal('meStyle', params.get('meStyle'));
+
+    // Inverted-default checkboxes — generateLink() only includes these params
+    // when they're OFF, so absence means "on" (the default), same as config.js
+    setCheck('showReplies',       params.get('showReplies') !== '0');
+    setCheck('showAnnouncements', params.get('showAnnouncements') !== '0');
+
+    return true;
+}
+
 // Serialises all form values to JSON, then base64-encodes it into a
 // shareable alphanumeric string that can be pasted into importConfig().
 function exportConfig() {
@@ -271,30 +387,40 @@ function exportConfig() {
 // field, firing change/input events so dependent UI (opacity labels,
 // event colour panels, badge disabling) updates automatically.
 function importConfig() {
-    const input = prompt('Paste your config string:');
+    const input = prompt('Paste your config string, or the overlay link from "Generate Link":');
     if (!input) return;
-    let data;
-    try {
-        data = JSON.parse(atob(input.trim()));
-    } catch {
-        alert('Invalid config string — make sure you pasted it correctly.');
-        return;
-    }
+    const trimmed = input.trim();
 
-    CONFIG_FIELDS.forEach(({ id, type }) => {
-        if (!(id in data)) return;
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (type === 'check') {
-            el.checked = data[id];
-            // Fire onchange handlers so dependent UI updates
-            el.dispatchEvent(new Event('change'));
-        } else {
-            el.value = data[id];
-            // Fire input so opacity labels update
-            el.dispatchEvent(new Event('input'));
+    if (trimmed.includes('#')) {
+        // Base64 config strings never contain '#', so this is a link
+        if (!importFromOverlayUrl(trimmed)) {
+            alert('That doesn\'t look like a YACOFO overlay link — make sure you copied the whole thing, starting from "https://".');
+            return;
         }
-    });
+    } else {
+        let data;
+        try {
+            data = JSON.parse(atob(trimmed));
+        } catch {
+            alert('Invalid config string — make sure you pasted it correctly.');
+            return;
+        }
+
+        CONFIG_FIELDS.forEach(({ id, type }) => {
+            if (!(id in data)) return;
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (type === 'check') {
+                el.checked = data[id];
+                // Fire onchange handlers so dependent UI updates
+                el.dispatchEvent(new Event('change'));
+            } else {
+                el.value = data[id];
+                // Fire input so opacity labels update
+                el.dispatchEvent(new Event('input'));
+            }
+        });
+    }
 
     // Hide any stale export box
     document.getElementById('exportLabel').style.display   = 'none';
