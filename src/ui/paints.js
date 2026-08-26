@@ -106,7 +106,10 @@ function buildGradientLayer(layer) {
         }
         case 'RADIAL_GRADIENT': {
             if (!stops.length) return null;
-            const shape  = layer.shape === 'ELLIPSE' ? 'ellipse' : 'circle';
+            // CosmeticPaintShape is serialized as lowercase snake_case by 7TV
+            // ('circle'/'ellipse') — unlike CosmeticPaintFunction just above,
+            // which uses SCREAMING_SNAKE_CASE. Different enums, different casing.
+            const shape  = layer.shape === 'ellipse' ? 'ellipse' : 'circle';
             const repeat = layer.repeat ? 'repeating-radial-gradient' : 'radial-gradient';
             return { image: `${repeat}(${shape}, ${stops.join(', ')})`, size: 'auto', repeat: 'no-repeat' };
         }
