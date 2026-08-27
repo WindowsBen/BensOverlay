@@ -63,8 +63,6 @@ async function fetch7TVUserCosmetics(twitchUserId) {
         const sevenTVUserId = data?.user?.id;
         const cosmetics     = { badgeUrl: null, paint: null, sevenTVUserId };
 
-        console.log(`[7TV Debug] users/twitch/${twitchUserId} → style:`, style, ' sevenTVUserId:', sevenTVUserId);
-
         // Badge — just a CDN URL keyed by badge_id
         if (style?.badge_id) {
             cosmetics.badgeUrl = `https://cdn.7tv.app/badge/${style.badge_id}/4x.webp`;
@@ -89,14 +87,7 @@ async function fetch7TVUserCosmetics(twitchUserId) {
             });
             if (paintRes.ok) {
                 const paintData = await paintRes.json();
-                console.log(`[7TV Debug] GQL paint response for paint_id=${style.paint_id}:`, JSON.stringify(paintData, null, 2));
-                if (paintData?.errors) {
-                    console.warn('[7TV Debug] GQL response contains errors (HTTP 200 does not mean success for GraphQL):', paintData.errors);
-                }
                 cosmetics.paint = paintData?.data?.cosmetics?.paints?.[0] || null;
-                console.log('[7TV Debug] Resolved cosmetics.paint:', cosmetics.paint);
-            } else {
-                console.warn(`[7TV Debug] GQL request itself failed — HTTP ${paintRes.status}`);
             }
         }
 
@@ -191,7 +182,6 @@ function reapply7TVCosmetics(messageElement, cosmetics) {
     }
 
     // Apply paint to the username span, and also to message-text for /me colored actions
-    console.log('[7TV Debug] reapply7TVCosmetics paint check — paint:', cosmetics.paint, ' usernameSpan found:', !!usernameSpan, ' show7TVPaints:', CONFIG.show7TVPaints);
     if (cosmetics.paint && usernameSpan && CONFIG.show7TVPaints) {
         applyPaint(usernameSpan, cosmetics.paint);
         if (messageElement.dataset.meColored) {

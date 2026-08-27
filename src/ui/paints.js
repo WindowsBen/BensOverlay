@@ -14,19 +14,11 @@ let paintClassCounter = 0;
 // Applies a 7TV paint to a DOM element by injecting a CSS class.
 // The <style> tag is stored with data-paint so it can be removed on refresh.
 function applyPaint(element, paint) {
-    console.log('[7TV Debug] applyPaint called with paint:', paint, ' on element:', element.className || element.tagName);
-    if (!paint) {
-        console.log('[7TV Debug] applyPaint bailing: no paint object at all');
-        return;
-    }
+    if (!paint) return;
 
     const className = `seventv-paint-${++paintClassCounter}`;
     const css = buildPaintCSS(`.${className}`, paint);
-    console.log('[7TV Debug] buildPaintCSS result:', css);
-    if (!css) {
-        console.log('[7TV Debug] applyPaint bailing: buildPaintCSS returned null (no layers AND no shadows) — element keeps its original inline color/shadow, which is exactly the "flat color, no gradient" symptom.');
-        return;
-    }
+    if (!css) return;
 
     const styleTag = document.createElement('style');
     styleTag.textContent    = css;
@@ -82,20 +74,19 @@ function buildPaintLayers(paint) {
     let layers;
 
     if (paint.gradients?.length) {
-        console.log('[7TV Debug] buildPaintLayers: using paint.gradients (', paint.gradients.length, 'layer(s))');
         layers = paint.gradients.map(buildGradientLayer).filter(Boolean);
-        console.log('[7TV Debug] buildPaintLayers: gradients produced', layers.length, 'valid layer(s) after filtering');
     } else if (paint.function) {
-        console.log('[7TV Debug] buildPaintLayers: paint.gradients empty/absent — falling back to deprecated flat fields. paint.function =', paint.function, ' paint.stops =', paint.stops);
+        // Deprecated flat shape — same field names as one gradient layer.
+        // Still required in practice: 7TV's v3 GQL endpoint always returns
+        // `gradients` as an empty array (never implemented server-side), so
+        // these deprecated fields are the only ones that actually carry data.
         const layer = buildGradientLayer(paint);
         layers = layer ? [layer] : [];
-        console.log('[7TV Debug] buildPaintLayers: fallback produced', layers.length, 'layer(s)');
     } else if (paint.color != null) {
-        console.log('[7TV Debug] buildPaintLayers: no gradients or function field — using flat paint.color =', paint.color);
+        // Solid-color paint with no gradient layers at all
         const c = intToRGBA(paint.color);
         layers = [{ image: `linear-gradient(${c}, ${c})`, size: 'auto', repeat: 'no-repeat' }];
     } else {
-        console.log('[7TV Debug] buildPaintLayers: NONE of gradients/function/color are present on this paint object — nothing to render. Raw paint object was:', paint);
         layers = [];
     }
 
@@ -111,13 +102,13 @@ function buildGradientLayer(layer) {
 
     switch (layer.function) {
         case 'LINEAR_GRADIENT': {
-            if (!stops.length) { console.log('[7TV Debug] buildGradientLayer: LINEAR_GRADIENT rejected — no stops. Raw layer:', layer); return null; }
+            if (!stops.length) return null;
             const angle  = layer.angle ?? 90;
             const repeat = layer.repeat ? 'repeating-linear-gradient' : 'linear-gradient';
             return { image: `${repeat}(${angle}deg, ${stops.join(', ')})`, size: 'auto', repeat: 'no-repeat' };
         }
         case 'RADIAL_GRADIENT': {
-            if (!stops.length) { console.log('[7TV Debug] buildGradientLayer: RADIAL_GRADIENT rejected — no stops. Raw layer:', layer); return null; }
+            if (!stops.length) return null;
             // CosmeticPaintShape is serialized as lowercase snake_case by 7TV
             // ('circle'/'ellipse') — unlike CosmeticPaintFunction just above,
             // which uses SCREAMING_SNAKE_CASE. Different enums, different casing.
@@ -126,11 +117,10 @@ function buildGradientLayer(layer) {
             return { image: `${repeat}(${shape}, ${stops.join(', ')})`, size: 'auto', repeat: 'no-repeat' };
         }
         case 'URL':
-            if (!layer.image_url) { console.log('[7TV Debug] buildGradientLayer: URL rejected — no image_url. Raw layer:', layer); return null; }
+            if (!layer.image_url) return null;
             // Image layers need explicit sizing so the image covers the text
             return { image: `url('${layer.image_url}')`, size: 'auto 100%', repeat: 'repeat-x' };
         default: {
-            console.log('[7TV Debug] buildGradientLayer: UNRECOGNIZED layer.function value:', JSON.stringify(layer.function), ' — full layer:', layer);
             // Unknown layer type — fall back to a flat color from the first stop
             if (!stops.length) return null;
             const c = intToRGBA(layer.stops[0].color);
