@@ -73,6 +73,10 @@ client.on('roomstate', (channel, state) => {
 
 // Regular chat messages and channel point redemptions (which also arrive as PRIVMSG)
 client.on('message', (channel, tags, message, self) => {
+    // [GIF Debug] Temporary — dumps every message's full tag set so we can see
+    // exactly what a Twitch sub-GIF message looks like versus a normal one.
+    console.log('[GIF Debug] message event — tags:', tags, ' message:', message, ' self:', self);
+
     // tmi.js fires both 'message' AND 'action' for /me messages — skip here
     // to avoid double-rendering; the 'action' handler below covers these
     if (tags['message-type'] === 'action') return;
@@ -88,6 +92,8 @@ client.on('message', (channel, tags, message, self) => {
 
 // /me messages — tmi.js routes these to 'action' separately from 'message'
 client.on('action', (channel, tags, message, self) => {
+    // [GIF Debug] Temporary — same as above, in case a GIF is ever sent via /me
+    console.log('[GIF Debug] action event — tags:', tags, ' message:', message, ' self:', self);
     displayMessage(tags, message, true); // isAction=true triggers /me styling
 });
 
@@ -96,6 +102,13 @@ client.on('action', (channel, tags, message, self) => {
 // Non-text redeems are EventSub/PubSub-only and cannot be caught here.
 
 client.on('raw_message', (messageCloned, message) => {
+    // [GIF Debug] Temporary — logs the full pre-processed message object for
+    // EVERY IRC command, not just USERNOTICE. This is the closest thing tmi.js
+    // exposes to the raw wire data, so it should reveal any GIF-specific tags
+    // or a different command type entirely, even if the 'message' event above
+    // doesn't show anything unusual.
+    console.log('[GIF Debug] raw_message — command:', message.command, ' tags:', message.tags, ' params:', message.params, ' full object:', message);
+
     if (message.command !== 'USERNOTICE') return;
     const tags  = message.tags || {};
     const msgId = tags['msg-id'];
