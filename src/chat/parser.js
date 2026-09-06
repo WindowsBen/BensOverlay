@@ -11,6 +11,24 @@
 //   2. Scan remaining text word-by-word for third-party emotes
 //   3. Stack any zero-width emotes onto the previous emote token
 
+// Parses Twitch's `gifs` IRC tag (T2/T3 sub-only chat GIFs, added 2026).
+// Observed format: "START-END|GIF_ID|GIF_URL" — a single entry whose range
+// spans the ENTIRE message. Twitch sends a human-readable placeholder as the
+// actual message text (e.g. "[Halloween Wow GIF by This GIF Is Haunted]")
+// and this tag says which GIF to show instead. tmi.js has no built-in
+// support for this tag, so it arrives as a raw, unparsed string.
+// NOTE: only single-GIF messages have been observed/tested. If a message
+// can contain multiple GIFs or a GIF mixed with typed text, this will need
+// revisiting — there's no confirmed example of that yet.
+function parseGifTag(rawGifsTag) {
+    if (!rawGifsTag) return null;
+    const parts = rawGifsTag.split('|');
+    if (parts.length !== 3) return null;
+    const [, id, url] = parts;
+    if (!id || !url) return null;
+    return { id, url };
+}
+
 // Builds a flat array of tokens from the message.
 // Each token: { html: string, isEmote: bool, stacked: bool }
 function buildTokens(message, twitchEmotes) {

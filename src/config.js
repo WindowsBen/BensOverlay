@@ -41,6 +41,7 @@ const CONFIG = {
     excludedPrefixes: (params.get('excludePrefix') || '').split(',').map(p => p.trim()).filter(Boolean),
 
     showReplies:       params.get('showReplies') !== '0', // default on
+    showGifs:          params.get('showGifs') !== '0',    // default on — Twitch sub-only chat GIFs (T2/T3)
     meStyle:           params.get('meStyle') || 'colored', // 'colored' | 'italic' | 'none'
     showAnnouncements: params.get('showAnnouncements') !== '0', // default on
 

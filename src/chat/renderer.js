@@ -11,6 +11,13 @@ function displayMessage(tags, message, isAction = false, renderedMessageHTML = n
     // Drop messages that start with an excluded prefix (e.g. "!" for bot commands)
     if (CONFIG.excludedPrefixes.length && CONFIG.excludedPrefixes.some(p => message.startsWith(p))) return;
 
+    // Twitch sub-GIF messages (T2/T3 chat GIFs) — drop the whole message when
+    // disabled, since a GIF message's placeholder text ("[some description]")
+    // isn't meant to be read on its own.
+    const gif = parseGifTag(tags.gifs);
+    if (gif && !CONFIG.showGifs) return;
+    const gifHTML = gif ? `<img class="chat-gif" src="${escapeHTML(gif.url)}" alt="GIF" loading="lazy">` : null;
+
     const chatContainer  = document.getElementById('chat-container'); // always present
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
@@ -107,12 +114,12 @@ function displayMessage(tags, message, isAction = false, renderedMessageHTML = n
             ${replyHTML}
             <div class="reply-message-row">
                 <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-                <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? parseMessage(cleanMessage, adjustedEmotes)}</span>
+                <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? gifHTML ?? parseMessage(cleanMessage, adjustedEmotes)}</span>
             </div>`;
     } else {
         messageElement.innerHTML = `
             <span class="badges">${badgesHTML}</span><span class="username" style="color: ${escapeHTML(userColor)}">${escapeHTML(username)}:</span>
-            <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? parseMessage(message, tags.emotes)}</span>`;
+            <span class="message-text" ${messageStyle}>${renderedMessageHTML ?? gifHTML ?? parseMessage(message, tags.emotes)}</span>`;
     }
 
     // Tag the element for moderation targeting — login name (not display-name)

@@ -120,7 +120,7 @@ function generateLink() {
 
     const fontParams = fontUrl ? `fontUrl=${encodeURIComponent(fontUrl)}` : '';
 
-    const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&nameFontSize=${v('nameFontSize')}px&messageFontSize=${v('messageFontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}&shadowSize=${v('shadowSize')}&shadowAngle=${v('shadowAngle')}${fontParams ? '&'+fontParams : ''}${messageGap ? '&messageGap='+messageGap : ''}${lineHeight ? '&lineHeight='+lineHeight : ''}&slideDistance=${slideDistance}&slideDuration=${slideDuration}&messageLifetime=${messageLifetime}&fadeDuration=${fadeDuration}${excludedUsers ? '&exclude='+encodeURIComponent(excludedUsers) : ''}${excludedPrefixes ? '&excludePrefix='+encodeURIComponent(excludedPrefixes) : ''}${!ch('showReplies') ? '&showReplies=0' : ''}${v('meStyle') !== 'colored' ? '&meStyle='+v('meStyle') : ''}${!ch('showAnnouncements') ? '&showAnnouncements=0' : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}&${badgeParams}&token=${encodeURIComponent(token)}`;
+    const url = `${base}overlay.html#channel=${encodeURIComponent(channel)}&nameFontSize=${v('nameFontSize')}px&messageFontSize=${v('messageFontSize')}px&shadow=${c8('shadowColor','shadowOpacity')}&shadowSize=${v('shadowSize')}&shadowAngle=${v('shadowAngle')}${fontParams ? '&'+fontParams : ''}${messageGap ? '&messageGap='+messageGap : ''}${lineHeight ? '&lineHeight='+lineHeight : ''}&slideDistance=${slideDistance}&slideDuration=${slideDuration}&messageLifetime=${messageLifetime}&fadeDuration=${fadeDuration}${excludedUsers ? '&exclude='+encodeURIComponent(excludedUsers) : ''}${excludedPrefixes ? '&excludePrefix='+encodeURIComponent(excludedPrefixes) : ''}${!ch('showReplies') ? '&showReplies=0' : ''}${!ch('showGifs') ? '&showGifs=0' : ''}${v('meStyle') !== 'colored' ? '&meStyle='+v('meStyle') : ''}${!ch('showAnnouncements') ? '&showAnnouncements=0' : ''}&toastEmotes=${ch('toastEmotes') ? '1':'0'}&${eventParams}&${badgeParams}&token=${encodeURIComponent(token)}`;
 
     document.getElementById('resultLink').textContent = url;
 
@@ -175,6 +175,7 @@ const CONFIG_FIELDS = [
     { id: 'excludedUsers',    type: 'text'  },
     { id: 'excludedPrefixes', type: 'text'  },
     { id: 'showReplies',        type: 'check' },
+    { id: 'showGifs',           type: 'check' },
     { id: 'meStyle',            type: 'text'  },
     { id: 'showAnnouncements',  type: 'check' },
     { id: 'fontUrl',       type: 'text' },
@@ -357,6 +358,7 @@ function importFromOverlayUrl(text) {
     // Inverted-default checkboxes — generateLink() only includes these params
     // when they're OFF, so absence means "on" (the default), same as config.js
     setCheck('showReplies',       params.get('showReplies') !== '0');
+    setCheck('showGifs',          params.get('showGifs') !== '0');
     setCheck('showAnnouncements', params.get('showAnnouncements') !== '0');
 
     return true;
